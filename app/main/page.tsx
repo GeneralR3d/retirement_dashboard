@@ -369,6 +369,12 @@ export default function MainPage() {
   );
   const finalBalance = brokerageRows[brokerageRows.length - 1]?.balance ?? 0;
 
+  // Retirement viability: check if brokerage ever hits 0 after stopWorkingAge
+  const runOutRow = brokerageRows.find(
+    (r) => r.age > stopWorkingAge && r.balance <= 0,
+  );
+  const canRetire = runOutRow === undefined;
+
   const peakNwRow = netWorthData.reduce(
     (best, r) => (r.total > best.total ? r : best),
     netWorthData[0] ?? { age: currentAge, total: 0 },
@@ -386,6 +392,26 @@ export default function MainPage() {
           Net worth across CPF, SRS, and real brokerage — age {currentAge} to {deathAge}.
         </p>
       </header>
+
+      {/* Retirement verdict banner */}
+      <div className="mb-8 text-center">
+        {canRetire ? (
+          <h2 className="text-2xl font-semibold text-emerald-400">
+            You can retire at age{" "}
+            <span className="text-4xl font-black italic">{stopWorkingAge}</span>
+          </h2>
+        ) : (
+          <>
+            <h2 className="text-2xl font-semibold text-red-400">
+              You cannot retire at age{" "}
+              <span className="text-4xl font-black italic">{stopWorkingAge}</span>
+            </h2>
+            <p className="text-sm text-red-400/70 mt-1">
+              You will run out of money at age {runOutRow!.age}
+            </p>
+          </>
+        )}
+      </div>
 
       {/* Net worth KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
