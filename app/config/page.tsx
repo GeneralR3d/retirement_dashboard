@@ -17,7 +17,7 @@ function buildDefaultSeries(
   );
 }
 
-export default function SettingsPage() {
+export default function ConfigPage() {
   const { inputs, setInputs } = useProfile();
 
   // Local draft — only committed to shared context on Save
@@ -104,7 +104,7 @@ export default function SettingsPage() {
       <header className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            Settings
+            Config
           </h1>
           <p className="text-foreground/60 text-sm mt-1">
             Your personal financial details — shared across all projection pages.

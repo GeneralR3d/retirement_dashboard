@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const NAV_LINKS = [
-  { href: "/main", label: "Main" },
-  { href: "/srs", label: "SRS" },
+  { href: "/config", label: "Config" },
+  { href: "/main", label: "Networth" },
   { href: "/cpf", label: "CPF" },
   { href: "/withdrawals", label: "Withdrawals" },
-  { href: "/settings", label: "Settings" },
+  { href: "/srs", label: "SRS Demo" },
 ];
 
 function useTheme() {

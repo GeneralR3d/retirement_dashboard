@@ -30,7 +30,7 @@ At `cpfRetirementAge`, the model converts the full Ordinary Account balance into
 SRS withdrawals are only 50% taxable under Singapore law. The model applies this fraction when computing the annual tax drag during the 10-year SRS withdrawal window, which meaningfully affects post-tax take-home — and correctly shows that SRS becomes more advantageous the higher your marginal rate during accumulation relative to your (likely lower) retirement income.
 
 ### Salary cascade on manual override
-The settings page maintains a `salarySeries` array — one gross salary value per working year. When you edit a cell at index `i`, every subsequent row is auto-updated as `newGross × (1 + growthRate)^(j − i)`. This lets you model a specific career arc (big early promotion, sabbatical, founder-mode income dip) without manually editing every future year. Switching back to the formula is a single "Reset to defaults" button.
+The config page maintains a `salarySeries` array — one gross salary value per working year. When you edit a cell at index `i`, every subsequent row is auto-updated as `newGross × (1 + growthRate)^(j − i)`. This lets you model a specific career arc (big early promotion, sabbatical, founder-mode income dip) without manually editing every future year. Switching back to the formula is a single "Reset to defaults" button.
 
 ### Column visibility toggle with per-column dropdown
 Both the SRS and CPF projection tables have a header-click dropdown per column offering "Hide column" / "Remove from hidden" — and a global "show hidden" toggle that reveals them at reduced opacity. The default hidden sets (tax columns in SRS; raw balance columns in CPF) keep the tables scannable without removing the data entirely. The pattern lives in shared `hiddenCols: Set<ColId>` state and is easy to replicate on any new page.
@@ -46,7 +46,7 @@ flowchart TB
     end
 
     subgraph Pages
-        SET["/settings\nInput controls"]
+        SET["/config\nInput controls"]
         MAIN["/main\nOverview"]
         SRS["/srs\nSRS analysis"]
         CPF["/cpf\nCPF projection"]
@@ -75,7 +75,7 @@ flowchart TB
 
 **`lib/tax.ts`** is the entire financial brain — pure functions, no side effects, easily unit-testable.
 
-**`lib/profile-context.tsx`** is the single source of truth for user inputs. Every page reads from it; only Settings writes to it (on explicit Save).
+**`lib/profile-context.tsx`** is the single source of truth for user inputs. Every page reads from it; only Config writes to it (on explicit Save).
 
 **Pages** are pure views: read inputs, call `useMemo` to run projections, render charts and tables. No financial logic lives in components.
 
@@ -183,7 +183,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. You'll be r
 
 ### 4. Enter your profile
 
-Navigate to **Settings** (top-right in the nav). Fill in your:
+Navigate to **Config** (top-right in the nav). Fill in your:
 - Age milestones (current age, when you plan to stop working, etc.)
 - Starting salary and growth rate
 - CPF account balances (find these in your CPF statement)
@@ -214,7 +214,7 @@ app/
 ├── srs/page.tsx            # SRS projection & comparison
 ├── cpf/page.tsx            # CPF projection
 ├── withdrawals/page.tsx    # Retirement spending table
-├── settings/page.tsx       # Input controls & salary editor
+├── config/page.tsx       # Input controls & salary editor
 └── components/
     ├── ui.tsx              # Shared: Slider, NumberField, StatCard, Th, Td
     └── navbar.tsx          # Nav links + dark/light toggle

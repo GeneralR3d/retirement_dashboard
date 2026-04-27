@@ -245,7 +245,7 @@ export default function SrsPage() {
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="font-semibold flex items-center">
             Pot growth
-            <InfoTooltip text={`Investment grows at ${(investmentGrowthRate * 100).toFixed(1)}% p.a. during working years (age ${currentAge}–${stopWorkingAge}), then switches to ${(investmentGrowthRateRetirement * 100).toFixed(1)}% p.a. after retirement to reflect lower risk tolerance. Adjust both rates in Settings.`} />
+            <InfoTooltip text={`Investment grows at ${(investmentGrowthRate * 100).toFixed(1)}% p.a. during working years (age ${currentAge}–${stopWorkingAge}), then switches to ${(investmentGrowthRateRetirement * 100).toFixed(1)}% p.a. after retirement to reflect lower risk tolerance. Adjust both rates in Config.`} />
           </h2>
           <span className="text-xs text-foreground/60">
             Total tax saved (age {currentAge}–{srsWithdrawalAge}): {fmtMoney(totalTaxSavings)}
