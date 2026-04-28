@@ -325,11 +325,13 @@ export function buildBrokerageProjection(inputs: {
   cpfWithdrawalAge: number;
   cpfLifeAnnualPayout: number; // already inflated to cpfWithdrawalAge, fixed thereafter
   srsAnnualIncome: number;     // net annual SRS income from srsWithdrawalAge onwards
+  srsEnabled?: boolean;        // false = no SRS pot; use investedNoSrs contributions, single draw/reinvest phase
 }): BrokerageRow[] {
   const {
     startingCash, currentAge, workingYears, cpfRetirementAge, deathAge,
     investmentGrowthRate, investmentGrowthRateRetirement, srsRows, oaAtRetirement,
     stopWorkingAge, srsWithdrawalAge, cpfWithdrawalAge, cpfLifeAnnualPayout, srsAnnualIncome,
+    srsEnabled = true,
   } = inputs;
 
   const totalYears = Math.max(0, deathAge - currentAge);
@@ -340,24 +342,43 @@ export function buildBrokerageProjection(inputs: {
     const startAge = currentAge + i;
     const endAge = startAge + 1;
 
-    const contribution = i < workingYears ? (srsRows[i]?.brokerageWithSrs ?? 0) : 0;
+    // When SRS is disabled, the full investedNoSrs amount flows into brokerage each working year.
+    const contribution = i < workingYears
+      ? (srsEnabled ? (srsRows[i]?.brokerageWithSrs ?? 0) : (srsRows[i]?.investedNoSrs ?? 0))
+      : 0;
     const oaInjection = endAge === cpfRetirementAge ? oaAtRetirement : 0;
 
-    // Phase 1 — drawdown: withdraw shortfall while waiting for SRS
     let brokerageIncome = 0;
-    if (startAge >= stopWorkingAge && startAge < srsWithdrawalAge) {
-      const expenses = ANNUAL_EXPENSES_TODAY * Math.pow(1 + EXPENSES_INFLATION_RATE, i);
-      const cpfLife = startAge >= cpfWithdrawalAge ? cpfLifeAnnualPayout : 0;
-      const shortfall = Math.max(0, expenses - cpfLife);
-      brokerageIncome = Math.min(shortfall, Math.max(0, balance + oaInjection));
-    }
-
-    // Phase 2 — reinvest: put any surplus from SRS + CPF LIFE back into brokerage
     let srsReinvestment = 0;
-    if (startAge >= srsWithdrawalAge) {
-      const expenses = ANNUAL_EXPENSES_TODAY * Math.pow(1 + EXPENSES_INFLATION_RATE, i);
-      const cpfLife = startAge >= cpfWithdrawalAge ? cpfLifeAnnualPayout : 0;
-      srsReinvestment = Math.max(0, cpfLife + srsAnnualIncome - expenses);
+
+    if (srsEnabled) {
+      // Phase 1 — drawdown: withdraw shortfall while waiting for SRS
+      if (startAge >= stopWorkingAge && startAge < srsWithdrawalAge) {
+        const expenses = ANNUAL_EXPENSES_TODAY * Math.pow(1 + EXPENSES_INFLATION_RATE, i);
+        const cpfLife = startAge >= cpfWithdrawalAge ? cpfLifeAnnualPayout : 0;
+        const shortfall = Math.max(0, expenses - cpfLife);
+        brokerageIncome = Math.min(shortfall, Math.max(0, balance + oaInjection));
+      }
+
+      // Phase 2 — reinvest: put any surplus from SRS + CPF LIFE back into brokerage
+      if (startAge >= srsWithdrawalAge) {
+        const expenses = ANNUAL_EXPENSES_TODAY * Math.pow(1 + EXPENSES_INFLATION_RATE, i);
+        const cpfLife = startAge >= cpfWithdrawalAge ? cpfLifeAnnualPayout : 0;
+        srsReinvestment = Math.max(0, cpfLife + srsAnnualIncome - expenses);
+      }
+    } else {
+      // No-SRS: single unified phase from stopWorkingAge to deathAge.
+      // Draw from brokerage when expenses exceed CPF LIFE; reinvest the surplus otherwise.
+      if (startAge >= stopWorkingAge) {
+        const expenses = ANNUAL_EXPENSES_TODAY * Math.pow(1 + EXPENSES_INFLATION_RATE, i);
+        const cpfLife = startAge >= cpfWithdrawalAge ? cpfLifeAnnualPayout : 0;
+        const netFlow = cpfLife - expenses;
+        if (netFlow < 0) {
+          brokerageIncome = Math.min(-netFlow, Math.max(0, balance + oaInjection));
+        } else {
+          srsReinvestment = netFlow;
+        }
+      }
     }
 
     const growthRate = i < workingYears ? investmentGrowthRate : investmentGrowthRateRetirement;

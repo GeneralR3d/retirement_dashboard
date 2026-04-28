@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useSrsToggle } from "@/lib/srs-toggle-context";
 import {
   CartesianGrid,
   Legend,
@@ -166,8 +167,32 @@ function BrokerageTooltip({
   );
 }
 
+function SrsToggleSwitch() {
+  const { srsEnabled, setSrsEnabled } = useSrsToggle();
+  return (
+    <label className="flex items-center gap-2 cursor-pointer select-none">
+      <span className="text-xs text-foreground/60">SRS</span>
+      <button
+        role="switch"
+        aria-checked={srsEnabled}
+        onClick={() => setSrsEnabled(!srsEnabled)}
+        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+          srsEnabled ? "bg-emerald-500" : "bg-foreground/20"
+        }`}
+      >
+        <span
+          className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+            srsEnabled ? "translate-x-4" : "translate-x-0.5"
+          }`}
+        />
+      </button>
+    </label>
+  );
+}
+
 export default function MainPage() {
   const { inputs } = useProfile();
+  const { srsEnabled } = useSrsToggle();
   const {
     currentAge,
     stopWorkingAge,
@@ -256,7 +281,8 @@ export default function MainPage() {
         srsWithdrawalAge,
         cpfWithdrawalAge,
         cpfLifeAnnualPayout,
-        srsAnnualIncome,
+        srsAnnualIncome: srsEnabled ? srsAnnualIncome : 0,
+        srsEnabled,
       });
 
       // --- Net worth chart data ---
@@ -272,22 +298,22 @@ export default function MainPage() {
         cpfMap.set(r.age, Math.max(0, val));
       }
 
-      // SRS map: age → SRS pot balance
-      // During accumulation: from srsRows
-      // After srsWithdrawalAge: linear drawdown over SRS_WITHDRAWAL_YEARS
+      // SRS map: age → SRS pot balance (all zeros when SRS is disabled)
       const srsMap = new Map<number, number>();
-      srsMap.set(currentAge, 0);
-      for (let i = 0; i < srsRows.length; i++) {
-        const age = currentAge + i + 1;
-        if (age <= srsWithdrawalAge) {
-          srsMap.set(age, srsRows[i].srsPot);
+      if (srsEnabled) {
+        srsMap.set(currentAge, 0);
+        for (let i = 0; i < srsRows.length; i++) {
+          const age = currentAge + i + 1;
+          if (age <= srsWithdrawalAge) {
+            srsMap.set(age, srsRows[i].srsPot);
+          }
         }
-      }
-      for (let k = 1; k <= Math.max(0, deathAge - srsWithdrawalAge); k++) {
-        srsMap.set(
-          srsWithdrawalAge + k,
-          Math.max(0, srsFinalPot - srsYearlyWithdrawal * k),
-        );
+        for (let k = 1; k <= Math.max(0, deathAge - srsWithdrawalAge); k++) {
+          srsMap.set(
+            srsWithdrawalAge + k,
+            Math.max(0, srsFinalPot - srsYearlyWithdrawal * k),
+          );
+        }
       }
 
       // Brokerage map: age → balance
@@ -342,6 +368,7 @@ export default function MainPage() {
       workingYears,
       seriesOverride,
       cpfLifeAnnualPayout,
+      srsEnabled,
     ]);
 
   const chartData = useMemo(
@@ -351,7 +378,11 @@ export default function MainPage() {
         balance: Math.round(r.balance),
         contribution:
           k > 0 && k - 1 < workingYears
-            ? Math.round(srsRowsForChart[k - 1]?.brokerageWithSrs ?? 0)
+            ? Math.round(
+                srsEnabled
+                  ? (srsRowsForChart[k - 1]?.brokerageWithSrs ?? 0)
+                  : (srsRowsForChart[k - 1]?.investedNoSrs ?? 0),
+              )
             : null,
         withdrawal: r.brokerageIncome > 0 ? Math.round(r.brokerageIncome) : null,
         oaInjected:
@@ -360,7 +391,7 @@ export default function MainPage() {
             : null,
         reinvestment: r.srsReinvestment > 0 ? Math.round(r.srsReinvestment) : null,
       })),
-    [brokerageRows, srsRowsForChart, workingYears, cpfRetirementAge, oaAtRetirement],
+    [brokerageRows, srsRowsForChart, workingYears, cpfRetirementAge, oaAtRetirement, srsEnabled],
   );
 
   const peakRow = brokerageRows.reduce(
@@ -440,11 +471,14 @@ export default function MainPage() {
 
       {/* Net Worth Chart */}
       <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 mb-8">
-        <div className="flex items-baseline justify-between mb-1">
+        <div className="flex items-center justify-between mb-1">
           <h2 className="font-semibold">Net Worth Breakdown</h2>
-          <span className="text-xs text-foreground/60">
-            Age {currentAge}–{deathAge}
-          </span>
+          <div className="flex items-center gap-4">
+            <SrsToggleSwitch />
+            <span className="text-xs text-foreground/60">
+              Age {currentAge}–{deathAge}
+            </span>
+          </div>
         </div>
         <p className="text-foreground/60 text-xs mb-6">
           CPF (OA excluded after age {cpfRetirementAge}), SRS pot (drawn down over 10 yrs from age{" "}
@@ -515,18 +549,20 @@ export default function MainPage() {
                 fontSize: 10,
               }}
             />
-            <ReferenceLine
-              x={srsWithdrawalAge}
-              stroke="#22d3ee"
-              strokeDasharray="4 4"
-              strokeWidth={1.5}
-              label={{
-                value: `SRS starts (${srsWithdrawalAge})`,
-                position: "insideTopRight",
-                fill: "#22d3ee",
-                fontSize: 10,
-              }}
-            />
+            {srsEnabled && (
+              <ReferenceLine
+                x={srsWithdrawalAge}
+                stroke="#22d3ee"
+                strokeDasharray="4 4"
+                strokeWidth={1.5}
+                label={{
+                  value: `SRS starts (${srsWithdrawalAge})`,
+                  position: "insideTopRight",
+                  fill: "#22d3ee",
+                  fontSize: 10,
+                }}
+              />
+            )}
             <ReferenceLine
               x={cpfWithdrawalAge}
               stroke="#f97316"
@@ -542,7 +578,9 @@ export default function MainPage() {
 
             <Line type="monotone" dataKey="total" name="Total Net Worth" stroke="#f8fafc" strokeWidth={2.5} dot={false} />
             <Line type="monotone" dataKey="brokerage" name="Brokerage" stroke="#38bdf8" strokeWidth={1.5} dot={false} />
-            <Line type="monotone" dataKey="srs" name="SRS Pot" stroke="#10b981" strokeWidth={1.5} dot={false} />
+            {srsEnabled && (
+              <Line type="monotone" dataKey="srs" name="SRS Pot" stroke="#10b981" strokeWidth={1.5} dot={false} />
+            )}
             <Line type="monotone" dataKey="cpf" name="CPF" stroke="#eab308" strokeWidth={1.5} dot={false} />
           </LineChart>
         </ResponsiveContainer>
@@ -640,17 +678,19 @@ export default function MainPage() {
                 fontSize: 11,
               }}
             />
-            <ReferenceLine
-              x={srsWithdrawalAge}
-              stroke="#22d3ee"
-              strokeDasharray="4 4"
-              label={{
-                value: "SRS starts",
-                position: "insideTopRight",
-                fill: "#22d3ee",
-                fontSize: 11,
-              }}
-            />
+            {srsEnabled && (
+              <ReferenceLine
+                x={srsWithdrawalAge}
+                stroke="#22d3ee"
+                strokeDasharray="4 4"
+                label={{
+                  value: "SRS starts",
+                  position: "insideTopRight",
+                  fill: "#22d3ee",
+                  fontSize: 11,
+                }}
+              />
+            )}
             <Line
               type="monotone"
               dataKey="balance"

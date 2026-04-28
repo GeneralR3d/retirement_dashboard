@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useProfile } from "@/lib/profile-context";
+import { useSrsToggle } from "@/lib/srs-toggle-context";
 import { fmtMoney } from "@/lib/format";
 import { StatCard, Td, Th } from "@/app/components/ui";
 import {
@@ -55,8 +56,32 @@ function buildWithdrawalRows(
   return rows;
 }
 
+function SrsToggleSwitch() {
+  const { srsEnabled, setSrsEnabled } = useSrsToggle();
+  return (
+    <label className="flex items-center gap-2 cursor-pointer select-none">
+      <span className="text-xs text-foreground/60">SRS</span>
+      <button
+        role="switch"
+        aria-checked={srsEnabled}
+        onClick={() => setSrsEnabled(!srsEnabled)}
+        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+          srsEnabled ? "bg-emerald-500" : "bg-foreground/20"
+        }`}
+      >
+        <span
+          className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+            srsEnabled ? "translate-x-4" : "translate-x-0.5"
+          }`}
+        />
+      </button>
+    </label>
+  );
+}
+
 export default function WithdrawalsPage() {
   const { inputs } = useProfile();
+  const { srsEnabled } = useSrsToggle();
   const {
     currentAge,
     stopWorkingAge,
@@ -145,7 +170,8 @@ export default function WithdrawalsPage() {
       srsWithdrawalAge,
       cpfWithdrawalAge,
       cpfLifeAnnualPayout,
-      srsAnnualIncome: annualSrs,
+      srsAnnualIncome: srsEnabled ? annualSrs : 0,
+      srsEnabled,
     });
 
     // Map: startAge → row data
@@ -160,12 +186,13 @@ export default function WithdrawalsPage() {
       });
     }
 
-    return { srsAnnualIncome: annualSrs, brokerageByAge: map };
+    return { srsAnnualIncome: srsEnabled ? annualSrs : 0, brokerageByAge: map };
   }, [
     startingSalary, salaryGrowthRate, investmentGrowthRate, investmentGrowthRateRetirement,
     livingExpensePct, srsYears, srsWorkingYears, workingYears, seriesOverride,
     currentAge, stopWorkingAge, cpfWithdrawalAge, cpfRetirementAge, deathAge,
     cpfOA, cpfSA, cpfMA, cpfRA, cpfLifeFrs, startingCash, srsWithdrawalAge, cpfLifeAnnualPayout,
+    srsEnabled,
   ]);
 
   const rows = useMemo(
@@ -232,12 +259,15 @@ export default function WithdrawalsPage() {
       </section>
 
       <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5">
-        <div className="flex items-baseline justify-between mb-4">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Annual expenses</h2>
-          <span className="text-xs text-foreground/60">
-            S${MONTHLY_EXPENSES_TODAY.toLocaleString("en-SG")}/mo today &rarr; inflated at{" "}
-            {EXPENSES_INFLATION_RATE * 100}% p.a. for {Math.max(0, stopWorkingAge - currentAge)}+ years
-          </span>
+          <div className="flex items-center gap-4">
+            <SrsToggleSwitch />
+            <span className="text-xs text-foreground/60">
+              S${MONTHLY_EXPENSES_TODAY.toLocaleString("en-SG")}/mo today &rarr; inflated at{" "}
+              {EXPENSES_INFLATION_RATE * 100}% p.a. for {Math.max(0, stopWorkingAge - currentAge)}+ years
+            </span>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -273,8 +303,8 @@ export default function WithdrawalsPage() {
                     <Td className={r.cpfLifeIncome > 0 ? "text-orange-400" : "text-foreground/30"}>
                       {r.cpfLifeIncome > 0 ? fmtMoney(r.cpfLifeIncome) : "—"}
                     </Td>
-                    <Td className={r.srsIncome > 0 ? "text-emerald-400" : "text-foreground/30"}>
-                      {r.srsIncome > 0 ? fmtMoney(r.srsIncome) : "—"}
+                    <Td className={r.srsIncome > 0 && srsEnabled ? "text-emerald-400" : "text-foreground/30"}>
+                      {r.srsIncome > 0 && srsEnabled ? fmtMoney(r.srsIncome) : "—"}
                     </Td>
                     <Td className={
                       brokerageIncome > 0 ? "text-sky-400"
