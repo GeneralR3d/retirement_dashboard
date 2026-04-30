@@ -136,7 +136,7 @@ export default function CpfPage() {
   const saBeforeConversion = conversionRow?.saBalanceAtConversion ?? 0;
   const conversionSurplus = saBeforeConversion - frsTarget; // positive = excess to OA, negative = deficit drawn from OA
 
-  // OA is transferred to real brokerage at cpfRetirementAge — zero it out from that point
+  // OA is transferred to real networth at cpfRetirementAge — zero it out from that point
   const chartData = rows.map((r) => ({
     age: r.age,
     OA: conversionRow && r.age >= cpfRetirementAge ? 0 : Math.round(r.oaBalance),
@@ -318,7 +318,7 @@ export default function CpfPage() {
             Special Account is transferred to Retirement Account to meet the
             FRS target (current {fmtMoney(cpfLifeFrs)} inflated at {CPF_FRS_INFLATION_RATE * 100}%/yr).
             Any surplus returns to OA; any deficit is drawn from OA.
-            The remaining OA balance is then transferred in full to your real brokerage account.
+            The remaining OA balance is then transferred in full to your real networth account.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <Stat label="FRS target" value={fmtMoney(frsTarget)} />
