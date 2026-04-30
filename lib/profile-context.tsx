@@ -2,6 +2,20 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
+export type Investment = {
+  id: string;
+  name: string;
+  value: number;
+  returnRate: number;
+};
+
+const DEFAULT_INVESTMENTS: Investment[] = [
+  { id: "stocks",  name: "Stocks & ETFs",               value: 5000, returnRate: 0.07  },
+  { id: "bonds",   name: "Bonds & Money Market Funds",   value: 0,    returnRate: 0.03  },
+  { id: "cash",    name: "Cash",                         value: 0,    returnRate: 0.005 },
+  { id: "fd",      name: "Fixed Deposits",               value: 0,    returnRate: 0.035 },
+];
+
 export type ProfileInputs = {
   currentAge: number;
   stopWorkingAge: number;
@@ -23,6 +37,7 @@ export type ProfileInputs = {
   salarySeries: number[];
   startingCash: number;
   monthlyExpensesToday: number;
+  investments: Investment[];
 };
 
 export const CPF_RATES = {
@@ -53,6 +68,7 @@ const DEFAULTS: ProfileInputs = {
   salarySeries: [],
   startingCash: 5000,
   monthlyExpensesToday: 4000,
+  investments: DEFAULT_INVESTMENTS,
 };
 
 type ProfileContextType = {
