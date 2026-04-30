@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { SplitNavButton } from "@/components/ui/button";
 
-const NAV_LINKS = [
+const NAV_LINKS_BEFORE = [
   { href: "/config", label: "Config" },
   { href: "/main", label: "Networth" },
-  { href: "/cashflow", label: "Cashflow" },
+];
+
+const NAV_LINKS_AFTER = [
   { href: "/cpf", label: "CPF" },
-  { href: "/withdrawals", label: "Withdrawals" },
   { href: "/srs", label: "SRS Demo" },
 ];
 
@@ -46,7 +48,7 @@ export default function Navbar() {
           <span className="text-sm font-semibold mr-4 text-foreground/80">
             SG Retirement
           </span>
-          {NAV_LINKS.map((link) => {
+          {NAV_LINKS_BEFORE.map((link) => {
             const active =
               pathname === link.href ||
               (pathname === "/" && link.href === "/main");
@@ -64,14 +66,33 @@ export default function Navbar() {
               </Link>
             );
           })}
+          <SplitNavButton />
+          {NAV_LINKS_AFTER.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  active
+                    ? "bg-foreground/10 text-foreground font-medium"
+                    : "text-foreground/60 hover:text-foreground hover:bg-foreground/5"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </div>
-        <button
-          onClick={toggle}
-          className="rounded-md border border-foreground/15 px-3 py-1.5 text-sm hover:bg-foreground/5 transition"
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? "☀ Light" : "☾ Dark"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggle}
+            className="rounded-md border border-foreground/15 px-3 py-1.5 text-sm hover:bg-foreground/5 transition"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? "☀ Light" : "☾ Dark"}
+          </button>
+        </div>
       </div>
     </nav>
   );

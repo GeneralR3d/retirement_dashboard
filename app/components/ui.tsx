@@ -63,7 +63,7 @@ export function NumberField({
   return (
     <label className="block">
       <span className="block text-sm text-foreground/80 mb-1">{label}</span>
-      <div className="flex items-center rounded-md border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
+      <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
         {prefix && (
           <span className="pl-3 text-foreground/60 font-mono">{prefix}</span>
         )}

@@ -71,6 +71,9 @@ export default function ConfigPage() {
   // Salary table accordion state
   const [showSalaryTable, setShowSalaryTable] = useState(false);
 
+  // Target return — display only, not persisted
+  const [targetReturn, setTargetReturn] = useState(0.07);
+
   // Inline editing state (salary table)
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [editVal, setEditVal] = useState("");
@@ -228,7 +231,7 @@ export default function ConfigPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center rounded-md border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
+              <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
                 <span className="pl-3 text-foreground/60 font-mono">$</span>
                 <input
                   type="number"
@@ -241,38 +244,40 @@ export default function ConfigPage() {
             </label>
 
             {/* Salary growth rate accordion */}
-            <div>
+            <div className="rounded-xl border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
               <button
                 type="button"
                 onClick={() => setShowSalaryTable((v) => !v)}
-                className="w-full text-left group cursor-pointer"
+                className="w-full text-left cursor-pointer px-4 pt-3 pb-2"
               >
-                <div className="flex justify-between items-center text-sm mb-1">
-                  <span className="flex items-center gap-1.5 text-foreground/80">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="flex items-center gap-2 text-foreground/80">
                     Salary growth rate
                     <svg
-                      className={`w-3.5 h-3.5 text-foreground/40 transition-transform duration-200 ${showSalaryTable ? "rotate-180" : ""}`}
+                      className={`w-4 h-4 text-foreground/60 transition-transform duration-200 ${showSalaryTable ? "rotate-180" : ""}`}
                       viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
                   </span>
-                  <span className="font-mono text-foreground">
+                  <span className="font-mono text-foreground font-semibold">
                     {(salaryGrowthRate * 100).toFixed(1)}%
                   </span>
                 </div>
               </button>
-              <input
-                type="range"
-                min={0}
-                max={0.1}
-                step={0.005}
-                value={salaryGrowthRate}
-                onChange={(e) => update("salaryGrowthRate")(parseFloat(e.target.value))}
-                className="w-full accent-emerald-500"
-              />
+              <div className="px-4 pb-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={0.1}
+                  step={0.005}
+                  value={salaryGrowthRate}
+                  onChange={(e) => update("salaryGrowthRate")(parseFloat(e.target.value))}
+                  className="w-full accent-emerald-500"
+                />
+              </div>
               {showSalaryTable && (
-                <div className="mt-4">
+                <div className="border-t border-foreground/10 px-4 pt-3 pb-4">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs text-foreground/60">
                       Click any gross value to edit — rows below cascade automatically.
@@ -340,16 +345,6 @@ export default function ConfigPage() {
             </div>
 
             <Slider
-              label="Investment growth rate (post-retirement)"
-              value={investmentGrowthRateRetirement}
-              min={0}
-              max={0.1}
-              step={0.005}
-              suffix="%"
-              format={(v) => (v * 100).toFixed(1)}
-              onChange={update("investmentGrowthRateRetirement")}
-            />
-            <Slider
               label="Living expenses (% of take-home)"
               value={livingExpensePct}
               min={0.1}
@@ -385,6 +380,16 @@ export default function ConfigPage() {
               value={srsWithdrawalAge}
               onChange={update("srsWithdrawalAge")}
               step={1}
+            />
+            <Slider
+              label="Investment growth rate (post-retirement)"
+              value={investmentGrowthRateRetirement}
+              min={0}
+              max={0.1}
+              step={0.005}
+              suffix="%"
+              format={(v) => (v * 100).toFixed(1)}
+              onChange={update("investmentGrowthRateRetirement")}
             />
           </div>
         </div>
@@ -471,6 +476,23 @@ export default function ConfigPage() {
           </button>
         </div>
 
+        {/* Target return slider */}
+        <div className="mb-5 flex items-center gap-4 w-80">
+          <span className="text-sm text-foreground/70 shrink-0">Target return</span>
+          <input
+            type="range"
+            min={0}
+            max={0.20}
+            step={0.005}
+            value={targetReturn}
+            onChange={(e) => setTargetReturn(parseFloat(e.target.value))}
+            className="flex-1 accent-emerald-500"
+          />
+          <span className="font-mono text-sm text-foreground/80 w-12 text-right shrink-0">
+            {(targetReturn * 100).toFixed(1)}%
+          </span>
+        </div>
+
         <div className="rounded-xl border border-foreground/10 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-foreground/[0.06]">
@@ -495,7 +517,7 @@ export default function ConfigPage() {
                   </td>
                   {/* Value */}
                   <td className="py-2 px-2">
-                    <div className="flex items-center rounded-md border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500 w-40">
+                    <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500 w-40">
                       <span className="pl-2 text-foreground/50 font-mono text-xs">$</span>
                       <input
                         type="number"
@@ -546,15 +568,27 @@ export default function ConfigPage() {
               <tr className="border-t border-foreground/15 bg-foreground/[0.04] font-medium">
                 <td className="py-3 px-2 text-sm text-foreground/70">Total</td>
                 <td className="py-3 px-2 font-mono text-sm">{fmtMoney(totalInvestments)}</td>
-                <td className="py-3 px-2">
-                  <div className="flex items-center gap-3 min-w-[200px]">
-                    <div className="flex-1 text-xs text-foreground/50">Weighted avg return</div>
-                    <span className="font-mono text-emerald-400 text-sm w-10 text-right shrink-0">
-                      {totalInvestments > 0 ? `${(weightedRate * 100).toFixed(1)}%` : "—"}
-                    </span>
+                <td className="py-3 px-2" colSpan={2}>
+                  <div className="flex items-center gap-4 min-w-[200px]">
+                    <div className="text-xs text-foreground/50 shrink-0">Weighted avg return</div>
+                    <div className="flex flex-col items-end ml-auto">
+                      <span
+                        className={`font-mono font-semibold text-xl leading-tight ${
+                          totalInvestments > 0 && weightedRate < targetReturn
+                            ? "text-red-400"
+                            : "text-emerald-400"
+                        }`}
+                      >
+                        {totalInvestments > 0 ? `${(weightedRate * 100).toFixed(1)}%` : "—"}
+                      </span>
+                      {totalInvestments > 0 && weightedRate < targetReturn && (
+                        <span className="text-[11px] text-red-400/80 mt-0.5">
+                          {((targetReturn - weightedRate) * 100).toFixed(1)}% below target
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </td>
-                <td />
               </tr>
             </tfoot>
           </table>

@@ -35,7 +35,7 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 - `monthlyExpensesToday` (4000) — user-configured monthly retirement expenses in today's money. Pages derive annual expenses as `monthlyExpensesToday * 12`. This supersedes the old `MONTHLY_EXPENSES_TODAY` constant from `lib/tax.ts` for pages that read from context.
 - `investments: Investment[]` — breakdown of real networth by asset class. Each entry: `{ id: string, name: string, value: number, returnRate: number }`. The config page recomputes `startingCash` (sum of values) and `investmentGrowthRate` (value-weighted average return) whenever this changes.
 
-**`lib/srs-toggle-context.tsx`** — `SrsToggleProvider` + `useSrsToggle` hook. Holds `srsEnabled: boolean` (default `true`). Not persisted to localStorage — resets to enabled on page load. Mounted in `app/layout.tsx` inside `ProfileProvider`. The toggle switch is rendered on the `/main` and `/withdrawals` pages; any page can read or set it via `useSrsToggle`.
+**`lib/srs-toggle-context.tsx`** — `SrsToggleProvider` + `useSrsToggle` hook. Holds `srsEnabled: boolean` (default `true`). Not persisted to localStorage — resets to enabled on page load. Mounted in `app/layout.tsx` inside `ProfileProvider`. The toggle switch is rendered on the `/main` and `/retirement` pages; any page can read or set it via `useSrsToggle`.
 
 `investmentGrowthRateRetirement` represents reduced risk tolerance after stopping work. `buildProjection` uses `investmentGrowthRate` for `i < workingYears` and switches to `investmentGrowthRateRetirement` for all subsequent years.
 
@@ -52,7 +52,8 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
   - The salary table (inside the accordion) edits `salarySeries` directly; editing cell `i` cascades `newGross * (1 + salaryGrowthRate)^(j-i)` to all rows below.
 - **`app/srs/page.tsx`** — SRS projection page. A projection-only view comparing SRS vs no-SRS — key assumption is no withdrawals from the brokerage pot before `srsWithdrawalAge` (flagged by an amber disclaimer banner). Derives `years = srsWithdrawalAge - currentAge` and `workingYears = stopWorkingAge - currentAge`. Renders KPI cards, a pot-growth `LineChart` (With/Without SRS), a brokerage accumulation `AreaChart` (accumulation only, through `srsWithdrawalAge` — no depletion phase), an annual projection table with hideable columns, and an SRS withdrawal breakdown section. The brokerage chart shows contributions during working years and zero-contribution growth at `investmentGrowthRateRetirement` after `stopWorkingAge`. The SRS withdrawal breakdown bottom row shows a three-card equation: `brokeragePot (at srsWithdrawalAge) + netSRS = finalTakeHome`.
 - **`app/cpf/page.tsx`** — CPF projection page. Passes `endAge: deathAge` to `buildCpfProjection` so projections run from `currentAge` to `deathAge`. Renders 3 KPI cards (FRS target, CPF LIFE premium lump sum, annual CPF LIFE payout), a stacked `AreaChart` with OA/SA/MA/RA areas. OA is zeroed in the chart from `cpfRetirementAge` onwards (because OA is transferred to the real networth at that age). Two dotted `ReferenceLine`s: violet at `cpfRetirementAge` (SA→RA + OA→Brok) and orange at `cpfWithdrawalAge` (CPF LIFE purchase). The SA→RA conversion row in the table has both "SA→RA" (violet) and "OA→Brok" (sky) badges; CPF LIFE row has "CPF LIFE" (orange). Total Balance column excludes OA for all rows from `cpfRetirementAge` onwards.
-- **`app/withdrawals/page.tsx`** — Retirement spending page. Also renders the SRS toggle switch. `buildWithdrawalRows` (local to the page) produces rows from `stopWorkingAge` to `deathAge` with `annualExpenses`, `cpfLifeIncome`, `srsIncome`, and `shortfall`. Expenses use `monthlyExpensesToday * 12` from context (not the `MONTHLY_EXPENSES_TODAY` constant). Also calls `buildBrokerageProjection` to populate brokerage income and brokerage balance columns. When `srsEnabled` is false, `srsIncome` is zeroed and the brokerage projection accounts for the increased shortfall. Brokerage income column shows: sky-blue for withdrawals (drawdown phase), violet with "+" prefix for surplus reinvestments (post-SRS phase), "—" otherwise. Shortfall column shows the residual after brokerage withdrawal (green surplus, red uncovered gap).
+- **`app/accumulation/page.tsx`** — Working-years accumulation page. Covers `currentAge` to `stopWorkingAge`. Calls `buildProjection` (no-SRS scenario only) and renders an annual table: age, take-home salary, tax (no SRS), living expenses, housing mortgage (placeholder — always `—`, reserved for future BTO modeling), and leftover for investments, with a totals footer row. The former `app/cashflow/page.tsx` was replaced by this page; the `SplitNavButton` still routes to `/cashflow` in its center/default state (that route is currently unbuilt).
+- **`app/retirement/page.tsx`** — Retirement spending page. Also renders the SRS toggle switch. `buildWithdrawalRows` (local to the page) produces rows from `stopWorkingAge` to `deathAge` with `annualExpenses`, `cpfLifeIncome`, `srsIncome`, and `shortfall`. Expenses use `monthlyExpensesToday * 12` from context (not the `MONTHLY_EXPENSES_TODAY` constant). Also calls `buildBrokerageProjection` to populate brokerage income and brokerage balance columns. When `srsEnabled` is false, `srsIncome` is zeroed and the brokerage projection accounts for the increased shortfall. Brokerage income column shows: sky-blue for withdrawals (drawdown phase), violet with "+" prefix for surplus reinvestments (post-SRS phase), "—" otherwise. Shortfall column shows the residual after brokerage withdrawal (green surplus, red uncovered gap).
 
 ### Shared library
 
@@ -73,7 +74,11 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 
 **`app/components/ui.tsx`** — `Slider`, `NumberField`, `StatCard`, `Stat`, `Th`, `Td`. Import from here rather than redefining per page.
 
-**`app/components/navbar.tsx`** — sticky nav with links to `/main`, `/srs`, `/cpf`, `/withdrawals`, `/config`. Also owns `useTheme`, which toggles a `dark` class on `<html>` and persists to `localStorage`. Active link is derived from `usePathname`.
+**`app/components/navbar.tsx`** — sticky nav. Links are split into `NAV_LINKS_BEFORE` (Config, Networth) and `NAV_LINKS_AFTER` (CPF, SRS Demo), with `SplitNavButton` inserted between them. Also owns `useTheme`, which toggles a `dark` class on `<html>` and persists to `localStorage`. Active link is derived from `usePathname`.
+
+**`components/ui/button.tsx`** — `SplitNavButton`. A three-state nav button that tracks mouse X position relative to its centre. Default label "Cashflow" (routes to `/cashflow`); hover-left shows "Accumulation" (routes to `/accumulation`); hover-right shows "Retirement" (routes to `/retirement`). A `bg-foreground/10` half-width shade slides in from the active side. The button highlights as active when `pathname` is `/accumulation` or `/retirement`. Uses `cn()` from `lib/utils.ts`.
+
+**`lib/utils.ts`** — `cn(...classes)` helper (clsx + tailwind-merge). Required by `components/ui/button.tsx`; import here rather than re-implementing.
 
 ### Theme
 
@@ -150,7 +155,7 @@ balance = (balance + contribution + oaInjection − brokerageIncome + srsReinves
 
 Expense inflation: `annualExpensesToday * (1 + EXPENSES_INFLATION_RATE)^i` where `i = startAge - currentAge` and `annualExpensesToday = monthlyExpensesToday * 12` from `ProfileInputs`.
 
-`srsAnnualIncome` = `calculateSrsWithdrawal(srsPot).netFromSrs / SRS_WITHDRAWAL_YEARS` — treated as perpetual from `srsWithdrawalAge` (same simplification used in the withdrawals page).
+`srsAnnualIncome` = `calculateSrsWithdrawal(srsPot).netFromSrs / SRS_WITHDRAWAL_YEARS` — treated as perpetual from `srsWithdrawalAge` (same simplification used in the retirement page).
 
 ### Projection table — column visibility pattern
 
@@ -158,7 +163,7 @@ Both `/srs` and `/cpf` use the same pattern: `hiddenCols: Set<ColId>` state plus
 
 ### Adding a new scheme page
 
-Create `app/<name>/page.tsx`, read inputs via `useProfile`, add the route to `NAV_LINKS` in `app/components/navbar.tsx`, and put all financial logic in `lib/` rather than in the component. Derive any duration from the age milestone fields rather than storing a raw year count.
+Create `app/<name>/page.tsx`, read inputs via `useProfile`, and add the route to either `NAV_LINKS_BEFORE` or `NAV_LINKS_AFTER` in `app/components/navbar.tsx` (or wire it into `SplitNavButton` if it belongs in the accumulation/cashflow/retirement cluster). Put all financial logic in `lib/` rather than in the component. Derive any duration from the age milestone fields rather than storing a raw year count.
 
 ## Next.js 16 note
 

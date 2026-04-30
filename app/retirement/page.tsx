@@ -78,7 +78,7 @@ function SrsToggleSwitch() {
   );
 }
 
-export default function WithdrawalsPage() {
+export default function RetirementPage() {
   const { inputs } = useProfile();
   const { srsEnabled } = useSrsToggle();
   const {
@@ -229,7 +229,7 @@ export default function WithdrawalsPage() {
           grown from current age ({currentAge}) to each retirement year
         </p>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-          Retirement Withdrawals
+          Retirement Phase
         </h1>
         <p className="text-foreground/60 text-sm mt-1">
           Inflation-adjusted living expenses from retirement (age{" "}

@@ -8,6 +8,9 @@
   --axis-color: #475569;
   --grid-color: #e2e8f0;
   --tooltip-bg: #ffffff;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --ring: 222.2 84% 4.9%;
 }
 
 .dark {
@@ -16,6 +19,9 @@
   --axis-color: #94a3b8;
   --grid-color: #1e293b;
   --tooltip-bg: #0f172a;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --ring: 212.7 26.8% 83.9%;
 }
 
 @theme inline {
@@ -29,4 +35,14 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
 }
