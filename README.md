@@ -24,7 +24,7 @@ Rather than a single return assumption across 60 years, the model switches from 
 The personal brokerage account passes through three distinct phases: (1) **accumulation** — annual surplus from take-home after SRS, tax, and living expenses is deposited each year; (2) **drawdown** — between `stopWorkingAge` and `srsWithdrawalAge`, the brokerage covers any shortfall not met by CPF LIFE; (3) **reinvestment** — after SRS withdrawals begin, any surplus from CPF LIFE + SRS income over inflation-adjusted expenses is reinvested and continues compounding. This means a well-funded plan can actually *grow* its brokerage balance in retirement rather than continuously depleting it.
 
 ### OA-to-brokerage transfer at retirement age
-At `cpfRetirementAge`, the model converts the full Ordinary Account balance into the real brokerage account in a single step and simultaneously zeros OA in the CPF chart — preventing double-counting in the net-worth total. On the CPF chart, the OA area drops to zero at that reference line while the brokerage chart shows the corresponding spike. The SA→RA conversion happens in the same year, covering any shortfall from OA if SA alone can't meet the Full Retirement Sum target.
+At `cpfRetirementAge`, the model converts the full Ordinary Account balance into the real networth account in a single step and simultaneously zeros OA in the CPF chart — preventing double-counting in the net-worth total. On the CPF chart, the OA area drops to zero at that reference line while the brokerage chart shows the corresponding spike. The SA→RA conversion happens in the same year, covering any shortfall from OA if SA alone can't meet the Full Retirement Sum target.
 
 ### SRS 50% taxable fraction modeled explicitly
 SRS withdrawals are only 50% taxable under Singapore law. The model applies this fraction when computing the annual tax drag during the 10-year SRS withdrawal window, which meaningfully affects post-tax take-home — and correctly shows that SRS becomes more advantageous the higher your marginal rate during accumulation relative to your (likely lower) retirement income.
@@ -56,7 +56,7 @@ flowchart TB
     subgraph lib/tax.ts
         BP[buildProjection\nSRS + brokerage accumulation]
         BC[buildCpfProjection\nCPF accounts + LIFE]
-        BB[buildBrokerageProjection\nReal brokerage lifecycle]
+        BB[buildBrokerageProjection\nReal networth lifecycle]
         TAX[calculateTax\nIncome tax brackets]
     end
 
@@ -93,7 +93,7 @@ flowchart TB
 
 ## Features
 
-- **Overview dashboard** — net worth breakdown (CPF + SRS + Brokerage) and real brokerage balance from today to death age, with KPI cards for peak net worth, balance at death, and OA transfer amount
+- **Overview dashboard** — net worth breakdown (CPF + SRS + Brokerage) and real networth balance from today to death age, with KPI cards for peak net worth, balance at death, and OA transfer amount
 - **SRS analysis page** — side-by-side with-SRS vs. without-SRS projection with total tax savings quantified; SRS withdrawal breakdown showing pot → annual income → tax → net take-home
 - **CPF projection page** — stacked area chart of OA/SA/MA/RA balances; highlights SA→RA conversion and CPF LIFE purchase; shows whether you'll meet the Full Retirement Sum target
 - **Retirement spending page** — year-by-year table from retirement to death showing inflation-adjusted expenses vs. CPF LIFE + SRS + brokerage income; green/red shortfall column
@@ -132,7 +132,7 @@ For most Singaporeans, property is the single largest asset — yet it currently
 All inputs today are manually keyed. A future integration layer would pull real balances automatically — SGFinDex (Singapore's national financial data exchange, already adopted by major local banks and brokerages) provides a standardised API for exactly this. Connecting to SGFinDex would let the dashboard replace your manually entered starting balances with live figures on each visit, reducing the "garbage in, garbage out" risk of stale inputs.
 
 ### Multi-asset brokerage with per-asset growth rates
-The current model treats the real brokerage account as a single blended pot. The planned replacement is a **multi-component portfolio**:
+The current model treats the real networth account as a single blended pot. The planned replacement is a **multi-component portfolio**:
 
 | Asset class | Examples | Rate of return |
 |---|---|---|

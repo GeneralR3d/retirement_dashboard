@@ -372,8 +372,8 @@ export default function ConfigPage() {
           />
           <div className="border-t border-foreground/10 pt-5 space-y-5">
             <div>
-              <h2 className="font-semibold mb-0.5">Real Brokerage Account</h2>
-              <p className="text-foreground/60 text-xs">Starting balance in your real brokerage account today.</p>
+              <h2 className="font-semibold mb-0.5">Real Networth Account</h2>
+              <p className="text-foreground/60 text-xs">Starting balance in your real networth account today.</p>
             </div>
             <NumberField
               label="Starting cash"

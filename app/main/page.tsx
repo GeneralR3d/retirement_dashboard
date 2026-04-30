@@ -425,7 +425,7 @@ export default function MainPage() {
       <header className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Overview</h1>
         <p className="text-foreground/60 text-sm mt-1">
-          Net worth across CPF, SRS, and real brokerage — age {currentAge} to {deathAge}.
+          Net worth across CPF, SRS, and real networth — age {currentAge} to {deathAge}.
         </p>
       </header>
 
@@ -487,7 +487,7 @@ export default function MainPage() {
         </div>
         <p className="text-foreground/60 text-xs mb-6">
           CPF (OA excluded after age {cpfRetirementAge}), SRS pot (drawn down over 10 yrs from age{" "}
-          {srsWithdrawalAge}), real brokerage, and combined total.
+          {srsWithdrawalAge}), real networth, and combined total.
         </p>
         <ResponsiveContainer width="100%" height={500}>
           <LineChart
@@ -613,7 +613,7 @@ export default function MainPage() {
 
       {/* Brokerage Chart */}
       <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6">
-        <h2 className="font-semibold mb-1">Real Brokerage Account</h2>
+        <h2 className="font-semibold mb-1">Real Networth Account</h2>
         <p className="text-foreground/60 text-xs mb-6">
           Contributions: annual brokerage surplus (with SRS) during working years. OA
           balance injected at age {cpfRetirementAge}. Growth: {(investmentGrowthRate * 100).toFixed(1)}% until
@@ -702,7 +702,7 @@ export default function MainPage() {
               stroke="#10b981"
               strokeWidth={2.5}
               dot={false}
-              name="Real Brokerage"
+              name="Real Networth"
             />
           </LineChart>
         </ResponsiveContainer>
