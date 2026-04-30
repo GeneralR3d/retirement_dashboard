@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 const NAV_LINKS = [
   { href: "/config", label: "Config" },
   { href: "/main", label: "Networth" },
+  { href: "/cashflow", label: "Cashflow" },
   { href: "/cpf", label: "CPF" },
   { href: "/withdrawals", label: "Withdrawals" },
   { href: "/srs", label: "SRS Demo" },
