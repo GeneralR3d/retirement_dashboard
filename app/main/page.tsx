@@ -213,7 +213,10 @@ export default function MainPage() {
     cpfLifeFrs,
     cpfLifeMonthlyPayout,
     salarySeries,
+    monthlyExpensesToday,
   } = inputs;
+
+  const annualExpensesToday = monthlyExpensesToday * 12;
 
   const workingYears = Math.max(0, stopWorkingAge - currentAge);
   const seriesOverride =
@@ -283,6 +286,7 @@ export default function MainPage() {
         cpfLifeAnnualPayout,
         srsAnnualIncome: srsEnabled ? srsAnnualIncome : 0,
         srsEnabled,
+        annualExpensesToday,
       });
 
       // --- Net worth chart data ---
@@ -369,6 +373,7 @@ export default function MainPage() {
       seriesOverride,
       cpfLifeAnnualPayout,
       srsEnabled,
+      annualExpensesToday,
     ]);
 
   const chartData = useMemo(

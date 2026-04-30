@@ -22,6 +22,7 @@ export type ProfileInputs = {
   cpfLifeMonthlyPayout: number;
   salarySeries: number[];
   startingCash: number;
+  monthlyExpensesToday: number;
 };
 
 export const CPF_RATES = {
@@ -51,6 +52,7 @@ const DEFAULTS: ProfileInputs = {
   cpfLifeMonthlyPayout: 1610,
   salarySeries: [],
   startingCash: 5000,
+  monthlyExpensesToday: 4000,
 };
 
 type ProfileContextType = {

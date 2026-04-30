@@ -47,6 +47,7 @@ export default function ConfigPage() {
     investmentGrowthRateRetirement,
     salarySeries,
     startingCash,
+    monthlyExpensesToday,
   } = draft;
 
   const workingYears = Math.max(0, stopWorkingAge - currentAge);
@@ -56,6 +57,9 @@ export default function ConfigPage() {
     salarySeries.length === workingYears
       ? salarySeries
       : buildDefaultSeries(startingSalary, salaryGrowthRate, workingYears);
+
+  // Salary table accordion state
+  const [showSalaryTable, setShowSalaryTable] = useState(false);
 
   // Inline editing state
   const [editIdx, setEditIdx] = useState<number | null>(null);
@@ -117,17 +121,22 @@ export default function ConfigPage() {
           <button
             onClick={handleSave}
             disabled={!isDirty}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors
-              disabled:opacity-40 disabled:cursor-not-allowed
-              bg-emerald-600 hover:bg-emerald-500 text-white"
+            className="px-6 py-3 rounded-lg text-base font-semibold transition-colors
+              disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer
+              bg-emerald-600 hover:bg-emerald-500 text-white shadow-md"
           >
-            Save
+            Recalculate
           </button>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="flex flex-col gap-8">
         <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
+          <div>
+            <h2 className="font-semibold">Personal Details</h2>
+            <p className="text-foreground/60 text-xs mt-0.5">Your age milestones, salary, and investment assumptions.</p>
+          </div>
           <NumberField
             label="Current age"
             value={currentAge}
@@ -146,37 +155,129 @@ export default function ConfigPage() {
             onChange={update("deathAge")}
             step={1}
           />
-          <NumberField
-            label="Starting annual salary"
-            value={startingSalary}
-            onChange={update("startingSalary")}
-            prefix="$"
-            step={1000}
-          />
-          <div className="rounded-md border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm flex justify-between items-center">
-            <span className="text-foreground/60">
-              CPF employee contribution ({(CPF_EMPLOYEE_RATE * 100).toFixed(0)}% of gross)
-            </span>
-            <span className="font-mono text-foreground/80">
-              {fmtMoney(startingSalary * CPF_EMPLOYEE_RATE)}/yr
-            </span>
+          <label className="block">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-sm text-foreground/80">Starting annual salary</span>
+              <div className="relative group">
+                <div className="w-4 h-4 rounded-full border border-foreground/40 text-foreground/50 flex items-center justify-center text-[10px] font-semibold cursor-default select-none">
+                  i
+                </div>
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 rounded-lg border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
+                  invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+                  <p className="text-foreground/80 font-medium mb-1">CPF Employee Contribution</p>
+                  <p className="text-foreground/60">{(CPF_EMPLOYEE_RATE * 100).toFixed(0)}% of gross salary is deducted and paid into your CPF accounts before you receive your take-home pay.</p>
+                  <p className="text-foreground font-mono mt-1.5">{fmtMoney(startingSalary * CPF_EMPLOYEE_RATE)}/yr at current salary</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center rounded-md border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
+              <span className="pl-3 text-foreground/60 font-mono">$</span>
+              <input
+                type="number"
+                value={startingSalary}
+                step={1000}
+                onChange={(e) => update("startingSalary")(parseFloat(e.target.value) || 0)}
+                className="w-full bg-transparent px-3 py-2 outline-none font-mono"
+              />
+            </div>
+          </label>
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowSalaryTable((v) => !v)}
+              className="w-full text-left group cursor-pointer"
+            >
+              <div className="flex justify-between items-center text-sm mb-1">
+                <span className="flex items-center gap-1.5 text-foreground/80">
+                  Salary growth rate
+                  <svg
+                    className={`w-3.5 h-3.5 text-foreground/40 transition-transform duration-200 ${showSalaryTable ? "rotate-180" : ""}`}
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+                <span className="font-mono text-foreground">
+                  {(salaryGrowthRate * 100).toFixed(1)}%
+                </span>
+              </div>
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={0.1}
+              step={0.005}
+              value={salaryGrowthRate}
+              onChange={(e) => update("salaryGrowthRate")(parseFloat(e.target.value))}
+              className="w-full accent-emerald-500"
+            />
+            {showSalaryTable && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-foreground/60">
+                    Click any gross value to edit — rows below cascade automatically.
+                  </p>
+                  <button
+                    onClick={resetSeries}
+                    className="text-xs px-2.5 py-1 rounded-md border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                </div>
+                <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] overflow-hidden">
+                  <div className="max-h-[300px] overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-foreground/[0.06] backdrop-blur-sm z-10">
+                        <tr className="text-left text-foreground/60 border-b border-foreground/10">
+                          <Th>Age</Th>
+                          <Th>Gross Annual Salary</Th>
+                        </tr>
+                      </thead>
+                      <tbody className="font-mono">
+                        {displaySeries.map((gross, i) => {
+                          const age = currentAge + i;
+                          const isEditing = editIdx === i;
+                          return (
+                            <tr
+                              key={age}
+                              className="border-b border-foreground/5 hover:bg-foreground/[0.04]"
+                            >
+                              <Td>{age}</Td>
+                              <td className="py-2 px-2 whitespace-nowrap">
+                                {isEditing ? (
+                                  <input
+                                    type="number"
+                                    value={editVal}
+                                    onChange={(e) => setEditVal(e.target.value)}
+                                    onBlur={() => commitEdit(i)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter")
+                                        (e.target as HTMLInputElement).blur();
+                                      if (e.key === "Escape") setEditIdx(null);
+                                    }}
+                                    autoFocus
+                                    className="w-40 bg-foreground/10 border border-emerald-500/60 rounded px-2 py-0.5 outline-none text-right"
+                                  />
+                                ) : (
+                                  <button
+                                    onClick={() => startEdit(i)}
+                                    title="Click to edit"
+                                    className="text-right w-40 hover:text-emerald-400 transition-colors cursor-text"
+                                  >
+                                    {fmtMoney(gross)}
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="rounded-md border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm flex justify-between items-center">
-            <span className="text-foreground/60">Take-home cash (after CPF)</span>
-            <span className="font-mono text-foreground">
-              {fmtMoney(startingSalary * (1 - CPF_EMPLOYEE_RATE))}/yr
-            </span>
-          </div>
-          <Slider
-            label="Salary growth rate"
-            value={salaryGrowthRate}
-            min={0}
-            max={0.1}
-            step={0.005}
-            suffix="%"
-            format={(v) => (v * 100).toFixed(1)}
-            onChange={update("salaryGrowthRate")}
-          />
           <Slider
             label="Investment growth rate"
             value={investmentGrowthRate}
@@ -207,12 +308,33 @@ export default function ConfigPage() {
             format={(v) => (v * 100).toFixed(0)}
             onChange={update("livingExpensePct")}
           />
+        </div>
+
+        <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
+          <div>
+            <h2 className="font-semibold">Retirement Settings</h2>
+            <p className="text-foreground/60 text-xs mt-0.5">Spending and withdrawal assumptions used across all retirement projection pages.</p>
+          </div>
+          <NumberField
+            label="Monthly expenses in retirement (today's money)"
+            value={monthlyExpensesToday}
+            onChange={update("monthlyExpensesToday")}
+            prefix="$"
+            step={100}
+          />
+          <div className="rounded-md border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm flex justify-between items-center">
+            <span className="text-foreground/60">Annual equivalent</span>
+            <span className="font-mono text-foreground/80">
+              {fmtMoney(monthlyExpensesToday * 12)}/yr
+            </span>
+          </div>
           <NumberField
             label="SRS withdrawal age"
             value={srsWithdrawalAge}
             onChange={update("srsWithdrawalAge")}
             step={1}
           />
+        </div>
         </div>
 
         <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
@@ -291,77 +413,6 @@ export default function ConfigPage() {
           </div>
         </div>
       </div>
-
-      <section className="mt-10">
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-lg font-semibold tracking-tight">
-            Salary Projection
-          </h2>
-          <button
-            onClick={resetSeries}
-            className="text-xs px-3 py-1.5 rounded-md border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors"
-          >
-            Reset to defaults
-          </button>
-        </div>
-        <p className="text-foreground/60 text-sm mb-4">
-          Gross salary at each age, growing at {(salaryGrowthRate * 100).toFixed(1)}%/yr. Click any gross value to edit — rows below update automatically. Used as source of truth by the SRS page.
-        </p>
-        <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] overflow-hidden">
-          <div className="max-h-[420px] overflow-y-auto">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-foreground/[0.06] backdrop-blur-sm z-10">
-                <tr className="text-left text-foreground/60 border-b border-foreground/10">
-                  <Th>Age</Th>
-                  <Th>Gross Annual Salary</Th>
-                  <Th>Take-home Annual</Th>
-                </tr>
-              </thead>
-              <tbody className="font-mono">
-                {displaySeries.map((gross, i) => {
-                  const age = currentAge + i;
-                  const takeHome = gross * (1 - CPF_EMPLOYEE_RATE);
-                  const isEditing = editIdx === i;
-                  return (
-                    <tr
-                      key={age}
-                      className="border-b border-foreground/5 hover:bg-foreground/[0.04]"
-                    >
-                      <Td>{age}</Td>
-                      <td className="py-2 px-2 whitespace-nowrap">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            value={editVal}
-                            onChange={(e) => setEditVal(e.target.value)}
-                            onBlur={() => commitEdit(i)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter")
-                                (e.target as HTMLInputElement).blur();
-                              if (e.key === "Escape") setEditIdx(null);
-                            }}
-                            autoFocus
-                            className="w-40 bg-foreground/10 border border-emerald-500/60 rounded px-2 py-0.5 outline-none text-right"
-                          />
-                        ) : (
-                          <button
-                            onClick={() => startEdit(i)}
-                            title="Click to edit"
-                            className="text-right w-40 hover:text-emerald-400 transition-colors cursor-text"
-                          >
-                            {fmtMoney(gross)}
-                          </button>
-                        )}
-                      </td>
-                      <Td className="text-foreground/70">{fmtMoney(takeHome)}</Td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
 
     </main>
   );

@@ -12,8 +12,6 @@ import {
   calculateSrsWithdrawal,
   CPF_FRS_INFLATION_RATE,
   SRS_WITHDRAWAL_YEARS,
-  MONTHLY_EXPENSES_TODAY,
-  ANNUAL_EXPENSES_TODAY,
   EXPENSES_INFLATION_RATE,
 } from "@/lib/tax";
 
@@ -35,11 +33,12 @@ function buildWithdrawalRows(
   srsWithdrawalAge: number,
   cpfLifeAnnualPayout: number,
   srsAnnualIncome: number,
+  annualExpensesToday: number,
 ): WithdrawalRow[] {
   const rows: WithdrawalRow[] = [];
   for (let age = stopWorkingAge; age <= deathAge; age++) {
     const yearsFromNow = age - currentAge;
-    const annualExpenses = ANNUAL_EXPENSES_TODAY * Math.pow(1 + EXPENSES_INFLATION_RATE, yearsFromNow);
+    const annualExpenses = annualExpensesToday * Math.pow(1 + EXPENSES_INFLATION_RATE, yearsFromNow);
     const cpfLifeIncome = age >= cpfWithdrawalAge ? cpfLifeAnnualPayout : 0;
     const srsIncome = age >= srsWithdrawalAge ? srsAnnualIncome : 0;
     const shortfall = annualExpenses - cpfLifeIncome - srsIncome;
@@ -102,7 +101,10 @@ export default function WithdrawalsPage() {
     cpfMA,
     cpfRA,
     cpfLifeFrs,
+    monthlyExpensesToday,
   } = inputs;
+
+  const annualExpensesToday = monthlyExpensesToday * 12;
 
   const workingYears = Math.max(0, stopWorkingAge - currentAge);
   const srsYears = Math.max(0, srsWithdrawalAge - currentAge);
@@ -172,6 +174,7 @@ export default function WithdrawalsPage() {
       cpfLifeAnnualPayout,
       srsAnnualIncome: srsEnabled ? annualSrs : 0,
       srsEnabled,
+      annualExpensesToday,
     });
 
     // Map: startAge → row data
@@ -192,7 +195,7 @@ export default function WithdrawalsPage() {
     livingExpensePct, srsYears, srsWorkingYears, workingYears, seriesOverride,
     currentAge, stopWorkingAge, cpfWithdrawalAge, cpfRetirementAge, deathAge,
     cpfOA, cpfSA, cpfMA, cpfRA, cpfLifeFrs, startingCash, srsWithdrawalAge, cpfLifeAnnualPayout,
-    srsEnabled,
+    srsEnabled, annualExpensesToday,
   ]);
 
   const rows = useMemo(
@@ -205,8 +208,9 @@ export default function WithdrawalsPage() {
         srsWithdrawalAge,
         cpfLifeAnnualPayout,
         srsAnnualIncome,
+        annualExpensesToday,
       ),
-    [currentAge, stopWorkingAge, deathAge, cpfWithdrawalAge, srsWithdrawalAge, cpfLifeAnnualPayout, srsAnnualIncome],
+    [currentAge, stopWorkingAge, deathAge, cpfWithdrawalAge, srsWithdrawalAge, cpfLifeAnnualPayout, srsAnnualIncome, annualExpensesToday],
   );
 
   const retirementYears = Math.max(0, deathAge - stopWorkingAge);
@@ -219,8 +223,8 @@ export default function WithdrawalsPage() {
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-widest text-foreground/40 mb-1">
-          Base: S${MONTHLY_EXPENSES_TODAY.toLocaleString("en-SG")}/mo (S$
-          {ANNUAL_EXPENSES_TODAY.toLocaleString("en-SG")}/yr) in today&apos;s money
+          Base: S${monthlyExpensesToday.toLocaleString("en-SG")}/mo (S$
+          {annualExpensesToday.toLocaleString("en-SG")}/yr) in today&apos;s money
           &middot; Inflation {EXPENSES_INFLATION_RATE * 100}% p.a. &middot; Expenses
           grown from current age ({currentAge}) to each retirement year
         </p>
@@ -264,7 +268,7 @@ export default function WithdrawalsPage() {
           <div className="flex items-center gap-4">
             <SrsToggleSwitch />
             <span className="text-xs text-foreground/60">
-              S${MONTHLY_EXPENSES_TODAY.toLocaleString("en-SG")}/mo today &rarr; inflated at{" "}
+              S${monthlyExpensesToday.toLocaleString("en-SG")}/mo today &rarr; inflated at{" "}
               {EXPENSES_INFLATION_RATE * 100}% p.a. for {Math.max(0, stopWorkingAge - currentAge)}+ years
             </span>
           </div>
