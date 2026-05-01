@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 export type SliderProps = {
   label: string;
@@ -123,6 +124,61 @@ export function Stat({
         {value}
       </div>
     </div>
+  );
+}
+
+export function InfoTooltip({ children }: { children: React.ReactNode }) {
+  const iconRef = useRef<HTMLSpanElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function show() {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    const rect = iconRef.current?.getBoundingClientRect();
+    if (rect) {
+      setCoords({
+        top: rect.top + window.scrollY - 8,
+        left: rect.left + rect.width / 2 + window.scrollX,
+      });
+    }
+    setVisible(true);
+  }
+
+  function hide() {
+    hideTimer.current = setTimeout(() => setVisible(false), 100);
+  }
+
+  useEffect(() => () => { if (hideTimer.current) clearTimeout(hideTimer.current); }, []);
+
+  return (
+    <span className="relative inline-flex">
+      <span
+        ref={iconRef}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        className="flex h-3.5 w-3.5 cursor-default items-center justify-center rounded-full bg-foreground/20 text-[9px] font-bold text-foreground/60 select-none"
+      >
+        i
+      </span>
+      {visible && createPortal(
+        <span
+          onMouseEnter={show}
+          onMouseLeave={hide}
+          style={{
+            position: "absolute",
+            top: coords.top,
+            left: coords.left,
+            transform: "translate(-50%, -100%)",
+            zIndex: 9999,
+          }}
+          className="pointer-events-auto w-64 rounded-lg border border-foreground/10 bg-[var(--tooltip-bg,#0f172a)] p-3 text-xs font-normal text-foreground/80 shadow-xl"
+        >
+          {children}
+        </span>,
+        document.body,
+      )}
+    </span>
   );
 }
 

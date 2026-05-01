@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { buildAccumulation } from "@/lib/cash-flow";
 import { useProfile, LumpsumExpense } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
-import { Td, Th } from "@/app/components/ui";
+import { Td, Th, InfoTooltip } from "@/app/components/ui";
 import { LumpsumTable } from "@/app/components/lumpsum-table";
 
 export default function AccumulationPage() {
@@ -144,24 +144,43 @@ export default function AccumulationPage() {
               <tr className="text-left text-foreground/60 border-b border-foreground/10">
                 <Th>Age</Th>
                 <Th>Take-home salary</Th>
-                <Th>Tax(no SRS)</Th>
+                <Th>
+                  <span className="flex items-center gap-1">
+                    Tax
+                    <InfoTooltip>
+                      Tax rates follow Singapore IRAS resident tax brackets.{" "}
+                      <a
+                        href="https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-residency-and-tax-rates/individual-income-tax-rates"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sky-400 underline hover:text-sky-300"
+                      >
+                        View rates on IRAS
+                      </a>
+                    </InfoTooltip>
+                  </span>
+                </Th>
                 <Th>Living expenses</Th>
                 <Th>Cash on hand (actual / target)</Th>
                 <Th>Cash topup</Th>
-                <Th>Invesments topup</Th>
+                <Th>Investments topup</Th>
+                <Th>Investments balance</Th>
               </tr>
             </thead>
             <tbody className="font-mono">
               {rows.map((r) => {
                 const hasExpense = r.lumpsumThisYear > 0;
                 const hasInflow = r.lumpsumInflowThisYear > 0;
-                const rowClass = hasExpense && hasInflow
-                  ? "bg-gradient-to-r from-emerald-500/10 to-amber-500/10 hover:from-emerald-500/15 hover:to-amber-500/15"
-                  : hasExpense
-                    ? "bg-amber-500/10 hover:bg-amber-500/15"
-                    : hasInflow
-                      ? "bg-emerald-500/10 hover:bg-emerald-500/15"
-                      : "hover:bg-foreground/[0.04]";
+                const brokerageInsolvent = r.brokerageBalance <= 0;
+                const rowClass = brokerageInsolvent
+                  ? "bg-red-500/10 hover:bg-red-500/15"
+                  : hasExpense && hasInflow
+                    ? "bg-gradient-to-r from-emerald-500/10 to-amber-500/10 hover:from-emerald-500/15 hover:to-amber-500/15"
+                    : hasExpense
+                      ? "bg-amber-500/10 hover:bg-amber-500/15"
+                      : hasInflow
+                        ? "bg-emerald-500/10 hover:bg-emerald-500/15"
+                        : "hover:bg-foreground/[0.04]";
                 return (
                   <tr
                     key={r.year}
@@ -204,6 +223,10 @@ export default function AccumulationPage() {
                     </Td>
                     <Td className={r.invested < 0 ? "text-red-400" : "text-emerald-500"}>
                       {r.invested < 0 ? `-${fmtMoney(-r.invested)}` : fmtMoney(r.invested)}
+                    </Td>
+                    <Td className={r.brokerageBalance <= 0 ? "text-red-400 font-semibold" : "text-foreground/80"}>
+                      {r.brokerageBalance <= 0 && <span className="mr-1">⚠</span>}
+                      {fmtMoney(r.brokerageBalance)}
                     </Td>
                   </tr>
                 );

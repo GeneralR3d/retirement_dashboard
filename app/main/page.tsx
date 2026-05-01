@@ -3,6 +3,8 @@
 import { useMemo } from "react";
 import { useSrsToggle } from "@/lib/srs-toggle-context";
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
   Legend,
   Line,
@@ -674,7 +676,7 @@ export default function MainPage() {
 
       {/* Brokerage Chart */}
       <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6">
-        <h2 className="font-semibold mb-1">Real Networth Account</h2>
+        <h2 className="font-semibold mb-1">Investment Account</h2>
         <p className="text-foreground/60 text-xs mb-6">
           Contributions: annual brokerage surplus (with SRS) during working years. OA
           balance injected at age {cpfRetirementAge}. Growth: {(investmentGrowthRate * 100).toFixed(1)}% until
@@ -689,84 +691,127 @@ export default function MainPage() {
             (post-retirement) — infinitely liquid, no spreads or cash-drag modelled.
           </span>
         </div>
-        <ResponsiveContainer width="100%" height={420}>
-          <LineChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-            <XAxis
-              dataKey="age"
-              tick={{ fontSize: 12, fill: axisColor }}
-              label={{
-                value: "Age",
-                position: "insideBottomRight",
-                offset: -8,
-                fill: axisColor,
-                fontSize: 12,
-              }}
-            />
-            <YAxis
-              tickFormatter={fmtAxis}
-              tick={{ fontSize: 12, fill: axisColor }}
-              width={72}
-            />
-            <Tooltip
-              content={
-                <BrokerageTooltip
-                  cpfRetirementAge={cpfRetirementAge}
-                  stopWorkingAge={stopWorkingAge}
-                  srsWithdrawalAge={srsWithdrawalAge}
+        {(() => {
+          const balances = chartData.map((d) => d.balance);
+          const minBal = Math.min(...balances);
+          const maxBal = Math.max(...balances);
+          const hasNegative = minBal < 0;
+          // zeroOffset = fraction from top of chart where balance = 0
+          const zeroOffset = hasNegative
+            ? maxBal / (maxBal - minBal)
+            : 1;
+          return (
+            <ResponsiveContainer width="100%" height={420}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                <defs>
+                  <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
+                    <stop offset={`${zeroOffset * 100}%`} stopColor="#10b981" stopOpacity={0.1} />
+                    {hasNegative && (
+                      <stop offset={`${zeroOffset * 100}%`} stopColor="#ef4444" stopOpacity={0.15} />
+                    )}
+                    {hasNegative && (
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={0.35} />
+                    )}
+                  </linearGradient>
+                  <linearGradient id="balanceStroke" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset={`${zeroOffset * 100}%`} stopColor="#10b981" />
+                    {hasNegative && (
+                      <stop offset={`${zeroOffset * 100}%`} stopColor="#ef4444" />
+                    )}
+                    {hasNegative && (
+                      <stop offset="100%" stopColor="#ef4444" />
+                    )}
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                <XAxis
+                  dataKey="age"
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  label={{
+                    value: "Age",
+                    position: "insideBottomRight",
+                    offset: -8,
+                    fill: axisColor,
+                    fontSize: 12,
+                  }}
                 />
-              }
-            />
-            {stopWorkingAge !== cpfRetirementAge && (
-              <ReferenceLine
-                x={stopWorkingAge}
-                stroke="#f59e0b"
-                strokeDasharray="4 4"
-                label={{
-                  value: "Retire",
-                  position: "insideTopRight",
-                  fill: "#f59e0b",
-                  fontSize: 11,
-                }}
-              />
-            )}
-            <ReferenceLine
-              x={cpfRetirementAge}
-              stroke="#8b5cf6"
-              strokeDasharray="4 4"
-              label={{
-                value:
-                  stopWorkingAge === cpfRetirementAge
-                    ? "Retire / OA Transfer"
-                    : "OA Transfer",
-                position: "insideTopLeft",
-                fill: "#8b5cf6",
-                fontSize: 11,
-              }}
-            />
-            {srsEnabled && (
-              <ReferenceLine
-                x={srsWithdrawalAge}
-                stroke="#22d3ee"
-                strokeDasharray="4 4"
-                label={{
-                  value: "SRS starts",
-                  position: "insideTopRight",
-                  fill: "#22d3ee",
-                  fontSize: 11,
-                }}
-              />
-            )}
-            <Line
-              type="monotone"
-              dataKey="balance"
-              stroke="#10b981"
-              strokeWidth={2.5}
-              dot={false}
-              name="Real Networth"
-            />
-          </LineChart>
-        </ResponsiveContainer>
+                <YAxis
+                  tickFormatter={fmtAxis}
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  width={72}
+                />
+                <Tooltip
+                  content={
+                    <BrokerageTooltip
+                      cpfRetirementAge={cpfRetirementAge}
+                      stopWorkingAge={stopWorkingAge}
+                      srsWithdrawalAge={srsWithdrawalAge}
+                    />
+                  }
+                />
+                {stopWorkingAge !== cpfRetirementAge && (
+                  <ReferenceLine
+                    x={stopWorkingAge}
+                    stroke="#f59e0b"
+                    strokeDasharray="4 4"
+                    label={{
+                      value: "Retire",
+                      position: "insideTopRight",
+                      fill: "#f59e0b",
+                      fontSize: 11,
+                    }}
+                  />
+                )}
+                <ReferenceLine
+                  x={cpfRetirementAge}
+                  stroke="#8b5cf6"
+                  strokeDasharray="4 4"
+                  label={{
+                    value:
+                      stopWorkingAge === cpfRetirementAge
+                        ? "Retire / OA Transfer"
+                        : "OA Transfer",
+                    position: "insideTopLeft",
+                    fill: "#8b5cf6",
+                    fontSize: 11,
+                  }}
+                />
+                {srsEnabled && (
+                  <ReferenceLine
+                    x={srsWithdrawalAge}
+                    stroke="#22d3ee"
+                    strokeDasharray="4 4"
+                    label={{
+                      value: "SRS starts",
+                      position: "insideTopRight",
+                      fill: "#22d3ee",
+                      fontSize: 11,
+                    }}
+                  />
+                )}
+                {hasNegative && (
+                  <ReferenceLine
+                    y={0}
+                    stroke="#ef4444"
+                    strokeDasharray="3 3"
+                    strokeOpacity={0.6}
+                  />
+                )}
+                <Area
+                  type="monotone"
+                  dataKey="balance"
+                  stroke="url(#balanceStroke)"
+                  strokeWidth={2.5}
+                  fill="url(#balanceGradient)"
+                  dot={false}
+                  name="Investments"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          );
+        })()}
       </section>
     </main>
   );

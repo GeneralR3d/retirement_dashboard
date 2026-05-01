@@ -24,7 +24,7 @@ import {
 } from "@/lib/tax";
 import { useProfile } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
-import { Stat, StatCard, Td, Th } from "@/app/components/ui";
+import { Stat, StatCard, Td, Th, InfoTooltip } from "@/app/components/ui";
 
 function CpfTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: number }) {
   if (!active || !payload?.length) return null;
@@ -318,7 +318,7 @@ export default function CpfPage() {
             Special Account is transferred to Retirement Account to meet the
             FRS target (current {fmtMoney(cpfLifeFrs)} inflated at {CPF_FRS_INFLATION_RATE * 100}%/yr).
             Any surplus returns to OA; any deficit is drawn from OA.
-            The remaining OA balance is then transferred in full to your real networth account.
+            The remaining OA balance is then transferred in full to your investment account.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <Stat label="FRS target" value={fmtMoney(frsTarget)} />
@@ -338,7 +338,20 @@ export default function CpfPage() {
       {/* Annual projection table */}
       <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold">Annual projection</h2>
+          <span className="flex items-center gap-1.5">
+            <h2 className="font-semibold">Annual projection</h2>
+            <InfoTooltip>
+              CPF allocation rates (OA / SA / MA splits) follow the official CPF Board schedule.{" "}
+              <a
+                href="https://www.cpf.gov.sg/content/dam/web/employer/employer-obligations/documents/CPFAllocationRatesfromJanuary2026.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sky-400 underline hover:text-sky-300"
+              >
+                View allocation rates (PDF)
+              </a>
+            </InfoTooltip>
+          </span>
           {hiddenCount > 0 && (
             <button
               onClick={() => setShowHidden((v) => !v)}

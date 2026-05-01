@@ -637,7 +637,7 @@ export default function ConfigPage() {
       <div className="mt-8 rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6">
         <div className="flex items-start justify-between mb-5">
           <div>
-            <h2 className="font-semibold">Real Networth Account</h2>
+            <h2 className="font-semibold">Investment Account</h2>
             <p className="text-foreground/60 text-xs mt-0.5">
               Enter your current investments. The weighted average return drives all pre-retirement projections.
             </p>
