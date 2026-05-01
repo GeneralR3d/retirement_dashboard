@@ -12,8 +12,28 @@ export type Investment = {
 const DEFAULT_INVESTMENTS: Investment[] = [
   { id: "stocks",  name: "Stocks & ETFs",               value: 5000, returnRate: 0.07  },
   { id: "bonds",   name: "Bonds & Money Market Funds",   value: 0,    returnRate: 0.03  },
-  { id: "cash",    name: "Cash",                         value: 0,    returnRate: 0.005 },
   { id: "fd",      name: "Fixed Deposits",               value: 0,    returnRate: 0.035 },
+];
+
+export type LumpsumExpense = {
+  id: string;
+  age: number;
+  name: string;
+  amount: number;
+};
+
+const DEFAULT_LUMPSUM_EXPENSES: LumpsumExpense[] = [
+  { id: "exp-1", age: 0, name: "BTO Downpayment (application)", amount: 0 },
+  { id: "exp-2", age: 0, name: "BTO Downpayment (key collection)", amount: 0 },
+  { id: "exp-3", age: 0, name: "Wedding", amount: 0 },
+  { id: "exp-4", age: 0, name: "Renovation", amount: 0 },
+  { id: "exp-5", age: 0, name: "Honeymoon", amount: 0 },
+  { id: "exp-6", age: 0, name: "Car Downpayment", amount: 0 },
+];
+
+const DEFAULT_LUMPSUM_INFLOWS: LumpsumExpense[] = [
+  { id: "inflow-1", age: 0, name: "Inheritance", amount: 0 },
+  { id: "inflow-2", age: 0, name: "TOTO", amount: 0 },
 ];
 
 export type ProfileInputs = {
@@ -38,6 +58,11 @@ export type ProfileInputs = {
   startingCash: number;
   monthlyExpensesToday: number;
   investments: Investment[];
+  cash: number;
+  emergencyMonths: number;
+  monthlyExpenseSeries: number[];
+  lumpsumExpenses: LumpsumExpense[];
+  lumpsumInflows: LumpsumExpense[];
 };
 
 export const CPF_RATES = {
@@ -69,6 +94,11 @@ const DEFAULTS: ProfileInputs = {
   startingCash: 5000,
   monthlyExpensesToday: 4000,
   investments: DEFAULT_INVESTMENTS,
+  cash: 10000,
+  emergencyMonths: 6,
+  monthlyExpenseSeries: [],
+  lumpsumExpenses: DEFAULT_LUMPSUM_EXPENSES,
+  lumpsumInflows: DEFAULT_LUMPSUM_INFLOWS,
 };
 
 type ProfileContextType = {

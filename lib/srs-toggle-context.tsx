@@ -8,12 +8,12 @@ type SrsToggleContextType = {
 };
 
 const SrsToggleContext = createContext<SrsToggleContextType>({
-  srsEnabled: true,
+  srsEnabled: false,
   setSrsEnabled: () => {},
 });
 
 export function SrsToggleProvider({ children }: { children: React.ReactNode }) {
-  const [srsEnabled, setSrsEnabled] = useState(true);
+  const [srsEnabled, setSrsEnabled] = useState(false);
   return (
     <SrsToggleContext.Provider value={{ srsEnabled, setSrsEnabled }}>
       {children}

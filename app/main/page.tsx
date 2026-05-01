@@ -21,6 +21,7 @@ import {
   CPF_FRS_INFLATION_RATE,
   SRS_WITHDRAWAL_YEARS,
 } from "@/lib/tax";
+import { buildAccumulation } from "@/lib/cash-flow";
 import { useProfile } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
 import { StatCard } from "@/app/components/ui";
@@ -36,6 +37,7 @@ type NetWorthPoint = {
   cpf: number;
   srs: number;
   brokerage: number;
+  cash: number;
   total: number;
 };
 
@@ -214,6 +216,11 @@ export default function MainPage() {
     cpfLifeMonthlyPayout,
     salarySeries,
     monthlyExpensesToday,
+    monthlyExpenseSeries,
+    emergencyMonths,
+    lumpsumExpenses,
+    lumpsumInflows,
+    cash,
   } = inputs;
 
   const annualExpensesToday = monthlyExpensesToday * 12;
@@ -233,6 +240,23 @@ export default function MainPage() {
         workingYears,
         Math.max(0, srsWithdrawalAge - currentAge),
       );
+
+      const accRows = buildAccumulation({
+        currentAge,
+        stopWorkingAge,
+        startingSalary,
+        salaryGrowthRate,
+        salarySeries: seriesOverride,
+        monthlyExpensesToday,
+        monthlyExpenseSeries:
+          monthlyExpenseSeries.length === workingYears ? monthlyExpenseSeries : undefined,
+        emergencyMonths,
+        lumpsumExpenses,
+        lumpsumInflows,
+        cashStart: cash,
+        brokerageStart: startingCash,
+        investmentGrowthRate,
+      });
 
       const srsRows = buildProjection({
         startingSalary,
@@ -269,6 +293,15 @@ export default function MainPage() {
       const srsAnnualIncome =
         calculateSrsWithdrawal(srsFinalPot).netFromSrs / SRS_WITHDRAWAL_YEARS;
       const srsYearlyWithdrawal = srsFinalPot / SRS_WITHDRAWAL_YEARS;
+
+      // Override working-year contributions with the new accumulation
+      // (per-age living expenses + cash-topup) numbers.
+      for (let i = 0; i < workingYears; i++) {
+        if (srsRows[i] && accRows[i]) {
+          srsRows[i].investedNoSrs = accRows[i].invested;
+          srsRows[i].brokerageWithSrs = accRows[i].invested - srsRows[i].srsContribution;
+        }
+      }
 
       const rows = buildBrokerageProjection({
         startingCash,
@@ -326,6 +359,20 @@ export default function MainPage() {
         brokerageMap.set(r.age, Math.max(0, r.balance));
       }
 
+      // Cash map: age → cash balance. During working years, taken from
+      // accumulation rows. After stopWorkingAge, held flat (no drawdown
+      // modeled in retirement phase yet).
+      const cashMap = new Map<number, number>();
+      cashMap.set(currentAge, cash);
+      let lastCash = cash;
+      for (const r of accRows) {
+        cashMap.set(r.age + 1, Math.max(0, r.cashBalance));
+        lastCash = Math.max(0, r.cashBalance);
+      }
+      for (let age = stopWorkingAge + 1; age <= deathAge; age++) {
+        if (!cashMap.has(age)) cashMap.set(age, lastCash);
+      }
+
       // Merge into net worth array
       const totalYears = Math.max(0, deathAge - currentAge);
       const nwData: NetWorthPoint[] = Array.from(
@@ -335,12 +382,14 @@ export default function MainPage() {
           const cpf = cpfMap.get(age) ?? 0;
           const srs = srsMap.get(age) ?? 0;
           const brokerage = brokerageMap.get(age) ?? 0;
+          const cashAtAge = cashMap.get(age) ?? lastCash;
           return {
             age,
             cpf: Math.round(cpf),
             srs: Math.round(srs),
             brokerage: Math.round(brokerage),
-            total: Math.round(cpf + srs + brokerage),
+            cash: Math.round(cashAtAge),
+            total: Math.round(cpf + srs + brokerage + cashAtAge),
           };
         },
       );
@@ -374,6 +423,12 @@ export default function MainPage() {
       cpfLifeAnnualPayout,
       srsEnabled,
       annualExpensesToday,
+      monthlyExpensesToday,
+      monthlyExpenseSeries,
+      emergencyMonths,
+      lumpsumExpenses,
+      lumpsumInflows,
+      cash,
     ]);
 
   const chartData = useMemo(
@@ -587,13 +642,19 @@ export default function MainPage() {
               <Line type="monotone" dataKey="srs" name="SRS Pot" stroke="#10b981" strokeWidth={1.5} dot={false} />
             )}
             <Line type="monotone" dataKey="cpf" name="CPF" stroke="#eab308" strokeWidth={1.5} dot={false} />
+            <Line type="monotone" dataKey="cash" name="Cash" stroke="#a3a3a3" strokeWidth={1.5} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </section>
 
       {/* Brokerage KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Starting cash" value={fmtMoney(startingCash)} />
+        <StatCard
+          label="Cash today"
+          value={fmtMoney(cash)}
+          sub="zero-interest reserve"
+        />
+        <StatCard label="Brokerage seed" value={fmtMoney(startingCash)} />
         <StatCard
           label="OA transfer at retirement"
           value={fmtMoney(oaAtRetirement)}
@@ -622,7 +683,7 @@ export default function MainPage() {
         <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400/90 mb-6">
           <span className="mt-px shrink-0">⚠</span>
           <span>
-            <strong>Assumption:</strong> combined cash + brokerage earning a flat{" "}
+            <strong>Assumption:</strong> combined investments earning a flat{" "}
             <strong>{(investmentGrowthRate * 100).toFixed(1)}% p.a.</strong> (pre-retirement) /{" "}
             <strong>{(investmentGrowthRateRetirement * 100).toFixed(1)}% p.a.</strong>{" "}
             (post-retirement) — infinitely liquid, no spreads or cash-drag modelled.

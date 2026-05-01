@@ -14,6 +14,7 @@ import {
   SRS_WITHDRAWAL_YEARS,
   EXPENSES_INFLATION_RATE,
 } from "@/lib/tax";
+import { buildAccumulation } from "@/lib/cash-flow";
 
 type WithdrawalRow = {
   age: number;
@@ -102,6 +103,11 @@ export default function RetirementPage() {
     cpfRA,
     cpfLifeFrs,
     monthlyExpensesToday,
+    monthlyExpenseSeries,
+    emergencyMonths,
+    lumpsumExpenses,
+    lumpsumInflows,
+    cash,
   } = inputs;
 
   const annualExpensesToday = monthlyExpensesToday * 12;
@@ -158,6 +164,30 @@ export default function RetirementPage() {
       salarySeries: seriesOverride,
     });
 
+    // Override working-year contributions with cashflow-accurate accumulation data
+    // (same as main page) so brokerage balance at retirement matches the networth chart.
+    const accRows = buildAccumulation({
+      currentAge,
+      stopWorkingAge,
+      startingSalary,
+      salaryGrowthRate,
+      salarySeries: seriesOverride,
+      monthlyExpensesToday,
+      monthlyExpenseSeries: monthlyExpenseSeries.length === workingYears ? monthlyExpenseSeries : undefined,
+      emergencyMonths,
+      lumpsumExpenses,
+      lumpsumInflows,
+      cashStart: cash,
+      brokerageStart: startingCash,
+      investmentGrowthRate,
+    });
+    for (let i = 0; i < workingYears; i++) {
+      if (fullSrsRows[i] && accRows[i]) {
+        fullSrsRows[i].investedNoSrs = accRows[i].invested;
+        fullSrsRows[i].brokerageWithSrs = accRows[i].invested - fullSrsRows[i].srsContribution;
+      }
+    }
+
     const brokerageRows = buildBrokerageProjection({
       startingCash,
       currentAge,
@@ -177,14 +207,16 @@ export default function RetirementPage() {
       annualExpensesToday,
     });
 
-    // Map: startAge → row data
-    // result[0] = initial (age=currentAge), result[k] covers year starting at age currentAge+k-1
+    // Map: startAge → row data.
+    // Balance uses brokerageRows[k-1] (the balance entering this year = end of previous year)
+    // so it matches the networth chart which plots balance at age = endAge of the prior year.
+    // Flows (brokerageIncome, srsReinvestment) still come from brokerageRows[k] (this year's flows).
     const map = new Map<number, { brokerageIncome: number; balance: number; srsReinvestment: number }>();
     for (let k = 1; k < brokerageRows.length; k++) {
       const startAge = brokerageRows[k].age - 1;
       map.set(startAge, {
         brokerageIncome: brokerageRows[k].brokerageIncome,
-        balance: brokerageRows[k].balance,
+        balance: brokerageRows[k - 1].balance,
         srsReinvestment: brokerageRows[k].srsReinvestment,
       });
     }
@@ -196,6 +228,8 @@ export default function RetirementPage() {
     currentAge, stopWorkingAge, cpfWithdrawalAge, cpfRetirementAge, deathAge,
     cpfOA, cpfSA, cpfMA, cpfRA, cpfLifeFrs, startingCash, srsWithdrawalAge, cpfLifeAnnualPayout,
     srsEnabled, annualExpensesToday,
+    monthlyExpensesToday, monthlyExpenseSeries, emergencyMonths,
+    lumpsumExpenses, lumpsumInflows, cash,
   ]);
 
   const rows = useMemo(
@@ -283,8 +317,8 @@ export default function RetirementPage() {
                 <Th>Annual expenses</Th>
                 <Th>CPF LIFE income</Th>
                 <Th>SRS income</Th>
-                <Th>Brokerage income</Th>
-                <Th>Brokerage balance</Th>
+                <Th>Withdrawal from investments</Th>
+                <Th>Investments balance</Th>
                 <Th>Shortfall</Th>
               </tr>
             </thead>

@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useProfile, CPF_RATES, ProfileInputs, Investment } from "@/lib/profile-context";
+import { useProfile, CPF_RATES, ProfileInputs, Investment, LumpsumExpense } from "@/lib/profile-context";
 import { CPF_EMPLOYEE_RATE } from "@/lib/tax";
 import { NumberField, Slider, Th, Td } from "@/app/components/ui";
+import { LumpsumTable } from "@/app/components/lumpsum-table";
 import { fmtMoney } from "@/lib/format";
 
 function buildDefaultSeries(
@@ -15,6 +16,10 @@ function buildDefaultSeries(
     { length },
     (_, i) => startingSalary * Math.pow(1 + salaryGrowthRate, i),
   );
+}
+
+function buildDefaultExpenseSeries(monthly: number, length: number): number[] {
+  return Array.from({ length }, () => monthly);
 }
 
 function deriveInvestmentAggregates(investments: Investment[]) {
@@ -45,7 +50,6 @@ export default function ConfigPage() {
     startingSalary,
     salaryGrowthRate,
     investmentGrowthRateRetirement,
-    livingExpensePct,
     srsWithdrawalAge,
     cpfOA,
     cpfSA,
@@ -56,6 +60,11 @@ export default function ConfigPage() {
     salarySeries,
     monthlyExpensesToday,
     investments,
+    cash,
+    emergencyMonths,
+    monthlyExpenseSeries,
+    lumpsumExpenses,
+    lumpsumInflows,
   } = draft;
 
   const { total: totalInvestments, weightedRate } = deriveInvestmentAggregates(investments);
@@ -68,8 +77,14 @@ export default function ConfigPage() {
       ? salarySeries
       : buildDefaultSeries(startingSalary, salaryGrowthRate, workingYears);
 
-  // Salary table accordion state
+  const expenseDisplaySeries =
+    monthlyExpenseSeries.length === workingYears
+      ? monthlyExpenseSeries
+      : buildDefaultExpenseSeries(monthlyExpensesToday, workingYears);
+
+  // Accordion state
   const [showSalaryTable, setShowSalaryTable] = useState(false);
+  const [showExpenseTable, setShowExpenseTable] = useState(false);
 
   // Target return — display only, not persisted
   const [targetReturn, setTargetReturn] = useState(0.07);
@@ -77,6 +92,10 @@ export default function ConfigPage() {
   // Inline editing state (salary table)
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [editVal, setEditVal] = useState("");
+
+  // Inline editing state (monthly expenses table)
+  const [expenseEditIdx, setExpenseEditIdx] = useState<number | null>(null);
+  const [expenseEditVal, setExpenseEditVal] = useState("");
 
   function startEdit(idx: number) {
     setEditIdx(idx);
@@ -101,6 +120,37 @@ export default function ConfigPage() {
     });
   }
 
+  function startExpenseEdit(idx: number) {
+    setExpenseEditIdx(idx);
+    setExpenseEditVal(String(Math.round(expenseDisplaySeries[idx])));
+  }
+
+  function commitExpenseEdit(idx: number) {
+    setExpenseEditIdx(null);
+    const parsed = parseFloat(expenseEditVal);
+    if (isNaN(parsed) || parsed < 0) return;
+    const newSeries = [...expenseDisplaySeries];
+    for (let j = idx; j < workingYears; j++) {
+      newSeries[j] = parsed;
+    }
+    setDraft({ ...latestDraft.current, monthlyExpenseSeries: newSeries });
+  }
+
+  function resetExpenseSeries() {
+    setDraft({
+      ...latestDraft.current,
+      monthlyExpenseSeries: buildDefaultExpenseSeries(monthlyExpensesToday, workingYears),
+    });
+  }
+
+  function setLumpsumExpenses(rows: LumpsumExpense[]) {
+    setDraft({ ...latestDraft.current, lumpsumExpenses: rows });
+  }
+
+  function setLumpsumInflows(rows: LumpsumExpense[]) {
+    setDraft({ ...latestDraft.current, lumpsumInflows: rows });
+  }
+
   function update(key: keyof ProfileInputs) {
     return (v: number) => {
       const next = { ...latestDraft.current, [key]: v };
@@ -114,6 +164,17 @@ export default function ConfigPage() {
         next.salarySeries = buildDefaultSeries(
           next.startingSalary,
           next.salaryGrowthRate,
+          wYears,
+        );
+      }
+      if (
+        key === "currentAge" ||
+        key === "stopWorkingAge" ||
+        key === "monthlyExpensesToday"
+      ) {
+        const wYears = Math.max(0, next.stopWorkingAge - next.currentAge);
+        next.monthlyExpenseSeries = buildDefaultExpenseSeries(
+          next.monthlyExpensesToday,
           wYears,
         );
       }
@@ -216,6 +277,40 @@ export default function ConfigPage() {
               onChange={update("deathAge")}
               step={1}
             />
+
+            {/* Cash account */}
+            <label className="block">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-sm text-foreground/80">Cash</span>
+                <div className="relative group">
+                  <div className="w-4 h-4 rounded-full border border-foreground/40 text-foreground/50 flex items-center justify-center text-[10px] font-semibold cursor-default select-none">
+                    i
+                  </div>
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 rounded-lg border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
+                    invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+                    <p className="text-foreground/80 font-medium mb-1">Zero-interest cash account</p>
+                    <p className="text-foreground/60">This balance earns no interest. It&apos;s your liquid emergency reserve and is tracked separately from your invested networth.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
+                <span className="pl-3 text-foreground/60 font-mono">$</span>
+                <input
+                  type="number"
+                  value={cash}
+                  step={500}
+                  onChange={(e) => update("cash")(parseFloat(e.target.value) || 0)}
+                  className="w-full bg-transparent px-3 py-2 outline-none font-mono"
+                />
+              </div>
+            </label>
+            <NumberField
+              label="Emergency funds (months)"
+              value={emergencyMonths}
+              onChange={update("emergencyMonths")}
+              step={1}
+            />
+
             <label className="block">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="text-sm text-foreground/80">Starting annual salary</span>
@@ -344,16 +439,95 @@ export default function ConfigPage() {
               )}
             </div>
 
-            <Slider
-              label="Living expenses (% of take-home)"
-              value={livingExpensePct}
-              min={0.1}
-              max={0.95}
-              step={0.01}
-              suffix="%"
-              format={(v) => (v * 100).toFixed(0)}
-              onChange={update("livingExpensePct")}
-            />
+            {/* Monthly living expenses accordion (per-age, today's money) */}
+            <div className="rounded-xl border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowExpenseTable((v) => !v)}
+                className="w-full text-left cursor-pointer px-4 py-3"
+              >
+                <div className="flex justify-between items-center text-sm">
+                  <span className="flex items-center gap-2 text-foreground/80">
+                    Monthly living expenses (today&apos;s $)
+                    <svg
+                      className={`w-4 h-4 text-foreground/60 transition-transform duration-200 ${showExpenseTable ? "rotate-180" : ""}`}
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                  <span className="font-mono text-foreground font-semibold">
+                    {fmtMoney(expenseDisplaySeries[0] ?? monthlyExpensesToday)}/mo
+                  </span>
+                </div>
+              </button>
+              {showExpenseTable && (
+                <div className="border-t border-foreground/10 px-4 pt-3 pb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-foreground/60">
+                      Values are per month, in today&apos;s money. 2% annual inflation is applied automatically. Editing a row cascades the same value to all rows below.
+                    </p>
+                    <button
+                      onClick={resetExpenseSeries}
+                      className="text-xs px-2.5 py-1 rounded-md border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors cursor-pointer shrink-0 ml-2"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] overflow-hidden">
+                    <div className="max-h-[300px] overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 bg-foreground/[0.06] backdrop-blur-sm z-10">
+                          <tr className="text-left text-foreground/60 border-b border-foreground/10">
+                            <Th>Age</Th>
+                            <Th>Monthly expenses (today&apos;s $)</Th>
+                          </tr>
+                        </thead>
+                        <tbody className="font-mono">
+                          {expenseDisplaySeries.map((monthly, i) => {
+                            const age = currentAge + i;
+                            const isEditing = expenseEditIdx === i;
+                            return (
+                              <tr
+                                key={age}
+                                className="border-b border-foreground/5 hover:bg-foreground/[0.04]"
+                              >
+                                <Td>{age}</Td>
+                                <td className="py-2 px-2 whitespace-nowrap">
+                                  {isEditing ? (
+                                    <input
+                                      type="number"
+                                      value={expenseEditVal}
+                                      onChange={(e) => setExpenseEditVal(e.target.value)}
+                                      onBlur={() => commitExpenseEdit(i)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter")
+                                          (e.target as HTMLInputElement).blur();
+                                        if (e.key === "Escape") setExpenseEditIdx(null);
+                                      }}
+                                      autoFocus
+                                      className="w-40 bg-foreground/10 border border-emerald-500/60 rounded px-2 py-0.5 outline-none text-right"
+                                    />
+                                  ) : (
+                                    <button
+                                      onClick={() => startExpenseEdit(i)}
+                                      title="Click to edit"
+                                      className="text-right w-40 hover:text-emerald-400 transition-colors cursor-text"
+                                    >
+                                      {fmtMoney(monthly)}
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Retirement Settings */}
@@ -593,6 +767,26 @@ export default function ConfigPage() {
             </tfoot>
           </table>
         </div>
+      </div>
+
+      {/* Lumpsum Inflows + Expenses — side-by-side */}
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <LumpsumTable
+          title="Lumpsum Inflows"
+          description="One-time inflows (inheritance, bonuses, etc.) added to that year's available cash."
+          rows={lumpsumInflows}
+          onChange={setLumpsumInflows}
+          totalAccent="emerald"
+          idPrefix="inflow"
+        />
+        <LumpsumTable
+          title="Lumpsum Expenses"
+          description="One-time expenses applied at a specific age. Added on top of the monthly living expenses for that year."
+          rows={lumpsumExpenses}
+          onChange={setLumpsumExpenses}
+          totalAccent="red"
+          idPrefix="exp"
+        />
       </div>
 
     </main>
