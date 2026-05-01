@@ -65,6 +65,7 @@ export default function ConfigPage() {
     monthlyExpenseSeries,
     lumpsumExpenses,
     lumpsumInflows,
+    srsAnnualCap,
   } = draft;
 
   const { total: totalInvestments, weightedRate } = deriveInvestmentAggregates(investments);
@@ -85,6 +86,7 @@ export default function ConfigPage() {
   // Accordion state
   const [showSalaryTable, setShowSalaryTable] = useState(false);
   const [showExpenseTable, setShowExpenseTable] = useState(false);
+  const [srsCapEditMode, setSrsCapEditMode] = useState(false);
 
   // Target return — display only, not persisted
   const [targetReturn, setTargetReturn] = useState(0.07);
@@ -555,6 +557,54 @@ export default function ConfigPage() {
               onChange={update("srsWithdrawalAge")}
               step={1}
             />
+            {/* SRS annual cap */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Max annual SRS top-up</label>
+                <button
+                  type="button"
+                  onClick={() => setSrsCapEditMode((v) => !v)}
+                  className={`p-1 rounded transition-colors ${srsCapEditMode ? "text-foreground" : "text-foreground/40 hover:text-foreground/70"}`}
+                  title="Edit manually"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                    <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L2.68 10.846a.75.75 0 0 0-.196.373l-.71 3.539a.75.75 0 0 0 .888.888l3.54-.71a.75.75 0 0 0 .372-.196l8.335-8.334a1.75 1.75 0 0 0 0-2.474l-.421-.42Z" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex gap-2">
+                {[
+                  { label: "Citizen / PR", value: 15300 },
+                  { label: "Foreigner", value: 35700 },
+                ].map(({ label, value }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      update("srsAnnualCap")(value);
+                      setSrsCapEditMode(false);
+                    }}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                      srsAnnualCap === value && !srsCapEditMode
+                        ? "border-foreground/40 bg-foreground/10 font-medium"
+                        : "border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.07]"
+                    }`}
+                  >
+                    <div>{label}</div>
+                    <div className="text-xs mt-0.5 font-mono">{fmtMoney(value)}/yr</div>
+                  </button>
+                ))}
+              </div>
+              {srsCapEditMode && (
+                <NumberField
+                  label="Custom cap"
+                  value={srsAnnualCap}
+                  onChange={update("srsAnnualCap")}
+                  prefix="$"
+                  step={100}
+                />
+              )}
+            </div>
             <Slider
               label="Investment growth rate (post-retirement)"
               value={investmentGrowthRateRetirement}

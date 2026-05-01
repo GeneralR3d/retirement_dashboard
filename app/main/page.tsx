@@ -223,6 +223,7 @@ export default function MainPage() {
     lumpsumExpenses,
     lumpsumInflows,
     cash,
+    srsAnnualCap,
   } = inputs;
 
   const annualExpensesToday = monthlyExpensesToday * 12;
@@ -269,6 +270,7 @@ export default function MainPage() {
         years: srsYears,
         workingYears,
         salarySeries: seriesOverride,
+        srsCap: srsAnnualCap,
       });
 
       const cpfRows = buildCpfProjection({

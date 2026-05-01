@@ -108,6 +108,7 @@ export default function RetirementPage() {
     lumpsumExpenses,
     lumpsumInflows,
     cash,
+    srsAnnualCap,
   } = inputs;
 
   const annualExpensesToday = monthlyExpensesToday * 12;
@@ -130,6 +131,7 @@ export default function RetirementPage() {
       years: srsYears,
       workingYears: srsWorkingYears,
       salarySeries: seriesOverride,
+      srsCap: srsAnnualCap,
     });
     const srsFinal = srsRows[srsRows.length - 1];
     const w = calculateSrsWithdrawal(srsFinal?.srsPot ?? 0);
@@ -162,6 +164,7 @@ export default function RetirementPage() {
       years: Math.max(workingYears, srsYears),
       workingYears,
       salarySeries: seriesOverride,
+      srsCap: srsAnnualCap,
     });
 
     // Override working-year contributions with cashflow-accurate accumulation data
