@@ -377,11 +377,16 @@ export function buildBrokerageProjection(inputs: {
       brokerageIncome = Math.min(shortfall, Math.max(0, balance + oaInjection));
     }
 
-    // Phase 2 — reinvest: put any surplus from SRS + CPF LIFE back into brokerage
+    // Phase 2 — SRS active: cover any remaining shortfall from brokerage, or reinvest surplus
     if (startAge >= srsWithdrawalAge) {
       const expenses = annualExpensesToday * Math.pow(1 + EXPENSES_INFLATION_RATE, i);
       const cpfLife = startAge >= cpfWithdrawalAge ? cpfLifeAnnualPayout : 0;
-      srsReinvestment = Math.max(0, cpfLife + srsAnnualIncome - expenses);
+      const net = cpfLife + srsAnnualIncome - expenses;
+      if (net >= 0) {
+        srsReinvestment = net;
+      } else {
+        brokerageIncome = Math.min(-net, Math.max(0, balance + oaInjection));
+      }
     }
 
     const growthRate = i < workingYears ? investmentGrowthRate : investmentGrowthRateRetirement;

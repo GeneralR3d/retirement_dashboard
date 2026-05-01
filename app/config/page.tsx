@@ -85,7 +85,7 @@ export default function ConfigPage() {
 
   // Accordion state
   const [showSalaryTable, setShowSalaryTable] = useState(false);
-  const [showExpenseTable, setShowExpenseTable] = useState(false);
+  const [showExpenseTable, setShowExpenseTable] = useState(true);
   const [srsCapEditMode, setSrsCapEditMode] = useState(false);
 
   // Target return — display only, not persisted
@@ -169,11 +169,7 @@ export default function ConfigPage() {
           wYears,
         );
       }
-      if (
-        key === "currentAge" ||
-        key === "stopWorkingAge" ||
-        key === "monthlyExpensesToday"
-      ) {
+      if (key === "currentAge" || key === "stopWorkingAge") {
         const wYears = Math.max(0, next.stopWorkingAge - next.currentAge);
         next.monthlyExpenseSeries = buildDefaultExpenseSeries(
           next.monthlyExpensesToday,
