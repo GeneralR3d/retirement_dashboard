@@ -64,6 +64,7 @@ export type ProfileInputs = {
   lumpsumExpenses: LumpsumExpense[];
   lumpsumInflows: LumpsumExpense[];
   srsAnnualCap: number;
+  srsAccepted: boolean[]; // per working-year accept/reject; [] = all accepted (default)
 };
 
 export const CPF_RATES = {
@@ -101,6 +102,7 @@ const DEFAULTS: ProfileInputs = {
   lumpsumExpenses: DEFAULT_LUMPSUM_EXPENSES,
   lumpsumInflows: DEFAULT_LUMPSUM_INFLOWS,
   srsAnnualCap: 15300,
+  srsAccepted: [],
 };
 
 type ProfileContextType = {

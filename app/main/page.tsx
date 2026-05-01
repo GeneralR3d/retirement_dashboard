@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useSrsToggle } from "@/lib/srs-toggle-context";
 import {
   Area,
   AreaChart,
@@ -18,10 +17,12 @@ import {
 import {
   buildBrokerageProjection,
   buildCpfProjection,
-  buildProjection,
   calculateSrsWithdrawal,
   CPF_FRS_INFLATION_RATE,
+  CPF_EMPLOYEE_RATE,
   SRS_WITHDRAWAL_YEARS,
+  recommendedSrsTopUp,
+  SRS_ANNUAL_CAP,
 } from "@/lib/tax";
 import { buildAccumulation } from "@/lib/cash-flow";
 import { useProfile } from "@/lib/profile-context";
@@ -171,32 +172,79 @@ function BrokerageTooltip({
   );
 }
 
-function SrsToggleSwitch() {
-  const { srsEnabled, setSrsEnabled } = useSrsToggle();
+function SimpleTooltip({
+  active,
+  payload,
+  label,
+  color,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: number;
+  color: string;
+}) {
+  if (!active || !payload?.length) return null;
   return (
-    <label className="flex items-center gap-2 cursor-pointer select-none">
-      <span className="text-xs text-foreground/60">SRS</span>
-      <button
-        role="switch"
-        aria-checked={srsEnabled}
-        onClick={() => setSrsEnabled(!srsEnabled)}
-        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-          srsEnabled ? "bg-emerald-500" : "bg-foreground/20"
-        }`}
-      >
-        <span
-          className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-            srsEnabled ? "translate-x-4" : "translate-x-0.5"
-          }`}
-        />
-      </button>
-    </label>
+    <div
+      style={{
+        background: "var(--tooltip-bg, #0f172a)",
+        border: "1px solid var(--grid-color, #1e293b)",
+        borderRadius: 8,
+        fontSize: 12,
+        padding: "8px 12px",
+        minWidth: 160,
+      }}
+    >
+      <p className="font-semibold mb-1">Age {label}</p>
+      <p style={{ color }}>{fmtMoney(payload[0].value)}</p>
+    </div>
+  );
+}
+
+function SrsTooltip({
+  active,
+  payload,
+  label,
+  srsWithdrawalAge,
+  stopWorkingAge,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: { srs: number; contribution: number | null } }>;
+  label?: number;
+  srsWithdrawalAge: number;
+  stopWorkingAge: number;
+}) {
+  if (!active || !payload?.length) return null;
+  const { srs, contribution } = payload[0].payload;
+  const isDrawdown = (label ?? 0) > srsWithdrawalAge;
+  return (
+    <div
+      style={{
+        background: "var(--tooltip-bg, #0f172a)",
+        border: "1px solid var(--grid-color, #1e293b)",
+        borderRadius: 8,
+        fontSize: 12,
+        padding: "8px 12px",
+        minWidth: 180,
+      }}
+    >
+      <p className="font-semibold mb-1">Age {label}</p>
+      <p className="text-emerald-400">Pot balance: {fmtMoney(srs)}</p>
+      {contribution !== null && contribution > 0 && (
+        <p className="text-emerald-300/70 mt-0.5">Annual top-up: {fmtMoney(contribution)}</p>
+      )}
+      {contribution !== null && contribution === 0 && (label ?? 0) <= stopWorkingAge && (
+        <p className="text-foreground/40 mt-0.5">No top-up this year</p>
+      )}
+      {isDrawdown && (
+        <p className="text-cyan-400/70 mt-0.5 text-[11px]">Drawdown phase</p>
+      )}
+    </div>
   );
 }
 
 export default function MainPage() {
   const { inputs } = useProfile();
-  const { srsEnabled } = useSrsToggle();
   const {
     currentAge,
     stopWorkingAge,
@@ -207,7 +255,6 @@ export default function MainPage() {
     salaryGrowthRate,
     investmentGrowthRate,
     investmentGrowthRateRetirement,
-    livingExpensePct,
     srsWithdrawalAge,
     startingCash,
     cpfOA,
@@ -224,6 +271,7 @@ export default function MainPage() {
     lumpsumInflows,
     cash,
     srsAnnualCap,
+    srsAccepted,
   } = inputs;
 
   const annualExpensesToday = monthlyExpensesToday * 12;
@@ -237,12 +285,16 @@ export default function MainPage() {
     12 *
     Math.pow(1 + CPF_FRS_INFLATION_RATE, cpfWithdrawalAge - currentAge);
 
-  const { brokerageRows, oaAtRetirement, srsRowsForChart, netWorthData } =
+  const { brokerageRows, oaAtRetirement, srsPotData, cashData, srsPotAtWithdrawal, srsWithdrawal, netWorthData, brokerageContributions } =
     useMemo(() => {
-      const srsYears = Math.max(
-        workingYears,
-        Math.max(0, srsWithdrawalAge - currentAge),
-      );
+      // Compute recommended SRS top-ups per year, honouring per-year accept/reject from context.
+      const srsTopUps = Array.from({ length: workingYears }, (_, i) => {
+        const accepted = i < srsAccepted.length ? srsAccepted[i] : true;
+        if (!accepted) return 0;
+        const salary = seriesOverride?.[i] ?? startingSalary * Math.pow(1 + salaryGrowthRate, i);
+        const takeHome = salary * (1 - CPF_EMPLOYEE_RATE);
+        return recommendedSrsTopUp(takeHome, srsAnnualCap ?? SRS_ANNUAL_CAP).topUp;
+      });
 
       const accRows = buildAccumulation({
         currentAge,
@@ -259,19 +311,30 @@ export default function MainPage() {
         cashStart: cash,
         brokerageStart: startingCash,
         investmentGrowthRate,
+        srsTopUps,
       });
 
-      const srsRows = buildProjection({
-        startingSalary,
-        salaryGrowthRate,
-        investmentGrowthRate,
-        investmentGrowthRateRetirement,
-        livingExpensePct,
-        years: srsYears,
-        workingYears,
-        salarySeries: seriesOverride,
-        srsCap: srsAnnualCap,
-      });
+      // Compute SRS pot year by year from acc rows
+      let srsPotRunning = 0;
+      const srsPotByAge = new Map<number, number>();
+      srsPotByAge.set(currentAge, 0);
+
+      for (let i = 0; i < workingYears; i++) {
+        srsPotRunning = (srsPotRunning + accRows[i].srsTopUp) * (1 + investmentGrowthRate);
+        srsPotByAge.set(currentAge + i + 1, srsPotRunning);
+      }
+
+      // After working years: grow at retirement rate until srsWithdrawalAge (no new contributions)
+      const postWorkGrowYears = Math.max(0, srsWithdrawalAge - stopWorkingAge);
+      for (let j = 0; j < postWorkGrowYears; j++) {
+        srsPotRunning = srsPotRunning * (1 + investmentGrowthRateRetirement);
+        srsPotByAge.set(stopWorkingAge + j + 1, srsPotRunning);
+      }
+
+      const finalSrsPot = srsPotRunning;
+      const w = calculateSrsWithdrawal(finalSrsPot);
+      const srsAnnualIncome = w.netFromSrs / SRS_WITHDRAWAL_YEARS;
+      const srsYearlyWithdrawal = finalSrsPot / SRS_WITHDRAWAL_YEARS;
 
       const cpfRows = buildCpfProjection({
         currentAge,
@@ -292,21 +355,8 @@ export default function MainPage() {
       const convRow = cpfRows.find((r) => r.raConversionHappened);
       const oaBalance = convRow?.oaBalance ?? 0;
 
-      const srsFinal = srsRows[srsRows.length - 1];
-      const srsFinalPot = srsFinal?.srsPot ?? 0;
-      const srsAnnualIncome =
-        calculateSrsWithdrawal(srsFinalPot).netFromSrs / SRS_WITHDRAWAL_YEARS;
-      const srsYearlyWithdrawal = srsFinalPot / SRS_WITHDRAWAL_YEARS;
-
-      // Override working-year contributions with the new accumulation
-      // (per-age living expenses + cash-topup) numbers.
-      for (let i = 0; i < workingYears; i++) {
-        if (srsRows[i] && accRows[i]) {
-          srsRows[i].investedNoSrs = accRows[i].invested;
-          srsRows[i].brokerageWithSrs = accRows[i].invested - srsRows[i].srsContribution;
-        }
-      }
-
+      // Brokerage projection using acc row contributions
+      const contributions = accRows.map((r) => r.invested);
       const rows = buildBrokerageProjection({
         startingCash,
         currentAge,
@@ -315,20 +365,52 @@ export default function MainPage() {
         deathAge,
         investmentGrowthRate,
         investmentGrowthRateRetirement,
-        srsRows,
+        contributions,
         oaAtRetirement: oaBalance,
         stopWorkingAge,
         srsWithdrawalAge,
         cpfWithdrawalAge,
         cpfLifeAnnualPayout,
-        srsAnnualIncome: srsEnabled ? srsAnnualIncome : 0,
-        srsEnabled,
+        srsAnnualIncome,
         annualExpensesToday,
       });
 
-      // --- Net worth chart data ---
+      // --- SRS pot chart data (contribution = srsTopUp for that year, null outside working years) ---
+      const srsTopUpByEndAge = new Map<number, number>();
+      for (let i = 0; i < workingYears; i++) {
+        srsTopUpByEndAge.set(currentAge + i, accRows[i].srsTopUp);
+      }
 
-      // CPF map: age → net-CPF balance (OA excluded after transfer)
+      const srsPotArr: { age: number; srs: number; contribution: number | null }[] = [];
+      for (let age = currentAge; age <= srsWithdrawalAge; age++) {
+        const topUp = srsTopUpByEndAge.get(age) ?? null;
+        srsPotArr.push({
+          age,
+          srs: Math.round(srsPotByAge.get(age) ?? 0),
+          contribution: topUp !== null ? Math.round(topUp) : null,
+        });
+      }
+      for (let k = 1; k <= Math.max(0, deathAge - srsWithdrawalAge); k++) {
+        srsPotArr.push({
+          age: srsWithdrawalAge + k,
+          srs: Math.round(Math.max(0, finalSrsPot - srsYearlyWithdrawal * k)),
+          contribution: null,
+        });
+      }
+
+      // --- Cash chart data ---
+      const cashArr: { age: number; cash: number }[] = [];
+      cashArr.push({ age: currentAge, cash: Math.round(cash) });
+      let lastCash = cash;
+      for (const r of accRows) {
+        cashArr.push({ age: r.age + 1, cash: Math.round(Math.max(0, r.cashBalance)) });
+        lastCash = Math.max(0, r.cashBalance);
+      }
+      for (let age = stopWorkingAge + 1; age <= deathAge; age++) {
+        cashArr.push({ age, cash: Math.round(lastCash) });
+      }
+
+      // --- Net worth chart data ---
       const cpfMap = new Map<number, number>();
       cpfMap.set(currentAge, cpfOA + cpfSA + cpfMA + cpfRA);
       for (const r of cpfRows) {
@@ -339,70 +421,40 @@ export default function MainPage() {
         cpfMap.set(r.age, Math.max(0, val));
       }
 
-      // SRS map: age → SRS pot balance (all zeros when SRS is disabled)
       const srsMap = new Map<number, number>();
-      if (srsEnabled) {
-        srsMap.set(currentAge, 0);
-        for (let i = 0; i < srsRows.length; i++) {
-          const age = currentAge + i + 1;
-          if (age <= srsWithdrawalAge) {
-            srsMap.set(age, srsRows[i].srsPot);
-          }
-        }
-        for (let k = 1; k <= Math.max(0, deathAge - srsWithdrawalAge); k++) {
-          srsMap.set(
-            srsWithdrawalAge + k,
-            Math.max(0, srsFinalPot - srsYearlyWithdrawal * k),
-          );
-        }
-      }
+      for (const pt of srsPotArr) srsMap.set(pt.age, pt.srs);
 
-      // Brokerage map: age → balance
       const brokerageMap = new Map<number, number>();
-      for (const r of rows) {
-        brokerageMap.set(r.age, Math.max(0, r.balance));
-      }
+      for (const r of rows) brokerageMap.set(r.age, Math.max(0, r.balance));
 
-      // Cash map: age → cash balance. During working years, taken from
-      // accumulation rows. After stopWorkingAge, held flat (no drawdown
-      // modeled in retirement phase yet).
-      const cashMap = new Map<number, number>();
-      cashMap.set(currentAge, cash);
-      let lastCash = cash;
-      for (const r of accRows) {
-        cashMap.set(r.age + 1, Math.max(0, r.cashBalance));
-        lastCash = Math.max(0, r.cashBalance);
-      }
-      for (let age = stopWorkingAge + 1; age <= deathAge; age++) {
-        if (!cashMap.has(age)) cashMap.set(age, lastCash);
-      }
+      const cashMap = new Map<number, number>(cashArr.map((pt) => [pt.age, pt.cash]));
 
-      // Merge into net worth array
       const totalYears = Math.max(0, deathAge - currentAge);
-      const nwData: NetWorthPoint[] = Array.from(
-        { length: totalYears + 1 },
-        (_, i) => {
-          const age = currentAge + i;
-          const cpf = cpfMap.get(age) ?? 0;
-          const srs = srsMap.get(age) ?? 0;
-          const brokerage = brokerageMap.get(age) ?? 0;
-          const cashAtAge = cashMap.get(age) ?? lastCash;
-          return {
-            age,
-            cpf: Math.round(cpf),
-            srs: Math.round(srs),
-            brokerage: Math.round(brokerage),
-            cash: Math.round(cashAtAge),
-            total: Math.round(cpf + srs + brokerage + cashAtAge),
-          };
-        },
-      );
+      const nwData: NetWorthPoint[] = Array.from({ length: totalYears + 1 }, (_, i) => {
+        const age = currentAge + i;
+        const cpf = cpfMap.get(age) ?? 0;
+        const srs = srsMap.get(age) ?? 0;
+        const brokerage = brokerageMap.get(age) ?? 0;
+        const cashAtAge = cashMap.get(age) ?? lastCash;
+        return {
+          age,
+          cpf: Math.round(cpf),
+          srs: Math.round(srs),
+          brokerage: Math.round(brokerage),
+          cash: Math.round(cashAtAge),
+          total: Math.round(cpf + srs + brokerage + cashAtAge),
+        };
+      });
 
       return {
         brokerageRows: rows,
         oaAtRetirement: oaBalance,
-        srsRowsForChart: srsRows,
+        srsPotData: srsPotArr,
+        cashData: cashArr,
+        srsPotAtWithdrawal: finalSrsPot,
+        srsWithdrawal: w,
         netWorthData: nwData,
+        brokerageContributions: contributions,
       };
     }, [
       currentAge,
@@ -414,7 +466,6 @@ export default function MainPage() {
       salaryGrowthRate,
       investmentGrowthRate,
       investmentGrowthRateRetirement,
-      livingExpensePct,
       srsWithdrawalAge,
       startingCash,
       cpfOA,
@@ -425,7 +476,6 @@ export default function MainPage() {
       workingYears,
       seriesOverride,
       cpfLifeAnnualPayout,
-      srsEnabled,
       annualExpensesToday,
       monthlyExpensesToday,
       monthlyExpenseSeries,
@@ -433,21 +483,16 @@ export default function MainPage() {
       lumpsumExpenses,
       lumpsumInflows,
       cash,
+      srsAnnualCap,
+      srsAccepted,
     ]);
 
-  const chartData = useMemo(
+  const brokerageChartData = useMemo(
     () =>
       brokerageRows.map((r, k) => ({
         age: r.age,
         balance: Math.round(r.balance),
-        contribution:
-          k > 0 && k - 1 < workingYears
-            ? Math.round(
-                srsEnabled
-                  ? (srsRowsForChart[k - 1]?.brokerageWithSrs ?? 0)
-                  : (srsRowsForChart[k - 1]?.investedNoSrs ?? 0),
-              )
-            : null,
+        contribution: k > 0 && k - 1 < workingYears ? Math.round(brokerageContributions[k - 1] ?? 0) : null,
         withdrawal: r.brokerageIncome > 0 ? Math.round(r.brokerageIncome) : null,
         oaInjected:
           r.age === cpfRetirementAge && oaAtRetirement > 0
@@ -455,7 +500,7 @@ export default function MainPage() {
             : null,
         reinvestment: r.srsReinvestment > 0 ? Math.round(r.srsReinvestment) : null,
       })),
-    [brokerageRows, srsRowsForChart, workingYears, cpfRetirementAge, oaAtRetirement, srsEnabled],
+    [brokerageRows, brokerageContributions, workingYears, cpfRetirementAge, oaAtRetirement],
   );
 
   const peakRow = brokerageRows.reduce(
@@ -464,7 +509,6 @@ export default function MainPage() {
   );
   const finalBalance = brokerageRows[brokerageRows.length - 1]?.balance ?? 0;
 
-  // Retirement viability: check if brokerage ever hits 0 after stopWorkingAge
   const runOutRow = brokerageRows.find(
     (r) => r.age > stopWorkingAge && r.balance <= 0,
   );
@@ -484,7 +528,7 @@ export default function MainPage() {
       <header className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Overview</h1>
         <p className="text-foreground/60 text-sm mt-1">
-          Net worth across CPF, SRS, and real networth — age {currentAge} to {deathAge}.
+          Net worth across CPF, SRS, and investments — age {currentAge} to {deathAge}.
         </p>
       </header>
 
@@ -537,16 +581,13 @@ export default function MainPage() {
       <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 mb-8">
         <div className="flex items-center justify-between mb-1">
           <h2 className="font-semibold">Net Worth Breakdown</h2>
-          <div className="flex items-center gap-4">
-            <SrsToggleSwitch />
-            <span className="text-xs text-foreground/60">
-              Age {currentAge}–{deathAge}
-            </span>
-          </div>
+          <span className="text-xs text-foreground/60">
+            Age {currentAge}–{deathAge}
+          </span>
         </div>
         <p className="text-foreground/60 text-xs mb-6">
           CPF (OA excluded after age {cpfRetirementAge}), SRS pot (drawn down over 10 yrs from age{" "}
-          {srsWithdrawalAge}), real networth, and combined total.
+          {srsWithdrawalAge}), investments, and combined total.
         </p>
         <ResponsiveContainer width="100%" height={500}>
           <LineChart
@@ -583,7 +624,6 @@ export default function MainPage() {
             />
             <Legend wrapperStyle={{ fontSize: 12 }} />
 
-            {/* Milestone reference lines */}
             {stopWorkingAge !== cpfRetirementAge && (
               <ReferenceLine
                 x={stopWorkingAge}
@@ -613,20 +653,18 @@ export default function MainPage() {
                 fontSize: 10,
               }}
             />
-            {srsEnabled && (
-              <ReferenceLine
-                x={srsWithdrawalAge}
-                stroke="#22d3ee"
-                strokeDasharray="4 4"
-                strokeWidth={1.5}
-                label={{
-                  value: `SRS starts (${srsWithdrawalAge})`,
-                  position: "insideTopRight",
-                  fill: "#22d3ee",
-                  fontSize: 10,
-                }}
-              />
-            )}
+            <ReferenceLine
+              x={srsWithdrawalAge}
+              stroke="#22d3ee"
+              strokeDasharray="4 4"
+              strokeWidth={1.5}
+              label={{
+                value: `SRS starts (${srsWithdrawalAge})`,
+                position: "insideTopRight",
+                fill: "#22d3ee",
+                fontSize: 10,
+              }}
+            />
             <ReferenceLine
               x={cpfWithdrawalAge}
               stroke="#f97316"
@@ -641,10 +679,8 @@ export default function MainPage() {
             />
 
             <Line type="monotone" dataKey="total" name="Total Net Worth" stroke="#f8fafc" strokeWidth={2.5} dot={false} />
-            <Line type="monotone" dataKey="brokerage" name="Brokerage" stroke="#38bdf8" strokeWidth={1.5} dot={false} />
-            {srsEnabled && (
-              <Line type="monotone" dataKey="srs" name="SRS Pot" stroke="#10b981" strokeWidth={1.5} dot={false} />
-            )}
+            <Line type="monotone" dataKey="brokerage" name="Investments" stroke="#38bdf8" strokeWidth={1.5} dot={false} />
+            <Line type="monotone" dataKey="srs" name="SRS Pot" stroke="#10b981" strokeWidth={1.5} dot={false} />
             <Line type="monotone" dataKey="cpf" name="CPF" stroke="#eab308" strokeWidth={1.5} dot={false} />
             <Line type="monotone" dataKey="cash" name="Cash" stroke="#a3a3a3" strokeWidth={1.5} dot={false} />
           </LineChart>
@@ -653,11 +689,6 @@ export default function MainPage() {
 
       {/* Brokerage KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          label="Cash today"
-          value={fmtMoney(cash)}
-          sub="zero-interest reserve"
-        />
         <StatCard label="Brokerage seed" value={fmtMoney(startingCash)} />
         <StatCard
           label="OA transfer at retirement"
@@ -680,9 +711,9 @@ export default function MainPage() {
       <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6">
         <h2 className="font-semibold mb-1">Investment Account</h2>
         <p className="text-foreground/60 text-xs mb-6">
-          Contributions: annual brokerage surplus (with SRS) during working years. OA
-          balance injected at age {cpfRetirementAge}. Growth: {(investmentGrowthRate * 100).toFixed(1)}% until
-          retirement, {(investmentGrowthRateRetirement * 100).toFixed(1)}% after.
+          Annual brokerage surplus during working years. OA balance injected at age {cpfRetirementAge}. Growth:{" "}
+          {(investmentGrowthRate * 100).toFixed(1)}% until retirement,{" "}
+          {(investmentGrowthRateRetirement * 100).toFixed(1)}% after.
         </p>
         <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400/90 mb-6">
           <span className="mt-px shrink-0">⚠</span>
@@ -694,17 +725,14 @@ export default function MainPage() {
           </span>
         </div>
         {(() => {
-          const balances = chartData.map((d) => d.balance);
+          const balances = brokerageChartData.map((d) => d.balance);
           const minBal = Math.min(...balances);
           const maxBal = Math.max(...balances);
           const hasNegative = minBal < 0;
-          // zeroOffset = fraction from top of chart where balance = 0
-          const zeroOffset = hasNegative
-            ? maxBal / (maxBal - minBal)
-            : 1;
+          const zeroOffset = hasNegative ? maxBal / (maxBal - minBal) : 1;
           return (
             <ResponsiveContainer width="100%" height={420}>
-              <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+              <AreaChart data={brokerageChartData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
                 <defs>
                   <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
@@ -731,13 +759,7 @@ export default function MainPage() {
                 <XAxis
                   dataKey="age"
                   tick={{ fontSize: 12, fill: axisColor }}
-                  label={{
-                    value: "Age",
-                    position: "insideBottomRight",
-                    offset: -8,
-                    fill: axisColor,
-                    fontSize: 12,
-                  }}
+                  label={{ value: "Age", position: "insideBottomRight", offset: -8, fill: axisColor, fontSize: 12 }}
                 />
                 <YAxis
                   tickFormatter={fmtAxis}
@@ -758,12 +780,7 @@ export default function MainPage() {
                     x={stopWorkingAge}
                     stroke="#f59e0b"
                     strokeDasharray="4 4"
-                    label={{
-                      value: "Retire",
-                      position: "insideTopRight",
-                      fill: "#f59e0b",
-                      fontSize: 11,
-                    }}
+                    label={{ value: "Retire", position: "insideTopRight", fill: "#f59e0b", fontSize: 11 }}
                   />
                 )}
                 <ReferenceLine
@@ -771,35 +788,20 @@ export default function MainPage() {
                   stroke="#8b5cf6"
                   strokeDasharray="4 4"
                   label={{
-                    value:
-                      stopWorkingAge === cpfRetirementAge
-                        ? "Retire / OA Transfer"
-                        : "OA Transfer",
+                    value: stopWorkingAge === cpfRetirementAge ? "Retire / OA Transfer" : "OA Transfer",
                     position: "insideTopLeft",
                     fill: "#8b5cf6",
                     fontSize: 11,
                   }}
                 />
-                {srsEnabled && (
-                  <ReferenceLine
-                    x={srsWithdrawalAge}
-                    stroke="#22d3ee"
-                    strokeDasharray="4 4"
-                    label={{
-                      value: "SRS starts",
-                      position: "insideTopRight",
-                      fill: "#22d3ee",
-                      fontSize: 11,
-                    }}
-                  />
-                )}
+                <ReferenceLine
+                  x={srsWithdrawalAge}
+                  stroke="#22d3ee"
+                  strokeDasharray="4 4"
+                  label={{ value: "SRS starts", position: "insideTopRight", fill: "#22d3ee", fontSize: 11 }}
+                />
                 {hasNegative && (
-                  <ReferenceLine
-                    y={0}
-                    stroke="#ef4444"
-                    strokeDasharray="3 3"
-                    strokeOpacity={0.6}
-                  />
+                  <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.6} />
                 )}
                 <Area
                   type="monotone"
@@ -809,6 +811,152 @@ export default function MainPage() {
                   fill="url(#balanceGradient)"
                   dot={false}
                   name="Investments"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          );
+        })()}
+      </section>
+
+      {/* SRS Pot Chart */}
+      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 mb-8 mt-8">
+        <h2 className="font-semibold mb-1">SRS Account</h2>
+        <p className="text-foreground/60 text-xs mb-4">
+          Contributions optimised to reduce tax brackets each year. Pot grows at{" "}
+          {(investmentGrowthRate * 100).toFixed(1)}% (pre-retirement) /{" "}
+          {(investmentGrowthRateRetirement * 100).toFixed(1)}% (post-retirement). Drawdown over 10 years from age {srsWithdrawalAge}.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <StatCard
+            label={`SRS pot at age ${srsWithdrawalAge}`}
+            value={fmtMoney(srsPotAtWithdrawal)}
+            accent="emerald"
+          />
+          <StatCard
+            label="Yearly withdrawal"
+            value={fmtMoney(srsWithdrawal.yearlyWithdrawal)}
+            sub="× 10 years"
+          />
+          <StatCard
+            label="Tax per year"
+            value={fmtMoney(srsWithdrawal.taxPerYear)}
+            sub="50% of withdrawal taxable"
+          />
+          <StatCard
+            label="Yearly withdrawal after tax"
+            value={fmtMoney(srsWithdrawal.yearlyWithdrawal - srsWithdrawal.taxPerYear)}
+            sub={`total ${fmtMoney(srsWithdrawal.netFromSrs)}`}
+          />
+        </div>
+        {(() => {
+          const srsBalances = srsPotData.map((d) => d.srs);
+          const maxSrs = Math.max(...srsBalances, 1);
+          return (
+            <ResponsiveContainer width="100%" height={320}>
+              <AreaChart data={srsPotData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                <defs>
+                  <linearGradient id="srsGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                <XAxis
+                  dataKey="age"
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  label={{ value: "Age", position: "insideBottomRight", offset: -8, fill: axisColor, fontSize: 12 }}
+                />
+                <YAxis
+                  tickFormatter={fmtAxis}
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  width={72}
+                  domain={[0, Math.ceil((maxSrs * 1.1) / 100_000) * 100_000]}
+                />
+                <Tooltip content={<SrsTooltip srsWithdrawalAge={srsWithdrawalAge} stopWorkingAge={stopWorkingAge} />} />
+                <ReferenceLine
+                  x={stopWorkingAge}
+                  stroke="#f59e0b"
+                  strokeDasharray="4 4"
+                  label={{ value: `Stop work (${stopWorkingAge})`, position: "insideTopRight", fill: "#f59e0b", fontSize: 10 }}
+                />
+                <ReferenceLine
+                  x={srsWithdrawalAge}
+                  stroke="#22d3ee"
+                  strokeDasharray="4 4"
+                  label={{ value: `Withdrawals start (${srsWithdrawalAge})`, position: "insideTopLeft", fill: "#22d3ee", fontSize: 10 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="srs"
+                  name="SRS Pot"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  fill="url(#srsGradient)"
+                  dot={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          );
+        })()}
+      </section>
+
+      {/* Cash Chart */}
+      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 mb-8">
+        <h2 className="font-semibold mb-1">Cash Reserve</h2>
+        <p className="text-foreground/60 text-xs mb-4">
+          Emergency fund targeting {inputs.emergencyMonths} months of expenses. Zero interest — held flat after retirement.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <StatCard
+            label="Cash today"
+            value={fmtMoney(cash)}
+            sub="zero-interest reserve"
+          />
+          <StatCard
+            label={`Cash at retirement (${stopWorkingAge})`}
+            value={fmtMoney(cashData.find((d) => d.age === stopWorkingAge)?.cash ?? cash)}
+            sub={`${inputs.emergencyMonths} months target`}
+          />
+        </div>
+        {(() => {
+          const cashBalances = cashData.map((d) => d.cash);
+          const maxCash = Math.max(...cashBalances, 1);
+          return (
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={cashData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                <defs>
+                  <linearGradient id="cashGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a3a3a3" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="#a3a3a3" stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                <XAxis
+                  dataKey="age"
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  label={{ value: "Age", position: "insideBottomRight", offset: -8, fill: axisColor, fontSize: 12 }}
+                />
+                <YAxis
+                  tickFormatter={fmtAxis}
+                  tick={{ fontSize: 12, fill: axisColor }}
+                  width={72}
+                  domain={[0, Math.ceil((maxCash * 1.2) / 10_000) * 10_000]}
+                />
+                <Tooltip content={<SimpleTooltip color="#a3a3a3" />} />
+                <ReferenceLine
+                  x={stopWorkingAge}
+                  stroke="#f59e0b"
+                  strokeDasharray="4 4"
+                  label={{ value: `Retire (${stopWorkingAge})`, position: "insideTopRight", fill: "#f59e0b", fontSize: 10 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="cash"
+                  name="Cash"
+                  stroke="#a3a3a3"
+                  strokeWidth={2}
+                  fill="url(#cashGradient)"
+                  dot={false}
                 />
               </AreaChart>
             </ResponsiveContainer>

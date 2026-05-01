@@ -6,6 +6,8 @@ export type AccumulationRow = {
   salary: number;
   takeHome: number;
   tax: number;
+  srsTopUp: number;
+  srsTaxSavings: number;
   livingExpenses: number;
   baseLiving: number;
   lumpsumThisYear: number;
@@ -36,6 +38,7 @@ export type AccumulationInputs = {
   brokerageStart: number;
   investmentGrowthRate: number;
   expensesInflationRate?: number;
+  srsTopUps?: number[];
 };
 
 export function buildAccumulation(inputs: AccumulationInputs): AccumulationRow[] {
@@ -54,6 +57,7 @@ export function buildAccumulation(inputs: AccumulationInputs): AccumulationRow[]
     brokerageStart,
     investmentGrowthRate,
     expensesInflationRate = EXPENSES_INFLATION_RATE,
+    srsTopUps,
   } = inputs;
 
   const workingYears = Math.max(0, stopWorkingAge - currentAge);
@@ -66,7 +70,10 @@ export function buildAccumulation(inputs: AccumulationInputs): AccumulationRow[]
     const salary = salarySeries?.[i] ?? startingSalary * Math.pow(1 + salaryGrowthRate, i);
     const cpf = salary * CPF_EMPLOYEE_RATE;
     const takeHome = salary - cpf;
-    const tax = calculateTax(takeHome);
+    const srsTopUp = Math.min(srsTopUps?.[i] ?? 0, Math.max(0, takeHome));
+    const taxBase = Math.max(0, takeHome - srsTopUp);
+    const tax = calculateTax(taxBase);
+    const srsTaxSavings = srsTopUp > 0 ? calculateTax(takeHome) - tax : 0;
 
     const monthly = monthlyExpenseSeries?.[i] ?? monthlyExpensesToday;
     const inflationFactor = Math.pow(1 + expensesInflationRate, i);
@@ -92,7 +99,7 @@ export function buildAccumulation(inputs: AccumulationInputs): AccumulationRow[]
 
     const livingExpenses = baseLiving + lumpsumThisYear;
     const cashTarget = monthly * emergencyMonths * inflationFactor;
-    const available = takeHome - tax - livingExpenses + lumpsumInflowThisYear;
+    const available = takeHome - tax - livingExpenses + lumpsumInflowThisYear - srsTopUp;
 
     let cashTopup: number;
     if (available >= 0) {
@@ -112,6 +119,8 @@ export function buildAccumulation(inputs: AccumulationInputs): AccumulationRow[]
       salary,
       takeHome,
       tax,
+      srsTopUp,
+      srsTaxSavings,
       livingExpenses,
       baseLiving,
       lumpsumThisYear,

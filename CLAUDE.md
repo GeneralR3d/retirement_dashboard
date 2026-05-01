@@ -26,53 +26,47 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 
 `ProfileInputs` fields:
 - Age milestones: `currentAge` (25), `stopWorkingAge` (55), `cpfWithdrawalAge` (65), `cpfRetirementAge` (55), `srsWithdrawalAge` (63), `deathAge` (83)
-- Financial inputs: `startingSalary`, `salaryGrowthRate`, `investmentGrowthRate` (0.07), `investmentGrowthRateRetirement` (0.025), `livingExpensePct` (still used by `buildProjection` for the SRS-vs-no-SRS comparison; the accumulation/main pages no longer derive living expenses from this — see `monthlyExpenseSeries` below).
+- Financial inputs: `startingSalary`, `salaryGrowthRate`, `investmentGrowthRate` (0.07), `investmentGrowthRateRetirement` (0.025), `livingExpensePct` (used only by the standalone `/srs` demo page via `buildProjection`; all other pages use `monthlyExpenseSeries` instead).
 - CPF starting balances: `cpfOA`, `cpfSA`, `cpfMA`, `cpfRA`
 - CPF LIFE: `cpfLifeFrs` (200000), `cpfLifeMonthlyPayout` (1610)
 - Salary override series: `salarySeries: number[]` — per-year gross salary array, length = `stopWorkingAge - currentAge`. Empty `[]` means "use formula". The config page always keeps it in sync; when `startingSalary`, `salaryGrowthRate`, `currentAge`, or `stopWorkingAge` change, the series is regenerated.
-- `startingCash` (5000) — brokerage seed balance. **Derived** from `investments` in the config page; do not edit directly. (This is the *invested* networth seed — the zero-interest cash bucket is the separate `cash` field below.)
+- `startingCash` (5000) — brokerage seed balance. **Derived** from `investments` in the config page; do not edit directly.
 - `investmentGrowthRate` (0.07) — pre-retirement investment growth rate. **Derived** as the weighted average of `investments` in the config page; do not edit directly.
 - `monthlyExpensesToday` (4000) — base monthly expenses in today's money. Used by the retirement page directly (`* 12 * inflation^k`) and as the seed value for `monthlyExpenseSeries`.
-- `monthlyExpenseSeries: number[]` — per-year monthly spend during working years (today's money), length = `stopWorkingAge - currentAge`. Empty `[]` means "use `monthlyExpensesToday` flat". Regenerated on the config page when `currentAge`, `stopWorkingAge`, or `monthlyExpensesToday` change. Inflation is applied at consumption time (`* (1+EXPENSES_INFLATION_RATE)^i`), not stored in the series.
-- `investments: Investment[]` — breakdown of real networth by asset class. Each entry: `{ id, name, value, returnRate }`. The config page recomputes `startingCash` (sum) and `investmentGrowthRate` (value-weighted average return) whenever this changes. The "Cash" row was intentionally removed from the defaults — cash is now a separate top-level field.
-- `cash` (10000) — zero-interest cash account balance. Tracked separately from `startingCash`; sized via the emergency-fund rule below. Held flat post-`stopWorkingAge` (no retirement drawdown modeled).
-- `emergencyMonths` (6) — months of expenses to keep as cash. The accumulation engine targets `monthly * emergencyMonths * inflation^i` each year and tops up cash toward this target.
-- `lumpsumExpenses: LumpsumExpense[]`, `lumpsumInflows: LumpsumExpense[]` — one-time amounts at a specific age (`{ id, age, name, amount }`). Default seeds: BTO/Wedding/etc. for expenses; Inheritance/TOTO for inflows. Both are persisted via context, edited on `/config` *and* `/accumulation` (the accumulation page uses a local-draft + Recalculate button to commit).
-
-**`lib/srs-toggle-context.tsx`** — `SrsToggleProvider` + `useSrsToggle` hook. Holds `srsEnabled: boolean` (default `true`). Not persisted to localStorage — resets to enabled on page load. Mounted in `app/layout.tsx` inside `ProfileProvider`. The toggle switch is rendered on the `/main` and `/retirement` pages; any page can read or set it via `useSrsToggle`.
+- `monthlyExpenseSeries: number[]` — per-year monthly spend during working years (today's money), length = `stopWorkingAge - currentAge`. Empty `[]` means "use `monthlyExpensesToday` flat". Inflation is applied at consumption time (`* (1+EXPENSES_INFLATION_RATE)^i`), not stored in the series.
+- `investments: Investment[]` — breakdown of real networth by asset class. Each entry: `{ id, name, value, returnRate }`. The config page recomputes `startingCash` (sum) and `investmentGrowthRate` (value-weighted average return) whenever this changes.
+- `cash` (10000) — zero-interest cash account balance. Tracked separately from `startingCash`; sized via the emergency-fund rule. Held flat post-`stopWorkingAge`.
+- `emergencyMonths` (6) — months of expenses to keep as cash. The accumulation engine targets `monthly * emergencyMonths * inflation^i` each year.
+- `lumpsumExpenses: LumpsumExpense[]`, `lumpsumInflows: LumpsumExpense[]` — one-time amounts at a specific age (`{ id, age, name, amount }`). Edited on `/config` *and* `/accumulation` (accumulation page uses a local-draft + Recalculate button to commit).
+- `srsAnnualCap` (15300) — annual SRS contribution cap.
+- `srsAccepted: boolean[]` — per-working-year SRS accept/reject decisions. Length = `workingYears`; missing indices default to `true`. Persisted to localStorage and shared across all pages so the accumulation table, networth SRS chart, and retirement page all reflect the same choices. Empty `[]` means all years accepted.
 
 `investmentGrowthRateRetirement` represents reduced risk tolerance after stopping work. `buildProjection` uses `investmentGrowthRate` for `i < workingYears` and switches to `investmentGrowthRateRetirement` for all subsequent years.
 
 ### Pages
 
 - **`app/page.tsx`** — server-side redirect to `/main`.
-- **`app/main/page.tsx`** — Overview page with two sections. Renders the SRS toggle switch (via `useSrsToggle`), which gates SRS income in both brokerage and networth projections. **Top section:** Net Worth Breakdown — a `LineChart` with five lines (Total Net Worth, Brokerage, SRS Pot, CPF, Cash) from `currentAge` to `deathAge`, preceded by 4 KPI cards (net worth today, peak net worth, net worth at death, OA transfer). CPF line uses total balance minus OA after `cpfRetirementAge`; SRS line uses `buildProjection` rows during accumulation then linear drawdown over `SRS_WITHDRAWAL_YEARS` from `srsWithdrawalAge`; Cash line follows `buildAccumulation.cashBalance` during working years and is held flat thereafter. Y axis domain is explicitly set to peak total × 1.1 (rounded to nearest $500k) because recharts cannot auto-scale a multi-series domain. **Bottom section:** Investments Account — an `AreaChart` of the brokerage balance with KPI cards (cash today, brokerage seed, OA transfer, peak brokerage, brokerage at death). The area fill uses an SVG `linearGradient` that transitions from emerald to red at the y=0 crossing (computed as `maxBal / (maxBal - minBal)` of the chart data); a dashed red `ReferenceLine` at y=0 appears when any balance is negative. Both charts share four dotted reference lines: amber at `stopWorkingAge` (omitted when equal to `cpfRetirementAge`), violet at `cpfRetirementAge`, cyan at `srsWithdrawalAge`, orange at `cpfWithdrawalAge`. `runOutRow` and `canRetire` track whether the brokerage balance hits zero post-retirement and drive the green/red verdict banner at the top of the page. All data is computed in a single `useMemo` that calls `buildAccumulation`, `buildProjection`, `buildCpfProjection`, and `buildBrokerageProjection`. Working-year contributions to the brokerage chart come from `buildAccumulation.invested` — the page mutates `srsRows[i].brokerageWithSrs` and `srsRows[i].investedNoSrs` for `i < workingYears` to align both pre/post-SRS contribution paths with the per-age expenses + cash-topup logic before passing the rows into `buildBrokerageProjection`.
-- **`app/config/page.tsx`** — profile inputs page. Uses a **local draft pattern**: all field changes update a local `draft` state; `setInputs` (which writes to context + `localStorage`) is only called when the user clicks **Recalculate**. An "Unsaved changes" badge appears when draft differs from saved inputs. Layout:
-  - *Left column (two stacked cards):*
-    - **Personal Details** — age fields, **Cash** (with zero-interest info tooltip), **Emergency funds (months)**, starting salary (with CPF info tooltip), salary growth rate (accordion → editable salary table), **Monthly living expenses** accordion (per-age table in today's $ — flat-cascade on edit, no growth scaling).
-    - **Retirement Settings** — monthly expenses in retirement, annual equivalent info box, SRS withdrawal age, post-retirement investment growth rate slider.
-  - *Right column:* CPF starting balances (OA/SA/MA/RA), CPF LIFE fields (FRS, monthly payout), CPF age milestones (retirement age, withdrawal age).
-  - *Full-width below grid:* **Investments Account** — investments table. Each row: editable name, value input, rate-of-return slider (0–20%). Footer shows total value and value-weighted average return. Editing any investment calls `updateInvestments`, which recomputes `startingCash` and `investmentGrowthRate` in the draft.
-  - *Side-by-side below investments:* **Lumpsum Inflows** + **Lumpsum Expenses** — both rendered via the shared `LumpsumTable` component (`app/components/lumpsum-table.tsx`).
-  - Cascade rules: salary table edits at index `i` propagate as `parsed * (1+salaryGrowthRate)^(j-i)` to rows below. Monthly-expenses table edits propagate the same value flat (today's money), since inflation is applied at consumption.
-- **`app/srs/page.tsx`** — SRS demo page. **Fully standalone — does not read from `useProfile`.** All inputs (ages, salary, growth rates, `livingExpensePct`) are local `useState` values seeded with the same defaults as the profile. No `salarySeries` override; always uses the formula. Renders a "Demo parameters" controls panel (sliders + number fields), then KPI cards, a pot-growth `LineChart` (With/Without SRS), a brokerage accumulation `AreaChart`, an annual projection table with hideable columns, and an SRS withdrawal breakdown. The disclaimer banner explains the disconnection from the rest of the app, the simplified expense model, and the no-withdrawal assumption.
-- **`app/cpf/page.tsx`** — CPF projection page. Passes `endAge: deathAge` to `buildCpfProjection` so projections run from `currentAge` to `deathAge`. Renders 3 KPI cards (FRS target, CPF LIFE premium lump sum, annual CPF LIFE payout), a stacked `AreaChart` with OA/SA/MA/RA areas. OA is zeroed in the chart from `cpfRetirementAge` onwards (because OA is transferred to the investments account at that age). Two dotted `ReferenceLine`s: violet at `cpfRetirementAge` (SA→RA + OA→Brok) and orange at `cpfWithdrawalAge` (CPF LIFE purchase). The SA→RA conversion row in the table has both "SA→RA" (violet) and "OA→Brok" (sky) badges; CPF LIFE row has "CPF LIFE" (orange). Total Balance column excludes OA for all rows from `cpfRetirementAge` onwards. The "Annual projection" heading has an `InfoTooltip` linking to the CPF allocation rates PDF.
-- **`app/accumulation/page.tsx`** — Working-years accumulation page. Covers `currentAge` to `stopWorkingAge`. Calls `buildAccumulation` from `lib/cash-flow.ts` (not `buildProjection`). Renders side-by-side `LumpsumTable`s for inflows + expenses with a **local-draft + Recalculate** pattern (mirrors config) — the lumpsum tables are *synced copies* of the same `lumpsumExpenses` / `lumpsumInflows` profile fields, but edits stay in local state until the page-level Recalculate button writes them back to context. Annual table columns: age, take-home (with green inflow chip), tax (with `InfoTooltip` linking to IRAS rates), living expenses (with amber expense chip), cash on hand (actual / target — actual turns amber when below target), cash topup (red if negative = withdrawal), investments topup (red if negative = withdrawal), investments balance (red + ⚠ when `brokerageBalance ≤ 0`). Row background priority: red tint when brokerage is insolvent, otherwise emerald/amber/gradient for inflow/expense years. Inflow years tint the row emerald; expense years tint amber; both = emerald-to-amber gradient. The former `app/cashflow/page.tsx` was replaced by this page; the `SplitNavButton` still routes to `/cashflow` in its center/default state (that route is currently unbuilt).
-- **`app/retirement/page.tsx`** — Retirement spending page. Also renders the SRS toggle switch. `buildWithdrawalRows` (local to the page) produces rows from `stopWorkingAge` to `deathAge` with `annualExpenses`, `cpfLifeIncome`, `srsIncome`, and `shortfall`. Expenses use `monthlyExpensesToday * 12` from context (not the `MONTHLY_EXPENSES_TODAY` constant). Also runs `buildAccumulation` and overrides `fullSrsRows[i].brokerageWithSrs` (same as `/main`) so brokerage balances at retirement match the networth chart. Then calls `buildBrokerageProjection` to populate brokerage income and brokerage balance columns. **Balance convention:** the "Investments balance" column at row age `a` shows `brokerageRows[k-1].balance` (balance entering that year = networth chart at age `a`), while flows (`brokerageIncome`, `srsReinvestment`) come from `brokerageRows[k]` (what happens during that year). When `srsEnabled` is false, `srsIncome` is zeroed and the brokerage projection accounts for the increased shortfall. Brokerage income column: sky-blue for withdrawals, violet "+" for surplus reinvestments, "—" otherwise. Shortfall column: green surplus, red uncovered gap.
+- **`app/main/page.tsx`** — Overview page. **Four chart sections:** (1) Net Worth Breakdown — `LineChart` with five lines (Total, Investments, SRS Pot, CPF, Cash) from `currentAge` to `deathAge`, preceded by 4 KPI cards. (2) SRS Account — `AreaChart` of SRS pot with KPI cards (pot at withdrawal age, yearly withdrawal, tax/yr, yearly after tax). (3) Cash Reserve — `AreaChart` of cash balance with 2 KPI cards. (4) Investment Account — `AreaChart` of brokerage balance. All data is computed in a single `useMemo`: `buildAccumulation` (with `srsTopUps` derived from `srsAccepted`) → SRS pot accumulated manually from `accRows[i].srsTopUp` → `buildCpfProjection` → `buildBrokerageProjection` (with `contributions = accRows.map(r => r.invested)`). The SRS pot by age is computed by iterating `(pot + srsTopUp) * (1 + growthRate)` over working years, then growing at `investmentGrowthRateRetirement` until `srsWithdrawalAge`, then drawing down linearly. Y axis domain for the networth chart is explicitly set to peak total × 1.1 (rounded to nearest $500k) because recharts cannot auto-scale a multi-series domain. `runOutRow` and `canRetire` drive the green/red verdict banner.
+- **`app/config/page.tsx`** — profile inputs page. Uses a **local draft pattern**: all field changes update a local `draft` state; `setInputs` (which writes to context + `localStorage`) is only called when the user clicks **Recalculate**. An "Unsaved changes" badge appears when draft differs from saved inputs. Layout: left column (Personal Details + Retirement Settings), right column (CPF balances + milestones), full-width investments table, side-by-side lumpsum tables. Cascade rules: salary table edits at index `i` propagate as `parsed * (1+salaryGrowthRate)^(j-i)` to rows below. Monthly-expenses table edits propagate flat (today's money), since inflation is applied at consumption.
+- **`app/srs/page.tsx`** — SRS demo page. **Fully standalone — does not read from `useProfile`.** All inputs are local `useState` values. Always uses `buildProjection` with `livingExpensePct`-based expenses. Renders demo parameter controls, KPI cards, a pot-growth `LineChart`, a brokerage `AreaChart`, an annual projection table with hideable columns, and an SRS withdrawal breakdown. The disclaimer banner explains the disconnection from the rest of the app.
+- **`app/cpf/page.tsx`** — CPF projection page. Passes `endAge: deathAge` to `buildCpfProjection`. Renders 3 KPI cards, a stacked `AreaChart` with OA/SA/MA/RA areas. OA is zeroed in the chart from `cpfRetirementAge` onwards. Two dotted `ReferenceLine`s at `cpfRetirementAge` (violet) and `cpfWithdrawalAge` (orange). Column visibility pattern (same as `/srs`): `hiddenCols: Set<ColId>` + `showHidden` toggle; default hidden = all four balance columns.
+- **`app/accumulation/page.tsx`** — Working-years accumulation page (`currentAge` to `stopWorkingAge`). Calls `buildAccumulation` from `lib/cash-flow.ts`. Lumpsum tables use **local-draft + Recalculate** pattern (mirrors config). Annual table columns: age (with "⚠ Debt Alert!" when brokerage insolvent), take-home (with inflow chip), **SRS top-up** (per-row ✓/✗ toggle), tax, living expenses, cash on hand (actual / target), cash topup, investments topup. **SRS top-up column:** `recommendations` memo computes `recommendedSrsTopUp(takeHome, SRS_ANNUAL_CAP)` from salary alone. `srsTopUps` memo maps accepted rows to their `topUp` (or 0 if declined). Toggling a row calls `setInputs({ ...inputs, srsAccepted: updatedArray })` immediately — no Recalculate needed. This instantly cascades to the table and updates the networth/retirement pages when the user navigates to them.
+- **`app/retirement/page.tsx`** — Retirement spending page. **SRS Withdrawal summary section** (5 `StatCard`s): SRS pot at `srsWithdrawalAge`, yearly gross withdrawal ×10, tax per year (50% of withdrawal is taxable), total from SRS after tax, yearly withdrawal after tax. Calls `calculateSrsWithdrawal` for these values. Then the annual expenses table (`stopWorkingAge` to `deathAge`) with columns: age, years from now, monthly/annual expenses, CPF LIFE income, SRS income, withdrawal from investments, investments balance, shortfall. `buildWithdrawalRows` (local) produces `srsIncome` from `srsAnnualIncome`. `buildBrokerageProjection` populates brokerage income and balance. **Balance convention:** the "Investments balance" column at age `a` shows `brokerageRows[k-1].balance` (balance entering that year), while flows come from `brokerageRows[k]` (what happens during that year). Shortfall column: green surplus (+), red uncovered gap (−).
 
 ### Shared library
 
 - **`lib/tax.ts`** — all money math. Pages are pure views — no financial logic in components. Key exports:
   - `calculateTax(income)` — IRAS resident tax brackets
-  - `buildProjection(inputs)` — SRS/brokerage projection engine (see SRS modeling convention below)
-  - `buildCpfProjection(inputs)` — CPF account projection engine (see CPF modeling convention below). Optional `endAge` overrides `cpfWithdrawalAge` as the projection endpoint.
-  - `buildBrokerageProjection(inputs)` — real networth account projection engine. Returns `BrokerageRow[]` where each row has `age`, `balance`, `brokerageIncome`, `srsReinvestment`.
-  - `calculateSrsWithdrawal(srsPot, years?)` — post-accumulation SRS drawdown
-  - `allocateCpfContribution(age, contribution)` — splits a CPF contribution into `{ oa, sa, ma }` using the CPF Board allocation-ratio table. Currently covers ages ≤55; a `TODO` marks where above-55 bands should be added.
-  - Expense constants: `MONTHLY_EXPENSES_TODAY` (4000), `ANNUAL_EXPENSES_TODAY` (48000), `EXPENSES_INFLATION_RATE` (0.02) — `EXPENSES_INFLATION_RATE` is still imported by pages; the dollar constants are superseded by `monthlyExpensesToday` from context.
+  - `buildProjection(inputs)` — SRS/brokerage projection engine. Used only by the standalone `/srs` demo page. The main/retirement/accumulation pages do not use this — they derive the SRS pot directly from `buildAccumulation` rows.
+  - `buildCpfProjection(inputs)` — CPF account projection engine. Optional `endAge` overrides `cpfWithdrawalAge` as the projection endpoint.
+  - `buildBrokerageProjection(inputs)` — investments account projection engine. Takes `contributions: number[]` (one entry per working year, SRS already deducted) instead of `srsRows`. Returns `BrokerageRow[]` where each row has `age`, `balance`, `brokerageIncome`, `srsReinvestment`. SRS is always active (no `srsEnabled` flag); drawdown phase covers `stopWorkingAge` to `srsWithdrawalAge`, reinvestment phase covers `srsWithdrawalAge` onward.
+  - `recommendedSrsTopUp(income, maxTopUp)` — returns `{ topUp, taxSavings }`: the minimum top-up that drops `income` into the next-lower tax bracket, capped at `maxTopUp`. Returns `{ topUp: 0, taxSavings: 0 }` when already in the 0% bracket or the required amount exceeds `maxTopUp`.
+  - `calculateSrsWithdrawal(srsPot, years?)` — returns `{ srsPot, yearlyWithdrawal, taxablePerYear, taxPerYear, totalTax, netFromSrs }`. Only 50% of each withdrawal (`SRS_TAXABLE_FRACTION`) is taxable.
+  - `allocateCpfContribution(age, contribution)` — splits CPF contribution into `{ oa, sa, ma }`. Currently covers ages ≤55; a `TODO` marks where above-55 bands should be added.
+  - Expense constants: `EXPENSES_INFLATION_RATE` (0.02), `MONTHLY_EXPENSES_TODAY` / `ANNUAL_EXPENSES_TODAY` — dollar constants superseded by `monthlyExpensesToday` from context, but `EXPENSES_INFLATION_RATE` is still imported by pages.
   - SRS constants: `SRS_ANNUAL_CAP` (15300), `CPF_EMPLOYEE_RATE` (0.2), `SRS_WITHDRAWAL_YEARS` (10), `SRS_TAXABLE_FRACTION` (0.5)
   - CPF constants: `CPF_OA_RATE` (0.025), `CPF_SA_RATE` (0.04), `CPF_MA_RATE` (0.04), `CPF_RA_RATE` (0.04), `CPF_TOTAL_CONTRIBUTION_RATE` (0.37), `CPF_FRS_INFLATION_RATE` (0.02)
-- **`lib/cash-flow.ts`** — `buildAccumulation(inputs)` returns one `AccumulationRow` per working year (`age = currentAge + i`). Used by `/accumulation` and `/main`. See "Cash + accumulation modeling convention" below.
+- **`lib/cash-flow.ts`** — `buildAccumulation(inputs)` returns one `AccumulationRow` per working year (`age = currentAge + i`). The optional `srsTopUps: number[]` parameter drives per-year SRS deductions; when omitted, no SRS top-up is applied. Used by `/accumulation`, `/main`, and `/retirement`. See "Cash + accumulation modeling convention" below.
 - **`lib/format.ts`** — `fmt` and `fmtMoney` helpers (en-SG locale).
 - **`taxAmount.js`** — original CLI prototype, not imported. Keep `lib/tax.ts` as the source of truth.
 
@@ -82,119 +76,100 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 
 **`InfoTooltip`** — hover tooltip that renders via `createPortal` into `document.body`. Use this (not CSS `position: absolute`) whenever a tooltip is inside an `overflow-x-auto` container, because `overflow` clips absolutely-positioned descendants regardless of `z-index`. On `mouseEnter` it reads the icon's `getBoundingClientRect()` and positions the portal with `position: absolute` in page coordinates. A 100 ms hide delay lets the mouse travel from icon to tooltip without it disappearing, making links inside the tooltip clickable.
 
-**`app/components/lumpsum-table.tsx`** — `LumpsumTable` editor for `LumpsumExpense[]` (used for both inflows and expenses). Props: `title`, `description`, `rows`, `onChange`, `totalAccent: "red" | "emerald"`, `idPrefix`. The component is purely controlled — it owns no state. Used in `/config` (bound to draft state) and `/accumulation` (bound to local draft, committed on Recalculate).
+**`app/components/lumpsum-table.tsx`** — `LumpsumTable` editor for `LumpsumExpense[]` (used for both inflows and expenses). Props: `title`, `description`, `rows`, `onChange`, `totalAccent: "red" | "emerald"`, `idPrefix`. Purely controlled — owns no state. Used in `/config` (bound to draft state) and `/accumulation` (bound to local draft, committed on Recalculate).
 
-**`app/components/navbar.tsx`** — sticky nav. Links are split into `NAV_LINKS_BEFORE` (Config, Networth) and `NAV_LINKS_AFTER` (CPF, SRS Demo), with `SplitNavButton` inserted between them. Also owns `useTheme`, which toggles a `dark` class on `<html>` and persists to `localStorage`. Active link is derived from `usePathname`.
+**`app/components/navbar.tsx`** — sticky nav. Links split into `NAV_LINKS_BEFORE` (Config, Networth) and `NAV_LINKS_AFTER` (CPF, SRS Demo), with `SplitNavButton` between them. Also owns `useTheme`, which toggles a `dark` class on `<html>` and persists to `localStorage`.
 
-**`components/ui/button.tsx`** — `SplitNavButton`. A three-state nav button that tracks mouse X position relative to its centre. Default label "Cashflow" (routes to `/cashflow`); hover-left shows "Accumulation" (routes to `/accumulation`); hover-right shows "Retirement" (routes to `/retirement`). A `bg-foreground/10` half-width shade slides in from the active side. The button highlights as active when `pathname` is `/accumulation` or `/retirement`. Uses `cn()` from `lib/utils.ts`.
-
-**`lib/utils.ts`** — `cn(...classes)` helper (clsx + tailwind-merge). Required by `components/ui/button.tsx`; import here rather than re-implementing.
+**`components/ui/button.tsx`** — `SplitNavButton`. Three-state nav button tracking mouse X position relative to its centre. Default "Cashflow" (routes to `/cashflow`, currently unbuilt); hover-left "Accumulation" (`/accumulation`); hover-right "Retirement" (`/retirement`). Uses `cn()` from `lib/utils.ts`.
 
 ### Theme
 
 `app/layout.tsx` sets `className="dark"` on `<html>` for SSR first-paint; `suppressHydrationWarning` is required because `useTheme` may flip it on mount. `app/globals.css` uses Tailwind v4's `@custom-variant dark (&:where(.dark, .dark *))` so `dark:` follows the class toggle, not `prefers-color-scheme`. Chart axis/grid/tooltip colours are CSS custom properties (`--axis-color`, `--grid-color`, `--tooltip-bg`) defined per theme in `globals.css` and referenced by string in the recharts config.
 
-### SRS modeling convention
+### SRS modeling convention (main/retirement/accumulation)
 
-All cash flows are derived from `takeHome = salary * (1 - CPF_EMPLOYEE_RATE)`. For a given year index `i`:
+These pages do **not** use `buildProjection`. The SRS pot is computed directly from `buildAccumulation` rows:
 
-- If `i < workingYears`: `salary = salarySeries[i]` when the series is available, otherwise `startingSalary * (1 + salaryGrowthRate)^i`; beyond working years `salary = 0`
-- `cpfContribution = salary * 0.20`
-- `takeHome        = salary - cpfContribution`
-- `livingExpenses  = takeHome * livingExpensePct`
+1. Call `buildAccumulation` with `srsTopUps[i] = srsAccepted[i] ? recommendedSrsTopUp(takeHome, srsAnnualCap).topUp : 0` for each working year `i`.
+2. Accumulate SRS pot: `srsPot = (srsPot + accRows[i].srsTopUp) * (1 + investmentGrowthRate)` for each working year.
+3. After `stopWorkingAge`, grow at `investmentGrowthRateRetirement` until `srsWithdrawalAge` (no new contributions).
+4. `srsAnnualIncome = calculateSrsWithdrawal(srsPotAtWithdrawalAge).netFromSrs / SRS_WITHDRAWAL_YEARS`.
+5. Pass `contributions = accRows.map(r => r.invested)` to `buildBrokerageProjection`. Since `buildAccumulation` already deducts the SRS top-up from `invested`, no further subtraction is needed.
+
+**Age labeling:** `accRows[i].age = currentAge + i`. The SRS pot balance at the end of year `i` is plotted at `currentAge + i + 1` in the net worth chart (end-of-year convention), but the annual contribution shown in the SRS chart tooltip is tagged at `currentAge + i` (same age as the accumulation table row) to keep labels consistent.
+
+### SRS modeling convention (SRS demo page only)
+
+`buildProjection` is used exclusively by `/srs`. For a given year index `i`:
+- `salary = salarySeries[i]` when available, otherwise `startingSalary * (1 + salaryGrowthRate)^i`
+- `takeHome = salary * (1 - CPF_EMPLOYEE_RATE)`
+- `livingExpenses = takeHome * livingExpensePct`
 - `srsContribution = min(SRS_ANNUAL_CAP, takeHome)`
-- `taxNoSrs        = calculateTax(takeHome)`
-- `taxWithSrs      = calculateTax(takeHome - srsContribution)`
+- `taxNoSrs = calculateTax(takeHome)`; `taxWithSrs = calculateTax(takeHome - srsContribution)`
 - Without SRS: `investedNoSrs = takeHome - taxNoSrs - livingExpenses`
-- With SRS: `brokerageWithSrs = takeHome - srsContribution - taxWithSrs - livingExpenses`; `investedWithSrs = srsContribution + brokerageWithSrs`
-- Growth rate: `growthRate = i < workingYears ? investmentGrowthRate : investmentGrowthRateRetirement`
-- Each pot grows as `pot = (pot + invested) * (1 + growthRate)` per year (contribution at start of year).
-- Post-retirement years (`i >= workingYears`): salary = 0, contributions = 0, pots grow at `investmentGrowthRateRetirement` only — no withdrawals are modeled within `buildProjection`.
-
-`ProjectionInputs.workingYears` defaults to `years` if omitted. `ProjectionInputs.srsCap` defaults to `SRS_ANNUAL_CAP`. `ProjectionInputs.investmentGrowthRateRetirement` defaults to `investmentGrowthRate` if omitted (backward-compatible). `ProjectionInputs.salarySeries` is optional; if provided and `length === workingYears`, it overrides the formula. `calculateSrsWithdrawal` accepts an optional `years` override (defaults to `SRS_WITHDRAWAL_YEARS` = 10).
-
-### SRS page KPI reference ages
-
-All SRS page snapshot values are taken at the local `srsWithdrawalAge` (the final row of the local `buildProjection` call — fully independent of profile context):
-- `final = rows[rows.length - 1]` → age `srsWithdrawalAge`
-- "SRS pot at age N" = `final.srsPot`
-- "Brokerage pot (with SRS scenario)" = `final.brokeragePotWithSrs`
-- "Final take-home pot" = `final.brokeragePotWithSrs + withdrawal.netFromSrs`
-- "SRS advantage (post-withdrawal)" = `takeHomeWithSrs - final.potNoSrs`
-
-The brokerage pot grows at the local `investmentGrowthRateRetirement` during the gap between `stopWorkingAge` and `srsWithdrawalAge` with no withdrawals — a simplifying assumption flagged by the disclaimer banner.
+- With SRS: `brokerageWithSrs = takeHome - srsContribution - taxWithSrs - livingExpenses`
+- Each pot grows as `pot = (pot + invested) * (1 + growthRate)` per year.
 
 ### CPF modeling convention
 
-`buildCpfProjection` uses `CPF_TOTAL_CONTRIBUTION_RATE` (37% of gross salary, covering both employee and employer shares). For year index `i` (age = `currentAge + i`):
-
-- If `i < workingYears`: salary from formula; otherwise `salary = 0`
+`buildCpfProjection` uses `CPF_TOTAL_CONTRIBUTION_RATE` (37% of gross salary, employee + employer). For year index `i`:
 - `totalContribution = salary * 0.37`
-- `allocateCpfContribution(currentAge + i, totalContribution)` produces `{ oa, sa, ma }` (ages ≤55 only; above-55 TODO)
-- After the SA→RA conversion, any would-be SA contributions are redirected to OA
+- `allocateCpfContribution(currentAge + i, totalContribution)` produces `{ oa, sa, ma }`
 - Each account grows as `balance = (balance + contribution) * (1 + rate)` per year
-- OA: 2.5%, SA: 4%, MA: 4%, RA: 4%
 
-**SA→RA conversion** at `cpfRetirementAge` (default 55), applied at end of the year whose `age === cpfRetirementAge`:
+**SA→RA conversion** at `cpfRetirementAge` (default 55):
 - `raTarget = cpfLifeFrs * (1 + CPF_FRS_INFLATION_RATE)^(cpfRetirementAge - currentAge)`
-- If `saBalance >= raTarget`: excess `(saBalance - raTarget)` goes to OA; RA receives `raTarget`; SA = 0
-- If `saBalance < raTarget`: deficit drawn from OA; RA receives `raTarget`; SA = 0
-- `CpfYearRow.raConversionHappened` is `true` on that row; SA contributions are redirected to OA for all subsequent years
-- After the conversion, the full OA balance is transferred to the investments account (see below)
+- SA balance fills RA to `raTarget`; surplus/deficit flows through OA. SA = 0 thereafter.
+- `CpfYearRow.raConversionHappened = true` on that row; SA contributions redirect to OA after this.
+- The full OA balance transfers to the investments account at the same event.
 
-**CPF LIFE annuity purchase** at `cpfWithdrawalAge` (default 65), applied at end of the year whose `age === cpfWithdrawalAge`:
-- The full RA balance is recorded as `CpfYearRow.cpfLifePremium` (the lump-sum premium paid)
-- RA balance is set to 0; `CpfYearRow.cpfLifeHappened` is `true` on that row
-- The annual payout is `cpfLifeMonthlyPayout * 12 * (1 + CPF_FRS_INFLATION_RATE)^(cpfWithdrawalAge - currentAge)` — computed in the page, not in `buildCpfProjection`; the payout is fixed from that age onward (no further inflation)
+**CPF LIFE annuity purchase** at `cpfWithdrawalAge` (default 65):
+- Full RA balance recorded as `CpfYearRow.cpfLifePremium`; RA set to 0.
+- Annual payout = `cpfLifeMonthlyPayout * 12 * (1 + CPF_FRS_INFLATION_RATE)^(cpfWithdrawalAge - currentAge)` — computed in the page, fixed thereafter.
 
 ### Investments account modeling convention
 
-`buildBrokerageProjection` models a single investments account (UI label: "Investments Account") from `currentAge` to `deathAge`. The result is `BrokerageRow[]` with an initial row at `age = currentAge` (balance = `startingCash`, no flows) followed by one end-of-year row per year. **Row indexing:** `result[0]` is the initial state; `result[k]` covers the year with `startAge = currentAge + k - 1`, `endAge = currentAge + k`. The balance in `result[k]` is the end-of-year balance at age `currentAge + k` — the same value the networth chart plots at that age. In the retirement table, for a row at age `a`: **balance** = `result[a - currentAge].balance` (start-of-year = chart at age `a`); **flows** = `result[a - currentAge + 1].brokerageIncome / srsReinvestment` (what happens during that year). The page builds a `startAge → result[k]` map and uses `brokerageRows[k-1].balance` for the displayed balance.
+`buildBrokerageProjection` models the investments account from `currentAge` to `deathAge`. Result is `BrokerageRow[]`: `result[0]` is the initial state at `currentAge`; `result[k]` is the end-of-year state at `currentAge + k`. The balance in `result[k]` is what the networth chart plots at age `currentAge + k`.
 
-Each year goes through four additive flows before growth:
+Each year goes through four flows before growth:
+1. **Contribution** (`i < workingYears`): `contributions[i]` — brokerage surplus with SRS already deducted.
+2. **OA injection** (`endAge === cpfRetirementAge`): the OA balance from `buildCpfProjection`. One-time.
+3. **Drawdown** (`stopWorkingAge ≤ startAge < srsWithdrawalAge`): `min(max(0, expenses − cpfLife), balance)`.
+4. **Reinvestment** (`startAge >= srsWithdrawalAge`): `max(0, cpfLife + srsAnnualIncome − expenses)`.
 
-1. **Contribution** (`i < workingYears`): `srsRows[i].brokerageWithSrs` (or `investedNoSrs` when `srsEnabled=false`). On `/main` and `/retirement`, these working-year fields are **overridden in place** with `buildAccumulation(...).invested[i]` so the brokerage projection reflects per-age expenses + cash-topup logic (including lumpsum spikes). On `/cpf` they remain the original `livingExpensePct`-based values. `/srs` no longer calls `buildBrokerageProjection` at all. Zero after `stopWorkingAge`.
-2. **OA injection** (`endAge === cpfRetirementAge`): the OA balance from `buildCpfProjection` at the `raConversionHappened` row. One-time event.
-3. **Drawdown** (`stopWorkingAge ≤ startAge < srsWithdrawalAge`): withdraws `min(shortfall, balance)` where `shortfall = max(0, expenses − cpfLife)`. CPF LIFE income offsets the shortfall if `startAge >= cpfWithdrawalAge`.
-4. **Reinvestment** (`startAge >= srsWithdrawalAge`): `max(0, cpfLife + srsAnnualIncome − expenses)` — any surplus from SRS and CPF LIFE over inflation-adjusted expenses is reinvested.
-
-Growth rate is `investmentGrowthRate` during working years, `investmentGrowthRateRetirement` after. The balance update each year:
 ```
 balance = (balance + contribution + oaInjection − brokerageIncome + srsReinvestment) * (1 + growthRate)
 ```
 
-Expense inflation: `annualExpensesToday * (1 + EXPENSES_INFLATION_RATE)^i` where `i = startAge - currentAge` and `annualExpensesToday = monthlyExpensesToday * 12` from `ProfileInputs`.
+Growth rate: `investmentGrowthRate` during working years, `investmentGrowthRateRetirement` after. Expense inflation: `annualExpensesToday * (1 + EXPENSES_INFLATION_RATE)^i`.
 
-`srsAnnualIncome` = `calculateSrsWithdrawal(srsPot).netFromSrs / SRS_WITHDRAWAL_YEARS` — treated as perpetual from `srsWithdrawalAge` (same simplification used in the retirement page).
+In the retirement page table, for a row at age `a`: **balance** = `brokerageRows[a - currentAge].balance` (start-of-year); **flows** = `brokerageRows[a - currentAge + 1]` (what happens during that year).
 
 ### Cash + accumulation modeling convention
 
-`buildAccumulation` (in `lib/cash-flow.ts`) produces one row per working year. Replaces the old `livingExpensePct`-derived flow on the accumulation/main pages. For year index `i`, `age = currentAge + i`:
+`buildAccumulation` produces one `AccumulationRow` per working year. For year index `i`, `age = currentAge + i`:
 
-- `salary = salarySeries[i] ?? startingSalary*(1+salaryGrowthRate)^i`; `takeHome = salary * (1 - CPF_EMPLOYEE_RATE)`; `tax = calculateTax(takeHome)`
-- `monthly = monthlyExpenseSeries[i] ?? monthlyExpensesToday`
-- `inflationFactor = (1 + EXPENSES_INFLATION_RATE)^i`
-- `baseLiving = monthly * 12 * inflationFactor`
-- `lumpsumThisYear = sum(lumpsumExpenses where age matches)`; `livingExpenses = baseLiving + lumpsumThisYear`
-- `lumpsumInflowThisYear = sum(lumpsumInflows where age matches)`
+- `salary = salarySeries[i] ?? startingSalary*(1+salaryGrowthRate)^i`; `takeHome = salary * (1 - CPF_EMPLOYEE_RATE)`
+- `srsTopUp = min(srsTopUps[i] ?? 0, takeHome)`
+- `tax = calculateTax(takeHome - srsTopUp)`
+- `baseLiving = (monthlyExpenseSeries[i] ?? monthlyExpensesToday) * 12 * (1 + EXPENSES_INFLATION_RATE)^i`
+- `livingExpenses = baseLiving + lumpsumThisYear`
 - `cashTarget = monthly * emergencyMonths * inflationFactor`
-- `available = takeHome - tax - livingExpenses + lumpsumInflowThisYear` (can be negative)
+- `available = takeHome - tax - livingExpenses + lumpsumInflowThisYear - srsTopUp`
 
-**Allocation** (resolved policy):
-- If `available >= 0`: `cashTopup = clamp(cashTarget - cashBalance, 0, available)` — top up cash toward the inflated target, capped at surplus, never withdraws on a surplus year. Remainder → `invested`.
-- If `available < 0`: cash absorbs the deficit first — `cashTopup = -min(-available, cashBalance)` (capped at current cash). Remainder of the deficit goes to `invested` (so it can be ≤0, representing a brokerage withdrawal).
+**Allocation:**
+- `available >= 0`: `cashTopup = clamp(cashTarget - cashBalance, 0, available)`; remainder → `invested`.
+- `available < 0`: `cashTopup = -min(-available, cashBalance)` (cash absorbs deficit first); remainder → `invested` (can be ≤ 0, representing a brokerage withdrawal).
 
-Cash earns no interest (`cashBalance += cashTopup`). Brokerage grows: `brokerageBalance = (brokerageBalance + invested) * (1 + investmentGrowthRate)`.
-
-Out of scope today: cash drawdown after `stopWorkingAge` (held flat by `/main`); per-age expenses on the retirement page (still uses `monthlyExpensesToday * 12 * inflation^k`); per-age expenses in `buildProjection` (SRS comparison still uses `livingExpensePct` to keep the SRS-vs-no-SRS math comparable).
+Cash earns no interest. Brokerage: `brokerageBalance = (brokerageBalance + invested) * (1 + investmentGrowthRate)`.
 
 ### Projection table — column visibility pattern
 
-Both `/srs` and `/cpf` use the same pattern: `hiddenCols: Set<ColId>` state plus a `showHidden` boolean toggle. Clicking any column header opens a per-column dropdown (`openMenu: ColId | null`, closed by a document `mousedown` listener) with "Hide column" / "Remove from hidden". A button beside the section title toggles `showHidden`. Hidden columns render at 50% opacity when `showHidden` is true. Default hidden sets: SRS hides the two tax columns; CPF hides all four balance columns (OA/SA/MA/RA).
+Both `/srs` and `/cpf` use: `hiddenCols: Set<ColId>` state + `showHidden` boolean toggle. Clicking a column header opens a per-column dropdown (`openMenu: ColId | null`, closed by a document `mousedown` listener) with "Hide column" / "Remove from hidden". Hidden columns render at 50% opacity when `showHidden` is true.
 
 ### Adding a new scheme page
 
-Create `app/<name>/page.tsx`, read inputs via `useProfile`, and add the route to either `NAV_LINKS_BEFORE` or `NAV_LINKS_AFTER` in `app/components/navbar.tsx` (or wire it into `SplitNavButton` if it belongs in the accumulation/cashflow/retirement cluster). Put all financial logic in `lib/` rather than in the component. Derive any duration from the age milestone fields rather than storing a raw year count.
+Create `app/<name>/page.tsx`, read inputs via `useProfile`, and add the route to either `NAV_LINKS_BEFORE` or `NAV_LINKS_AFTER` in `app/components/navbar.tsx` (or wire it into `SplitNavButton` for the accumulation/cashflow/retirement cluster). Put all financial logic in `lib/` rather than in the component. Derive any duration from the age milestone fields rather than storing a raw year count.
 
 ## Next.js 16 note
 

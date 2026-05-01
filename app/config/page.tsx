@@ -283,7 +283,7 @@ export default function ConfigPage() {
             {/* Cash account */}
             <label className="block">
               <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-sm text-foreground/80">Cash</span>
+                <span className="text-sm text-foreground/80">Current Cash</span>
                 <div className="relative group">
                   <div className="w-4 h-4 rounded-full border border-foreground/40 text-foreground/50 flex items-center justify-center text-[10px] font-semibold cursor-default select-none">
                     i

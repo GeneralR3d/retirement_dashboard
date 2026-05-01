@@ -2,17 +2,18 @@
 
 import { useMemo } from "react";
 import { useProfile } from "@/lib/profile-context";
-import { useSrsToggle } from "@/lib/srs-toggle-context";
 import { fmtMoney } from "@/lib/format";
 import { StatCard, Td, Th } from "@/app/components/ui";
 import {
   buildBrokerageProjection,
   buildCpfProjection,
-  buildProjection,
   calculateSrsWithdrawal,
   CPF_FRS_INFLATION_RATE,
+  CPF_EMPLOYEE_RATE,
   SRS_WITHDRAWAL_YEARS,
   EXPENSES_INFLATION_RATE,
+  recommendedSrsTopUp,
+  SRS_ANNUAL_CAP,
 } from "@/lib/tax";
 import { buildAccumulation } from "@/lib/cash-flow";
 
@@ -23,7 +24,7 @@ type WithdrawalRow = {
   monthlyExpenses: number;
   cpfLifeIncome: number;
   srsIncome: number;
-  shortfall: number; // expenses - cpfLife - srsIncome (before brokerage)
+  shortfall: number;
 };
 
 function buildWithdrawalRows(
@@ -56,32 +57,8 @@ function buildWithdrawalRows(
   return rows;
 }
 
-function SrsToggleSwitch() {
-  const { srsEnabled, setSrsEnabled } = useSrsToggle();
-  return (
-    <label className="flex items-center gap-2 cursor-pointer select-none">
-      <span className="text-xs text-foreground/60">SRS</span>
-      <button
-        role="switch"
-        aria-checked={srsEnabled}
-        onClick={() => setSrsEnabled(!srsEnabled)}
-        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-          srsEnabled ? "bg-emerald-500" : "bg-foreground/20"
-        }`}
-      >
-        <span
-          className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-            srsEnabled ? "translate-x-4" : "translate-x-0.5"
-          }`}
-        />
-      </button>
-    </label>
-  );
-}
-
 export default function RetirementPage() {
   const { inputs } = useProfile();
-  const { srsEnabled } = useSrsToggle();
   const {
     currentAge,
     stopWorkingAge,
@@ -94,7 +71,6 @@ export default function RetirementPage() {
     salaryGrowthRate,
     investmentGrowthRate,
     investmentGrowthRateRetirement,
-    livingExpensePct,
     salarySeries,
     startingCash,
     cpfOA,
@@ -109,32 +85,56 @@ export default function RetirementPage() {
     lumpsumInflows,
     cash,
     srsAnnualCap,
+    srsAccepted,
   } = inputs;
 
   const annualExpensesToday = monthlyExpensesToday * 12;
 
   const workingYears = Math.max(0, stopWorkingAge - currentAge);
-  const srsYears = Math.max(0, srsWithdrawalAge - currentAge);
-  const srsWorkingYears = Math.min(srsYears, workingYears);
   const seriesOverride = salarySeries.length === workingYears ? salarySeries : undefined;
 
   const cpfLifeAnnualPayout =
     cpfLifeMonthlyPayout * 12 * Math.pow(1 + CPF_FRS_INFLATION_RATE, cpfWithdrawalAge - currentAge);
 
-  const { srsAnnualIncome, brokerageByAge } = useMemo(() => {
-    const srsRows = buildProjection({
+  const { srsAnnualIncome, srsPotAtWithdrawal, srsWithdrawalInfo, brokerageByAge } = useMemo(() => {
+    // Compute recommended SRS top-ups per year, honouring per-year accept/reject from context.
+    const srsTopUps = Array.from({ length: workingYears }, (_, i) => {
+      const accepted = i < srsAccepted.length ? srsAccepted[i] : true;
+      if (!accepted) return 0;
+      const salary = seriesOverride?.[i] ?? startingSalary * Math.pow(1 + salaryGrowthRate, i);
+      const takeHome = salary * (1 - CPF_EMPLOYEE_RATE);
+      return recommendedSrsTopUp(takeHome, srsAnnualCap ?? SRS_ANNUAL_CAP).topUp;
+    });
+
+    const accRows = buildAccumulation({
+      currentAge,
+      stopWorkingAge,
       startingSalary,
       salaryGrowthRate,
-      investmentGrowthRate,
-      investmentGrowthRateRetirement,
-      livingExpensePct,
-      years: srsYears,
-      workingYears: srsWorkingYears,
       salarySeries: seriesOverride,
-      srsCap: srsAnnualCap,
+      monthlyExpensesToday,
+      monthlyExpenseSeries: monthlyExpenseSeries.length === workingYears ? monthlyExpenseSeries : undefined,
+      emergencyMonths,
+      lumpsumExpenses,
+      lumpsumInflows,
+      cashStart: cash,
+      brokerageStart: startingCash,
+      investmentGrowthRate,
+      srsTopUps,
     });
-    const srsFinal = srsRows[srsRows.length - 1];
-    const w = calculateSrsWithdrawal(srsFinal?.srsPot ?? 0);
+
+    // Compute SRS pot from acc rows
+    let srsPotRunning = 0;
+    for (let i = 0; i < workingYears; i++) {
+      srsPotRunning = (srsPotRunning + accRows[i].srsTopUp) * (1 + investmentGrowthRate);
+    }
+    const postWorkGrowYears = Math.max(0, srsWithdrawalAge - stopWorkingAge);
+    for (let j = 0; j < postWorkGrowYears; j++) {
+      srsPotRunning = srsPotRunning * (1 + investmentGrowthRateRetirement);
+    }
+
+    const finalSrsPot = srsPotRunning;
+    const w = calculateSrsWithdrawal(finalSrsPot);
     const annualSrs = w.netFromSrs / SRS_WITHDRAWAL_YEARS;
 
     const cpfRows = buildCpfProjection({
@@ -154,43 +154,7 @@ export default function RetirementPage() {
     });
     const oaAtRetirement = cpfRows.find((r) => r.raConversionHappened)?.oaBalance ?? 0;
 
-    // Re-build srsRows with full workingYears for brokerage contributions
-    const fullSrsRows = buildProjection({
-      startingSalary,
-      salaryGrowthRate,
-      investmentGrowthRate,
-      investmentGrowthRateRetirement,
-      livingExpensePct,
-      years: Math.max(workingYears, srsYears),
-      workingYears,
-      salarySeries: seriesOverride,
-      srsCap: srsAnnualCap,
-    });
-
-    // Override working-year contributions with cashflow-accurate accumulation data
-    // (same as main page) so brokerage balance at retirement matches the networth chart.
-    const accRows = buildAccumulation({
-      currentAge,
-      stopWorkingAge,
-      startingSalary,
-      salaryGrowthRate,
-      salarySeries: seriesOverride,
-      monthlyExpensesToday,
-      monthlyExpenseSeries: monthlyExpenseSeries.length === workingYears ? monthlyExpenseSeries : undefined,
-      emergencyMonths,
-      lumpsumExpenses,
-      lumpsumInflows,
-      cashStart: cash,
-      brokerageStart: startingCash,
-      investmentGrowthRate,
-    });
-    for (let i = 0; i < workingYears; i++) {
-      if (fullSrsRows[i] && accRows[i]) {
-        fullSrsRows[i].investedNoSrs = accRows[i].invested;
-        fullSrsRows[i].brokerageWithSrs = accRows[i].invested - fullSrsRows[i].srsContribution;
-      }
-    }
-
+    const contributions = accRows.map((r) => r.invested);
     const brokerageRows = buildBrokerageProjection({
       startingCash,
       currentAge,
@@ -199,21 +163,16 @@ export default function RetirementPage() {
       deathAge,
       investmentGrowthRate,
       investmentGrowthRateRetirement,
-      srsRows: fullSrsRows,
+      contributions,
       oaAtRetirement,
       stopWorkingAge,
       srsWithdrawalAge,
       cpfWithdrawalAge,
       cpfLifeAnnualPayout,
-      srsAnnualIncome: srsEnabled ? annualSrs : 0,
-      srsEnabled,
+      srsAnnualIncome: annualSrs,
       annualExpensesToday,
     });
 
-    // Map: startAge → row data.
-    // Balance uses brokerageRows[k-1] (the balance entering this year = end of previous year)
-    // so it matches the networth chart which plots balance at age = endAge of the prior year.
-    // Flows (brokerageIncome, srsReinvestment) still come from brokerageRows[k] (this year's flows).
     const map = new Map<number, { brokerageIncome: number; balance: number; srsReinvestment: number }>();
     for (let k = 1; k < brokerageRows.length; k++) {
       const startAge = brokerageRows[k].age - 1;
@@ -224,15 +183,20 @@ export default function RetirementPage() {
       });
     }
 
-    return { srsAnnualIncome: srsEnabled ? annualSrs : 0, brokerageByAge: map };
+    return {
+      srsAnnualIncome: annualSrs,
+      srsPotAtWithdrawal: finalSrsPot,
+      srsWithdrawalInfo: w,
+      brokerageByAge: map,
+    };
   }, [
     startingSalary, salaryGrowthRate, investmentGrowthRate, investmentGrowthRateRetirement,
-    livingExpensePct, srsYears, srsWorkingYears, workingYears, seriesOverride,
+    workingYears, seriesOverride,
     currentAge, stopWorkingAge, cpfWithdrawalAge, cpfRetirementAge, deathAge,
     cpfOA, cpfSA, cpfMA, cpfRA, cpfLifeFrs, startingCash, srsWithdrawalAge, cpfLifeAnnualPayout,
-    srsEnabled, annualExpensesToday,
+    annualExpensesToday,
     monthlyExpensesToday, monthlyExpenseSeries, emergencyMonths,
-    lumpsumExpenses, lumpsumInflows, cash,
+    lumpsumExpenses, lumpsumInflows, cash, srsAnnualCap, srsAccepted,
   ]);
 
   const rows = useMemo(
@@ -299,16 +263,48 @@ export default function RetirementPage() {
         />
       </section>
 
+      {/* SRS Withdrawal Summary */}
+      <section className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] p-5 mb-8">
+        <h2 className="font-semibold mb-1">SRS Withdrawal</h2>
+        <p className="text-foreground/60 text-xs mb-4">
+          Drawn down over 10 years from age {srsWithdrawalAge}. Only 50% of each withdrawal is taxable.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+          <StatCard
+            label={`SRS pot at age ${srsWithdrawalAge}`}
+            value={fmtMoney(srsPotAtWithdrawal)}
+            accent="emerald"
+          />
+          <StatCard
+            label="Yearly withdrawal"
+            value={fmtMoney(srsWithdrawalInfo.yearlyWithdrawal)}
+            sub="× 10 years"
+          />
+          <StatCard
+            label="Tax per year"
+            value={fmtMoney(srsWithdrawalInfo.taxPerYear)}
+            sub={`taxable: ${fmtMoney(srsWithdrawalInfo.taxablePerYear)}/yr`}
+          />
+          <StatCard
+            label="Total from SRS after tax"
+            value={fmtMoney(srsWithdrawalInfo.netFromSrs)}
+            sub={`total tax: ${fmtMoney(srsWithdrawalInfo.totalTax)}`}
+          />
+          <StatCard
+            label="Yearly withdrawal after tax"
+            value={fmtMoney(srsWithdrawalInfo.yearlyWithdrawal - srsWithdrawalInfo.taxPerYear)}
+            accent="emerald"
+          />
+        </div>
+      </section>
+
       <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Annual expenses</h2>
-          <div className="flex items-center gap-4">
-            <SrsToggleSwitch />
-            <span className="text-xs text-foreground/60">
-              S${monthlyExpensesToday.toLocaleString("en-SG")}/mo today &rarr; inflated at{" "}
-              {EXPENSES_INFLATION_RATE * 100}% p.a. for {Math.max(0, stopWorkingAge - currentAge)}+ years
-            </span>
-          </div>
+          <span className="text-xs text-foreground/60">
+            S${monthlyExpensesToday.toLocaleString("en-SG")}/mo today &rarr; inflated at{" "}
+            {EXPENSES_INFLATION_RATE * 100}% p.a. for {Math.max(0, stopWorkingAge - currentAge)}+ years
+          </span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -344,8 +340,8 @@ export default function RetirementPage() {
                     <Td className={r.cpfLifeIncome > 0 ? "text-orange-400" : "text-foreground/30"}>
                       {r.cpfLifeIncome > 0 ? fmtMoney(r.cpfLifeIncome) : "—"}
                     </Td>
-                    <Td className={r.srsIncome > 0 && srsEnabled ? "text-emerald-400" : "text-foreground/30"}>
-                      {r.srsIncome > 0 && srsEnabled ? fmtMoney(r.srsIncome) : "—"}
+                    <Td className={r.srsIncome > 0 ? "text-emerald-400" : "text-foreground/30"}>
+                      {r.srsIncome > 0 ? fmtMoney(r.srsIncome) : "—"}
                     </Td>
                     <Td className={
                       brokerageIncome > 0 ? "text-sky-400"
