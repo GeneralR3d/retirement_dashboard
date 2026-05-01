@@ -8,7 +8,6 @@ import {
   Legend,
   Line,
   LineChart,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -21,9 +20,8 @@ import {
   SRS_TAXABLE_FRACTION,
   SRS_WITHDRAWAL_YEARS,
 } from "@/lib/tax";
-import { useProfile } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
-import { Stat, StatCard, Td, Th } from "@/app/components/ui";
+import { NumberField, Slider, Stat, StatCard, Td, Th } from "@/app/components/ui";
 
 type ColId =
   | "taxNoSrs"
@@ -35,26 +33,26 @@ type ColId =
   | "pctWithSrs";
 
 const COLS: { id: ColId; label: string }[] = [
-  { id: "taxNoSrs",       label: "Tax (no SRS)" },
-  { id: "taxWithSrs",     label: "Tax (w/ SRS)" },
-  { id: "taxSaved",       label: "Tax saved" },
-  { id: "investedNoSrs",  label: "Invested (no SRS)" },
-  { id: "investedWithSrs",label: "Invested (w/ SRS)" },
-  { id: "pctNoSrs",       label: "% Salary invested (no SRS)" },
-  { id: "pctWithSrs",     label: "% Salary invested (w/ SRS)" },
+  { id: "taxNoSrs",        label: "Tax (no SRS)" },
+  { id: "taxWithSrs",      label: "Tax (w/ SRS)" },
+  { id: "taxSaved",        label: "Tax saved" },
+  { id: "investedNoSrs",   label: "Invested (no SRS)" },
+  { id: "investedWithSrs", label: "Invested (w/ SRS)" },
+  { id: "pctNoSrs",        label: "% Salary invested (no SRS)" },
+  { id: "pctWithSrs",      label: "% Salary invested (w/ SRS)" },
 ];
 
 type Row = ReturnType<typeof buildProjection>[number];
 
 function cellContent(id: ColId, r: Row): React.ReactNode {
   switch (id) {
-    case "taxNoSrs":       return fmtMoney(r.taxNoSrs);
-    case "taxWithSrs":     return fmtMoney(r.taxWithSrs);
-    case "taxSaved":       return fmtMoney(r.taxSavings);
-    case "investedNoSrs":  return fmtMoney(r.investedNoSrs);
-    case "investedWithSrs":return fmtMoney(r.investedWithSrs);
-    case "pctNoSrs":       return `${((r.investedNoSrs / r.takeHome) * 100).toFixed(1)}%`;
-    case "pctWithSrs":     return `${((r.investedWithSrs / r.takeHome) * 100).toFixed(1)}%`;
+    case "taxNoSrs":        return fmtMoney(r.taxNoSrs);
+    case "taxWithSrs":      return fmtMoney(r.taxWithSrs);
+    case "taxSaved":        return fmtMoney(r.taxSavings);
+    case "investedNoSrs":   return fmtMoney(r.investedNoSrs);
+    case "investedWithSrs": return fmtMoney(r.investedWithSrs);
+    case "pctNoSrs":        return `${((r.investedNoSrs / r.takeHome) * 100).toFixed(1)}%`;
+    case "pctWithSrs":      return `${((r.investedWithSrs / r.takeHome) * 100).toFixed(1)}%`;
   }
 }
 
@@ -108,12 +106,16 @@ function InfoTooltip({ text }: { text: string }) {
 }
 
 export default function SrsPage() {
-  const { inputs } = useProfile();
-  const {
-    currentAge, stopWorkingAge,
-    startingSalary, salaryGrowthRate, investmentGrowthRate, investmentGrowthRateRetirement,
-    livingExpensePct, srsWithdrawalAge, salarySeries,
-  } = inputs;
+  // ── Local demo state — fully disconnected from profile context ────────────
+  const [currentAge, setCurrentAge] = useState(25);
+  const [stopWorkingAge, setStopWorkingAge] = useState(55);
+  const [srsWithdrawalAge, setSrsWithdrawalAge] = useState(63);
+  const [startingSalary, setStartingSalary] = useState(70000);
+  const [salaryGrowthRate, setSalaryGrowthRate] = useState(0.02);
+  const [investmentGrowthRate, setInvestmentGrowthRate] = useState(0.07);
+  const [investmentGrowthRateRetirement, setInvestmentGrowthRateRetirement] = useState(0.025);
+  const [livingExpensePct, setLivingExpensePct] = useState(0.7);
+
   const years = Math.max(0, srsWithdrawalAge - currentAge);
   const workingYears = Math.min(years, Math.max(0, stopWorkingAge - currentAge));
 
@@ -127,9 +129,8 @@ export default function SrsPage() {
         livingExpensePct,
         years,
         workingYears,
-        salarySeries: salarySeries.length === workingYears ? salarySeries : undefined,
       }),
-    [startingSalary, salaryGrowthRate, investmentGrowthRate, investmentGrowthRateRetirement, livingExpensePct, years, workingYears, salarySeries],
+    [startingSalary, salaryGrowthRate, investmentGrowthRate, investmentGrowthRateRetirement, livingExpensePct, years, workingYears],
   );
 
   const final = rows[rows.length - 1];
@@ -147,7 +148,6 @@ export default function SrsPage() {
     "Without SRS": Math.round(r.potNoSrs),
   }));
 
-  // Brokerage chart: accumulation phase only, up to stopWorkingAge
   const brokerageAccumulationData = useMemo(() => {
     type Point = { age: number; balance: number; contribution: number | null };
     const result: Point[] = [];
@@ -214,9 +214,119 @@ export default function SrsPage() {
         </p>
       </header>
 
-      <div className="mb-8 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-400/80">
-        <span className="font-semibold text-amber-400">Projection only</span> — All figures on this page are illustrative comparisons between using SRS and not using SRS. A key assumption is that <span className="font-medium">no withdrawals are made from the brokerage pot before age {srsWithdrawalAge}</span>, which is almost certainly not true in practice.
+      <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-400/80 space-y-1.5">
+        <p>
+          <span className="font-semibold text-amber-400">Projection only</span> — All figures on this page are illustrative comparisons between using SRS and not using SRS. A key assumption is that <span className="font-medium">no withdrawals are made from the brokerage pot before age {srsWithdrawalAge}</span>, which is almost certainly not true in practice.
+        </p>
+        <p>
+          <span className="font-semibold text-amber-400">Disconnected from your profile</span> — The inputs below are local to this page and do not read from or write to your Config. Changes here have no effect on the Overview, Accumulation, Retirement, or CPF pages, and vice versa. This page is a standalone educational tool.
+        </p>
+        <p>
+          <span className="font-semibold text-amber-400">Simplified expense model</span> — Living expenses are modeled as a fixed percentage of take-home salary each year. The per-age monthly expense series and lumpsum events configured in Config are not used here.
+        </p>
+        <p>
+          <span className="font-semibold text-amber-400">No salary series override</span> — Salary grows at a constant rate from the starting salary. The per-age salary table from Config is not applied.
+        </p>
       </div>
+
+      {/* ── Demo parameter controls ─────────────────────────────────────────── */}
+      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
+        <h2 className="font-semibold mb-4">Demo parameters</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-5">
+
+          {/* Age milestones */}
+          <div className="space-y-4">
+            <p className="text-xs uppercase tracking-widest text-foreground/40">Age milestones</p>
+            <Slider
+              label="Current age"
+              value={currentAge}
+              min={18}
+              max={45}
+              step={1}
+              onChange={(v) => {
+                setCurrentAge(v);
+                if (stopWorkingAge <= v) setStopWorkingAge(v + 1);
+                if (srsWithdrawalAge <= v) setSrsWithdrawalAge(v + 2);
+              }}
+              format={(v) => `${v} yrs`}
+            />
+            <Slider
+              label="Stop working age"
+              value={stopWorkingAge}
+              min={currentAge + 1}
+              max={70}
+              step={1}
+              onChange={(v) => {
+                setStopWorkingAge(v);
+                if (srsWithdrawalAge <= v) setSrsWithdrawalAge(v + 1);
+              }}
+              format={(v) => `${v} yrs`}
+            />
+            <Slider
+              label="SRS withdrawal age"
+              value={srsWithdrawalAge}
+              min={Math.max(55, stopWorkingAge + 1)}
+              max={75}
+              step={1}
+              onChange={setSrsWithdrawalAge}
+              format={(v) => `${v} yrs`}
+            />
+          </div>
+
+          {/* Salary */}
+          <div className="space-y-4">
+            <p className="text-xs uppercase tracking-widest text-foreground/40">Salary</p>
+            <NumberField
+              label="Starting gross salary"
+              value={startingSalary}
+              onChange={setStartingSalary}
+              step={1000}
+              prefix="S$"
+            />
+            <Slider
+              label="Annual salary growth"
+              value={salaryGrowthRate}
+              min={0}
+              max={0.1}
+              step={0.005}
+              onChange={setSalaryGrowthRate}
+              format={(v) => `${(v * 100).toFixed(1)}%`}
+            />
+            <Slider
+              label="Living expenses (% of take-home)"
+              value={livingExpensePct}
+              min={0}
+              max={1}
+              step={0.01}
+              onChange={setLivingExpensePct}
+              format={(v) => `${(v * 100).toFixed(0)}%`}
+            />
+          </div>
+
+          {/* Growth rates */}
+          <div className="space-y-4">
+            <p className="text-xs uppercase tracking-widest text-foreground/40">Investment growth</p>
+            <Slider
+              label="Pre-retirement rate"
+              value={investmentGrowthRate}
+              min={0}
+              max={0.15}
+              step={0.005}
+              onChange={setInvestmentGrowthRate}
+              format={(v) => `${(v * 100).toFixed(1)}% p.a.`}
+            />
+            <Slider
+              label="Post-retirement rate"
+              value={investmentGrowthRateRetirement}
+              min={0}
+              max={0.1}
+              step={0.005}
+              onChange={setInvestmentGrowthRateRetirement}
+              format={(v) => `${(v * 100).toFixed(1)}% p.a.`}
+            />
+          </div>
+        </div>
+      </section>
 
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <StatCard
@@ -245,7 +355,7 @@ export default function SrsPage() {
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="font-semibold flex items-center">
             Pot growth
-            <InfoTooltip text={`Investment grows at ${(investmentGrowthRate * 100).toFixed(1)}% p.a. during working years (age ${currentAge}–${stopWorkingAge}), then switches to ${(investmentGrowthRateRetirement * 100).toFixed(1)}% p.a. after retirement to reflect lower risk tolerance. Adjust both rates in Config.`} />
+            <InfoTooltip text={`Investment grows at ${(investmentGrowthRate * 100).toFixed(1)}% p.a. during working years (age ${currentAge}–${stopWorkingAge}), then switches to ${(investmentGrowthRateRetirement * 100).toFixed(1)}% p.a. after retirement to reflect lower risk tolerance.`} />
           </h2>
           <span className="text-xs text-foreground/60">
             Total tax saved (age {currentAge}–{srsWithdrawalAge}): {fmtMoney(totalTaxSavings)}
