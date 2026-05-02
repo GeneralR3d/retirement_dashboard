@@ -249,10 +249,7 @@ export default function RetirementPage() {
   );
 
   const retirementYears = Math.max(0, deathAge - stopWorkingAge);
-  const firstRow = rows[0];
-  const lastRow = rows[rows.length - 1];
   const totalNeeded = rows.reduce((s, r) => s + r.annualExpenses, 0);
-  const avgAnnual = retirementYears > 0 ? totalNeeded / retirementYears : 0;
 
   return (
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
@@ -273,62 +270,54 @@ export default function RetirementPage() {
         </p>
       </header>
 
-      <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          label="First year expenses"
-          value={fmtMoney(firstRow?.annualExpenses ?? 0)}
-          sub={`${fmtMoney((firstRow?.monthlyExpenses ?? 0))}/mo at age ${stopWorkingAge}`}
-        />
-        <StatCard
-          label="Last year expenses"
-          value={fmtMoney(lastRow?.annualExpenses ?? 0)}
-          sub={`${fmtMoney((lastRow?.monthlyExpenses ?? 0))}/mo at age ${deathAge}`}
-        />
-        <StatCard
-          label="Average annual spend"
-          value={fmtMoney(avgAnnual)}
-          sub={`over ${retirementYears} years`}
-        />
-        <StatCard
-          label="Total retirement spend"
-          value={fmtMoney(totalNeeded)}
-          sub={`age ${stopWorkingAge}–${deathAge}`}
-          accent="emerald"
-        />
-      </section>
+      {/* Hero + SRS side-by-side */}
+      <section className="flex flex-col md:flex-row mb-8 rounded-xl border border-foreground/10 overflow-hidden">
+        {/* Left half: total retirement spend */}
+        <div className="flex-1 flex flex-col justify-center px-8 py-10 border-b md:border-b-0 md:border-r border-foreground/10">
+          <p className="text-xs uppercase tracking-widest text-foreground/40 mb-3">
+            Total retirement spend
+          </p>
+          <div className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-emerald-400 leading-none">
+            {fmtMoney(totalNeeded)}
+          </div>
+          <p className="text-foreground/50 text-sm mt-4">
+            age {stopWorkingAge}–{deathAge} · {retirementYears} years
+          </p>
+        </div>
 
-      {/* SRS Withdrawal Summary */}
-      <section className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] p-5 mb-8">
-        <h2 className="font-semibold mb-1">SRS Withdrawal</h2>
-        <p className="text-foreground/60 text-xs mb-4">
-          Drawn down over 10 years from age {srsWithdrawalAge}. Only 50% of each withdrawal is taxable.
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          <StatCard
-            label={`SRS pot at age ${srsWithdrawalAge}`}
-            value={fmtMoney(srsPotAtWithdrawal)}
-            accent="emerald"
-          />
-          <StatCard
-            label="Yearly withdrawal"
-            value={fmtMoney(srsWithdrawalInfo.yearlyWithdrawal)}
-            sub="× 10 years"
-          />
-          <StatCard
-            label="Tax per year"
-            value={fmtMoney(srsWithdrawalInfo.taxPerYear)}
-            sub={`taxable: ${fmtMoney(srsWithdrawalInfo.taxablePerYear)}/yr`}
-          />
-          <StatCard
-            label="Total from SRS after tax"
-            value={fmtMoney(srsWithdrawalInfo.netFromSrs)}
-            sub={`total tax: ${fmtMoney(srsWithdrawalInfo.totalTax)}`}
-          />
-          <StatCard
-            label="Yearly withdrawal after tax"
-            value={fmtMoney(srsWithdrawalInfo.yearlyWithdrawal - srsWithdrawalInfo.taxPerYear)}
-            accent="emerald"
-          />
+        {/* Right half: SRS withdrawal */}
+        <div className="md:w-1/2 shrink-0 p-6 bg-emerald-500/[0.03]">
+          <h2 className="font-semibold mb-0.5">SRS Withdrawal</h2>
+          <p className="text-foreground/60 text-xs mb-4">
+            Drawn down over 10 years from age {srsWithdrawalAge}. Only 50% of each withdrawal is taxable.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              label={`SRS pot at age ${srsWithdrawalAge}`}
+              value={fmtMoney(srsPotAtWithdrawal)}
+              accent="emerald"
+            />
+            <StatCard
+              label="Yearly withdrawal"
+              value={fmtMoney(srsWithdrawalInfo.yearlyWithdrawal)}
+              sub="× 10 years"
+            />
+            <StatCard
+              label="Tax per year"
+              value={fmtMoney(srsWithdrawalInfo.taxPerYear)}
+              sub={`taxable: ${fmtMoney(srsWithdrawalInfo.taxablePerYear)}/yr`}
+            />
+            <StatCard
+              label="Total from SRS after tax"
+              value={fmtMoney(srsWithdrawalInfo.netFromSrs)}
+              sub={`total tax: ${fmtMoney(srsWithdrawalInfo.totalTax)}`}
+            />
+            <StatCard
+              label="Yearly after-tax withdrawal"
+              value={fmtMoney(srsWithdrawalInfo.yearlyWithdrawal - srsWithdrawalInfo.taxPerYear)}
+              accent="emerald"
+            />
+          </div>
         </div>
       </section>
 

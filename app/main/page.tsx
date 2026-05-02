@@ -573,7 +573,7 @@ export default function MainPage() {
     (best, r) => (r.balance > best.balance ? r : best),
     brokerageRows[0],
   );
-  const finalBalance = brokerageRows[brokerageRows.length - 1]?.balance ?? 0;
+
 
   const runOutRow = brokerageRows.find(
     (r) => r.age > stopWorkingAge && r.balance <= 0,
@@ -584,7 +584,7 @@ export default function MainPage() {
     (best, r) => (r.total > best.total ? r : best),
     netWorthData[0] ?? { age: currentAge, total: 0 },
   );
-  const finalNw = netWorthData[netWorthData.length - 1]?.total ?? 0;
+
 
   const gridColor = "var(--grid-color)";
   const axisColor = "var(--axis-color)";
@@ -619,7 +619,7 @@ export default function MainPage() {
       </div>
 
       {/* Net worth KPI cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 gap-4 mb-8">
         <StatCard
           label="Net worth today"
           value={fmtMoney(netWorthData[0]?.total ?? 0)}
@@ -630,16 +630,6 @@ export default function MainPage() {
           value={fmtMoney(peakNwRow.total)}
           sub={`at age ${peakNwRow.age}`}
           accent="emerald"
-        />
-        <StatCard
-          label={`Net worth at ${deathAge}`}
-          value={fmtMoney(finalNw)}
-          sub="end of plan"
-        />
-        <StatCard
-          label="OA transfer at retirement"
-          value={fmtMoney(oaAtRetirement)}
-          sub={`at age ${cpfRetirementAge}`}
         />
       </div>
 
@@ -753,34 +743,23 @@ export default function MainPage() {
         </ResponsiveContainer>
       </section>
 
-      {/* Brokerage KPI cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Brokerage seed" value={fmtMoney(startingCash)} />
-        <StatCard
-          label="OA transfer at retirement"
-          value={fmtMoney(oaAtRetirement)}
-          sub={`at age ${cpfRetirementAge}`}
-        />
-        <StatCard
-          label="Peak brokerage balance"
-          value={fmtMoney(peakRow?.balance ?? 0)}
-          sub={`at age ${peakRow?.age ?? "—"}`}
-          accent="emerald"
-        />
-        <StatCard
-          label={`Brokerage at ${deathAge}`}
-          value={fmtMoney(finalBalance)}
-        />
-      </div>
-
       {/* Brokerage Chart */}
       <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6">
         <h2 className="font-semibold mb-1">Investment Account</h2>
-        <p className="text-foreground/60 text-xs mb-6">
+        <p className="text-foreground/60 text-xs mb-4">
           Annual brokerage surplus during working years. OA balance injected at age {cpfRetirementAge}. Growth:{" "}
           {(investmentGrowthRate * 100).toFixed(1)}% until retirement,{" "}
           {(investmentGrowthRateRetirement * 100).toFixed(1)}% after.
         </p>
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <StatCard label="Brokerage seed" value={fmtMoney(startingCash)} />
+          <StatCard
+            label="Peak brokerage balance"
+            value={fmtMoney(peakRow?.balance ?? 0)}
+            sub={`at age ${peakRow?.age ?? "—"}`}
+            accent="emerald"
+          />
+        </div>
         <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400/90 mb-6">
           <span className="mt-px shrink-0">⚠</span>
           <span>
