@@ -65,6 +65,17 @@ export type ProfileInputs = {
   lumpsumInflows: LumpsumExpense[];
   srsAnnualCap: number;
   srsAccepted: boolean[]; // per working-year accept/reject; [] = all accepted (default)
+  btoApplicantType: "single" | "couple";
+  btoFlatPrice: number;
+  btoApplicationAge: number;
+  btoCollectionAge: number;
+  btoDownpaymentScheme: "normal" | "staggered" | "deferred";
+  btoGrantFamily: number;
+  btoGrantEhg: number;
+  btoGrantPhg: number;
+  btoLoanType: "hdb" | "bank";
+  btoBankInterestRate: number;
+  btoLoanTenureYears: number;
 };
 
 export const CPF_RATES = {
@@ -103,6 +114,17 @@ const DEFAULTS: ProfileInputs = {
   lumpsumInflows: DEFAULT_LUMPSUM_INFLOWS,
   srsAnnualCap: 15300,
   srsAccepted: [],
+  btoApplicantType: "couple",
+  btoFlatPrice: 500000,
+  btoApplicationAge: 28,
+  btoCollectionAge: 32,
+  btoDownpaymentScheme: "normal",
+  btoGrantFamily: 0,
+  btoGrantEhg: 0,
+  btoGrantPhg: 0,
+  btoLoanType: "hdb",
+  btoBankInterestRate: 0.035,
+  btoLoanTenureYears: 25,
 };
 
 type ProfileContextType = {

@@ -13,6 +13,7 @@ const NAV_LINKS_BEFORE = [
 
 const NAV_LINKS_AFTER = [
   { href: "/cpf", label: "CPF" },
+  { href: "/bto", label: "BTO" },
 ];
 
 const NAV_LINKS_RIGHT = [

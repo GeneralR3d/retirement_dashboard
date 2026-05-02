@@ -205,6 +205,7 @@ export type CpfYearRow = {
   raConversionHappened: boolean;
   cpfLifeHappened: boolean;
   cpfLifePremium: number; // RA balance used to buy CPF LIFE annuity (non-zero only on cpfLifeHappened row)
+  oaDeducted: number; // Total OA withdrawn for BTO downpayments and mortgage this year
 };
 
 export type CpfProjectionInputs = {
@@ -221,6 +222,7 @@ export type CpfProjectionInputs = {
   cpfLifeFrs: number;
   endAge?: number;
   salarySeries?: number[];
+  oaDeductions?: { age: number; amount: number }[];
 };
 
 export function buildCpfProjection(inputs: CpfProjectionInputs): CpfYearRow[] {
@@ -244,6 +246,12 @@ export function buildCpfProjection(inputs: CpfProjectionInputs): CpfYearRow[] {
 
   // FRS target at cpfRetirementAge, inflated at CPF_FRS_INFLATION_RATE
   const raTarget = cpfLifeFrs * Math.pow(1 + CPF_FRS_INFLATION_RATE, Math.max(0, cpfRetirementAge - currentAge));
+
+  // Build a lookup: age → total OA to deduct that year
+  const oaDeductionByAge = new Map<number, number>();
+  for (const d of inputs.oaDeductions ?? []) {
+    oaDeductionByAge.set(d.age, (oaDeductionByAge.get(d.age) ?? 0) + d.amount);
+  }
 
   let oaBalance = initOA;
   let saBalance = initSA;
@@ -271,6 +279,12 @@ export function buildCpfProjection(inputs: CpfProjectionInputs): CpfYearRow[] {
     raBalance = raBalance * (1 + CPF_RA_RATE);
 
     const age = currentAge + i + 1;
+
+    // Apply OA deductions (BTO downpayments and mortgage) before SA→RA conversion
+    const rawDeduction = oaDeductionByAge.get(age) ?? 0;
+    const actualDeducted = Math.min(rawDeduction, Math.max(0, oaBalance));
+    oaBalance -= actualDeducted;
+
     let raConversionHappened = false;
     let saBalanceAtConversion = 0;
 
@@ -317,6 +331,7 @@ export function buildCpfProjection(inputs: CpfProjectionInputs): CpfYearRow[] {
       raConversionHappened,
       cpfLifeHappened,
       cpfLifePremium,
+      oaDeducted: actualDeducted,
     });
   }
 

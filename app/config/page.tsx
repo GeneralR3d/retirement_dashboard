@@ -5,6 +5,7 @@ import { useProfile, CPF_RATES, ProfileInputs, Investment, LumpsumExpense } from
 import { CPF_EMPLOYEE_RATE } from "@/lib/tax";
 import { NumberField, Slider, Th, Td } from "@/app/components/ui";
 import { LumpsumTable } from "@/app/components/lumpsum-table";
+import { BtoInputsPanel } from "@/app/components/bto-inputs";
 import { fmtMoney } from "@/lib/format";
 
 function buildDefaultSeries(
@@ -87,6 +88,7 @@ export default function ConfigPage() {
   const [showSalaryTable, setShowSalaryTable] = useState(false);
   const [showExpenseTable, setShowExpenseTable] = useState(true);
   const [srsCapEditMode, setSrsCapEditMode] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Target return — display only, not persisted
   const [targetReturn, setTargetReturn] = useState(0.07);
@@ -815,24 +817,60 @@ export default function ConfigPage() {
         </div>
       </div>
 
-      {/* Lumpsum Inflows + Expenses — side-by-side */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <LumpsumTable
-          title="Lumpsum Inflows"
-          description="One-time inflows (inheritance, bonuses, etc.) added to that year's available cash."
-          rows={lumpsumInflows}
-          onChange={setLumpsumInflows}
-          totalAccent="emerald"
-          idPrefix="inflow"
-        />
-        <LumpsumTable
-          title="Lumpsum Expenses"
-          description="One-time expenses applied at a specific age. Added on top of the monthly living expenses for that year."
-          rows={lumpsumExpenses}
-          onChange={setLumpsumExpenses}
-          totalAccent="red"
-          idPrefix="exp"
-        />
+      {/* Advanced — BTO + Lumpsums (also editable on their own pages) */}
+      <div className="mt-8 flex flex-col items-center">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground transition-colors cursor-pointer"
+        >
+          <span>Advanced</span>
+          <svg
+            className={`w-4 h-4 text-foreground/60 transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+          <span className="text-xs text-foreground/40">BTO &amp; lumpsums — also editable on their own pages</span>
+        </button>
+
+        {showAdvanced && (
+          <div className="mt-4 space-y-8">
+            {/* BTO / Housing */}
+            <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6">
+              <div className="mb-5">
+                <h2 className="font-semibold">BTO / Housing</h2>
+                <p className="text-foreground/60 text-xs mt-0.5">
+                  Flat purchase, downpayment scheme, grants, and loan terms. Mirrored on the BTO page.
+                </p>
+              </div>
+              <BtoInputsPanel draft={draft} setDraft={setDraft} />
+            </div>
+
+            {/* Lumpsum Inflows + Expenses — side-by-side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <LumpsumTable
+                title="Lumpsum Inflows"
+                description="One-time inflows (inheritance, bonuses, etc.) added to that year's available cash."
+                rows={lumpsumInflows}
+                onChange={setLumpsumInflows}
+                totalAccent="emerald"
+                idPrefix="inflow"
+              />
+              <LumpsumTable
+                title="Lumpsum Expenses"
+                description="One-time expenses applied at a specific age. Added on top of the monthly living expenses for that year."
+                rows={lumpsumExpenses}
+                onChange={setLumpsumExpenses}
+                totalAccent="red"
+                idPrefix="exp"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
     </main>

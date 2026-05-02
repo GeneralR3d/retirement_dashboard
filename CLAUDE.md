@@ -40,6 +40,12 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 - `lumpsumExpenses: LumpsumExpense[]`, `lumpsumInflows: LumpsumExpense[]` — one-time amounts at a specific age (`{ id, age, name, amount }`). Edited on `/config` *and* `/accumulation` (accumulation page uses a local-draft + Recalculate button to commit).
 - `srsAnnualCap` (15300) — annual SRS contribution cap.
 - `srsAccepted: boolean[]` — per-working-year SRS accept/reject decisions. Length = `workingYears`; missing indices default to `true`. Persisted to localStorage and shared across all pages so the accumulation table, networth SRS chart, and retirement page all reflect the same choices. Empty `[]` means all years accepted.
+- BTO fields (consumed only by `/bto`; not yet wired into accumulation/networth/retirement projections):
+  - `btoApplicantType: "single" | "couple"` — currently cosmetic.
+  - `btoFlatPrice` (500000), `btoApplicationAge` (28), `btoCollectionAge` (32) — `applicationAge` is DP1 age, `collectionAge` is DP2 age and mortgage start age.
+  - `btoDownpaymentScheme: "normal" | "staggered" | "deferred"` — drives DP1/DP2 ratios (10/15, 5/20, 2.5/22.5).
+  - `btoGrantFamily`, `btoGrantEhg`, `btoGrantPhg` — three housing grants summed and capped per-grant; each defaults to 0.
+  - `btoLoanType: "hdb" | "bank"`, `btoBankInterestRate` (0.035 — only used when bank), `btoLoanTenureYears` (25, max 25 for HDB / 30 for bank).
 
 `investmentGrowthRateRetirement` represents reduced risk tolerance after stopping work. `buildProjection` uses `investmentGrowthRate` for `i < workingYears` and switches to `investmentGrowthRateRetirement` for all subsequent years.
 
@@ -47,7 +53,8 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 
 - **`app/page.tsx`** — server-side redirect to `/main`.
 - **`app/main/page.tsx`** — Overview page. **Four chart sections:** (1) Net Worth Breakdown — `LineChart` with five lines (Total, Investments, SRS Pot, CPF, Cash) from `currentAge` to `deathAge`, preceded by 4 KPI cards. (2) SRS Account — `AreaChart` of SRS pot with KPI cards (pot at withdrawal age, yearly withdrawal, tax/yr, yearly after tax). (3) Cash Reserve — `AreaChart` of cash balance with 2 KPI cards. (4) Investment Account — `AreaChart` of brokerage balance. All data is computed in a single `useMemo`: `buildAccumulation` (with `srsTopUps` derived from `srsAccepted`) → SRS pot accumulated manually from `accRows[i].srsTopUp` → `buildCpfProjection` → `buildBrokerageProjection` (with `contributions = accRows.map(r => r.invested)`). The SRS pot by age is computed by iterating `(pot + srsTopUp) * (1 + growthRate)` over working years, then growing at `investmentGrowthRateRetirement` until `srsWithdrawalAge`, then drawing down linearly. Y axis domain for the networth chart is explicitly set to peak total × 1.1 (rounded to nearest $500k) because recharts cannot auto-scale a multi-series domain. `runOutRow` and `canRetire` drive the green/red verdict banner.
-- **`app/config/page.tsx`** — profile inputs page. Uses a **local draft pattern**: all field changes update a local `draft` state; `setInputs` (which writes to context + `localStorage`) is only called when the user clicks **Recalculate**. An "Unsaved changes" badge appears when draft differs from saved inputs. Layout: left column (Personal Details + Retirement Settings), right column (CPF balances + milestones), full-width investments table, side-by-side lumpsum tables. Cascade rules: salary table edits at index `i` propagate as `parsed * (1+salaryGrowthRate)^(j-i)` to rows below. Monthly-expenses table edits propagate flat (today's money), since inflation is applied at consumption.
+- **`app/config/page.tsx`** — profile inputs page. Uses a **local draft pattern**: all field changes update a local `draft` state; `setInputs` (which writes to context + `localStorage`) is only called when the user clicks **Recalculate**. An "Unsaved changes" badge appears when draft differs from saved inputs. Layout: left column (Personal Details + Retirement Settings), right column (CPF balances + milestones), full-width investments table, then an **"Advanced" disclosure** (`showAdvanced` state, closed by default) hiding the BTO inputs panel and lumpsum tables — these are also editable on their dedicated pages, so the disclosure keeps the main config view focused. Cascade rules: salary table edits at index `i` propagate as `parsed * (1+salaryGrowthRate)^(j-i)` to rows below. Monthly-expenses table edits propagate flat (today's money), since inflation is applied at consumption.
+- **`app/bto/page.tsx`** — BTO mortgage planning page. Local-draft + Recalculate (mirrors `/accumulation`); `BtoInputsPanel` is shared with the config page so both sides edit the same `ProfileInputs` keys. Layout is two stacked full-width sections: the inputs panel, then the breakdown — a vertical timeline (left rail with emerald dots) of `StatCard`s in chronological order (flat price → grant → DP1 → leftover grant → DP2 → total downpayment → loan → monthly mortgage). DP1/DP2 cards include three sub-`Stat`s for grant/OA/cash splits and show the looked-up OA balance at the relevant age. Reads CPF projection from saved `inputs` (not `draft`) so the OA lookup reflects committed assumptions.
 - **`app/srs/page.tsx`** — SRS demo page. **Fully standalone — does not read from `useProfile`.** All inputs are local `useState` values. Always uses `buildProjection` with `livingExpensePct`-based expenses. Renders demo parameter controls, KPI cards, a pot-growth `LineChart`, a brokerage `AreaChart`, an annual projection table with hideable columns, and an SRS withdrawal breakdown. The disclaimer banner explains the disconnection from the rest of the app.
 - **`app/cpf/page.tsx`** — CPF projection page. Passes `endAge: deathAge` to `buildCpfProjection`. Renders 3 KPI cards, a stacked `AreaChart` with OA/SA/MA/RA areas. OA is zeroed in the chart from `cpfRetirementAge` onwards. Two dotted `ReferenceLine`s at `cpfRetirementAge` (violet) and `cpfWithdrawalAge` (orange). Column visibility pattern (same as `/srs`): `hiddenCols: Set<ColId>` + `showHidden` toggle; default hidden = all four balance columns.
 - **`app/accumulation/page.tsx`** — Working-years accumulation page (`currentAge` to `stopWorkingAge`). Calls `buildAccumulation` from `lib/cash-flow.ts`. Lumpsum tables use **local-draft + Recalculate** pattern (mirrors config). Annual table columns: age (with "⚠ Debt Alert!" when brokerage insolvent), take-home (with inflow chip), **SRS top-up** (per-row ✓/✗ toggle), tax, living expenses, cash on hand (actual / target), cash topup, investments topup. **SRS top-up column:** `recommendations` memo computes `recommendedSrsTopUp(takeHome, SRS_ANNUAL_CAP)` from salary alone. `srsTopUps` memo maps accepted rows to their `topUp` (or 0 if declined). Toggling a row calls `setInputs({ ...inputs, srsAccepted: updatedArray })` immediately — no Recalculate needed. This instantly cascades to the table and updates the networth/retirement pages when the user navigates to them.
@@ -67,6 +74,7 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
   - SRS constants: `SRS_ANNUAL_CAP` (15300), `CPF_EMPLOYEE_RATE` (0.2), `SRS_WITHDRAWAL_YEARS` (10), `SRS_TAXABLE_FRACTION` (0.5)
   - CPF constants: `CPF_OA_RATE` (0.025), `CPF_SA_RATE` (0.04), `CPF_MA_RATE` (0.04), `CPF_RA_RATE` (0.04), `CPF_TOTAL_CONTRIBUTION_RATE` (0.37), `CPF_FRS_INFLATION_RATE` (0.02)
 - **`lib/cash-flow.ts`** — `buildAccumulation(inputs)` returns one `AccumulationRow` per working year (`age = currentAge + i`). The optional `srsTopUps: number[]` parameter drives per-year SRS deductions; when omitted, no SRS top-up is applied. Used by `/accumulation`, `/main`, and `/retirement`. See "Cash + accumulation modeling convention" below.
+- **`lib/bto.ts`** — pure BTO compute. Constants: `HDB_LOAN_RATE` (0.026), `GRANT_CAPS` (`{family: 80000, ehg: 120000, phg: 30000}`), `MAX_TENURE_HDB` (25), `MAX_TENURE_BANK` (30). Exports: `getDownpaymentRatios(scheme)` → `{dp1, dp2}`; `rawGrantSum(inputs)` (capped per-grant); `totalGrantAmount(inputs)` (returns 0 when scheme is `"deferred"`, else `rawGrantSum`); `effectiveInterestRate(inputs)`; `maxTenureFor(loanType)`; `computeBtoBreakdown(inputs, oaAtDp1Age, oaAtDp2Age)` — see "BTO modeling convention" below.
 - **`lib/format.ts`** — `fmt` and `fmtMoney` helpers (en-SG locale).
 - **`taxAmount.js`** — original CLI prototype, not imported. Keep `lib/tax.ts` as the source of truth.
 
@@ -78,7 +86,9 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 
 **`app/components/lumpsum-table.tsx`** — `LumpsumTable` editor for `LumpsumExpense[]` (used for both inflows and expenses). Props: `title`, `description`, `rows`, `onChange`, `totalAccent: "red" | "emerald"`, `idPrefix`. Purely controlled — owns no state. Used in `/config` (bound to draft state) and `/accumulation` (bound to local draft, committed on Recalculate).
 
-**`app/components/navbar.tsx`** — sticky nav. Links split into `NAV_LINKS_BEFORE` (Config, Networth) and `NAV_LINKS_AFTER` (CPF, SRS Demo), with `SplitNavButton` between them. Also owns `useTheme`, which toggles a `dark` class on `<html>` and persists to `localStorage`.
+**`app/components/bto-inputs.tsx`** — `BtoInputsPanel`. Shared form for all BTO fields, used by both `/config` (inside the Advanced disclosure) and `/bto`. Props: `{ draft, setDraft }` — purely controlled. Internally clamps `btoLoanTenureYears` to `maxTenureFor(loanType)` whenever loan type changes.
+
+**`app/components/navbar.tsx`** — sticky nav. Links split into `NAV_LINKS_BEFORE` (Config, Networth, Accumulation, Retirement), `NAV_LINKS_AFTER` (CPF, BTO), and `NAV_LINKS_RIGHT` (SRS Demo). `SplitNavButton` lives inside the Accumulation/Retirement cluster. Also owns `useTheme`, which toggles a `dark` class on `<html>` and persists to `localStorage`.
 
 **`components/ui/button.tsx`** — `SplitNavButton`. Three-state nav button tracking mouse X position relative to its centre. Default "Cashflow" (routes to `/cashflow`, currently unbuilt); hover-left "Accumulation" (`/accumulation`); hover-right "Retirement" (`/retirement`). Uses `cn()` from `lib/utils.ts`.
 
@@ -162,6 +172,24 @@ In the retirement page table, for a row at age `a`: **balance** = `brokerageRows
 - `available < 0`: `cashTopup = -min(-available, cashBalance)` (cash absorbs deficit first); remainder → `invested` (can be ≤ 0, representing a brokerage withdrawal).
 
 Cash earns no interest. Brokerage: `brokerageBalance = (brokerageBalance + invested) * (1 + investmentGrowthRate)`.
+
+### BTO modeling convention
+
+`computeBtoBreakdown(inputs, oaAtDp1Age, oaAtDp2Age)` produces every value the `/bto` page displays. Logic:
+
+- Ratios from `getDownpaymentRatios(scheme)`. `dp1Amount = flatPrice * dp1Ratio`, `dp2Amount = flatPrice * dp2Ratio`.
+- `totalGrant`: for `normal`/`staggered` it's `rawGrantSum(inputs)` (each grant capped at its limit). For `deferred` it's `0` — but `rawGrantSum` still flows forward as `leftoverGrantAfterDp1`.
+- **DP1 allocation** (grant → OA → cash):
+  - `dp1FromGrant = isDeferred ? 0 : min(totalGrant, dp1Amount)` — grant is capped at the proposed DP1 amount.
+  - `dp1FromOA = min(dp1Amount − dp1FromGrant, oaAtDp1Age)`; rest is `dp1FromCash`.
+  - `dp1.actualPaid` always equals `dp1.proposed`.
+- **Leftover grant**: `isDeferred ? rawGrantSum : (totalGrant − dp1FromGrant)`.
+- **DP2 allocation**: leftover grant is **fully applied** (not capped at DP2 proposed). If `leftoverGrant >= dp2Amount`, then `dp2FromGrantLeftover = leftoverGrant`, OA/cash both 0, and `actualPaid = leftoverGrant > proposed`. Otherwise, leftover grant covers what it can and the remainder draws OA → cash, with `actualPaid = dp2Amount`.
+- `totalDownpayment = dp1Amount + dp2.actualPaid` (uses actual, so grant overflow inflates totals).
+- `loanAmount = max(0, flatPrice − totalDownpayment)` — grant overflow shrinks the loan and feeds into LTV / monthly mortgage.
+- `monthlyMortgage`: standard amortization `P*r(1+r)^n / ((1+r)^n − 1)` with `r = annualRate/12`, `n = tenureYears*12`. Edge case: `r === 0` ⇒ `P/n`. Rate is `HDB_LOAN_RATE` for HDB, `btoBankInterestRate` for bank.
+- Mortgage runs from `btoCollectionAge` to `btoCollectionAge + tenureYears − 1`.
+- OA balances are looked up from `buildCpfProjection` rows by exact age match. `app/bto/page.tsx#oaBalanceAtAge` falls back to `cpfOA` when the requested age precedes `currentAge` (no row exists yet).
 
 ### Projection table — column visibility pattern
 

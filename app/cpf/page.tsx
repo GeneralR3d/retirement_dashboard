@@ -22,6 +22,7 @@ import {
   CPF_TOTAL_CONTRIBUTION_RATE,
   CPF_FRS_INFLATION_RATE,
 } from "@/lib/tax";
+import { computeBtoBreakdown } from "@/lib/bto";
 import { useProfile } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
 import { Stat, StatCard, Td, Th, InfoTooltip } from "@/app/components/ui";
@@ -69,7 +70,7 @@ function cellContent(id: ColId, r: CpfYearRow): React.ReactNode {
   switch (id) {
     case "salary":       return fmtMoney(r.salary);
     case "totalContrib": return fmtMoney(r.totalContribution);
-    case "hdbDeductions": return <span className="text-foreground/30">—</span>;
+    case "hdbDeductions": return r.oaDeducted > 0 ? fmtMoney(r.oaDeducted) : <span className="text-foreground/30">—</span>;
     case "oaContrib":    return fmtMoney(r.oaContribution);
     case "saContrib":    return fmtMoney(r.saContribution);
     case "maContrib":    return fmtMoney(r.maContribution);
@@ -81,6 +82,7 @@ function cellContent(id: ColId, r: CpfYearRow): React.ReactNode {
 }
 
 function cellClassName(id: ColId): string {
+  if (id === "hdbDeductions") return "text-rose-400";
   if (id === "oaBalance") return "text-blue-400";
   if (id === "saBalance") return "text-emerald-400";
   if (id === "maBalance") return "text-amber-400";
@@ -105,30 +107,72 @@ export default function CpfPage() {
     cpfLifeMonthlyPayout,
     deathAge,
     salarySeries,
+    btoFlatPrice,
+    btoApplicationAge,
+    btoCollectionAge,
+    btoLoanTenureYears,
   } = inputs;
 
   const frsTarget = cpfLifeFrs * Math.pow(1 + CPF_FRS_INFLATION_RATE, Math.max(0, cpfRetirementAge - currentAge));
   const annualCpfLifePayout = cpfLifeMonthlyPayout * 12 * Math.pow(1 + CPF_FRS_INFLATION_RATE, Math.max(0, cpfWithdrawalAge - currentAge));
 
-  const rows = useMemo(
-    () =>
-      buildCpfProjection({
-        currentAge,
-        stopWorkingAge,
-        cpfWithdrawalAge,
-        cpfRetirementAge,
-        startingSalary,
-        salaryGrowthRate,
-        cpfOA,
-        cpfSA,
-        cpfMA,
-        cpfRA,
-        cpfLifeFrs,
-        endAge: deathAge,
-        salarySeries: salarySeries.length === Math.max(0, stopWorkingAge - currentAge) ? salarySeries : undefined,
-      }),
-    [currentAge, stopWorkingAge, cpfWithdrawalAge, cpfRetirementAge, startingSalary, salaryGrowthRate, cpfOA, cpfSA, cpfMA, cpfRA, cpfLifeFrs, deathAge, salarySeries],
-  );
+  const resolvedSalarySeries = salarySeries.length === Math.max(0, stopWorkingAge - currentAge) ? salarySeries : undefined;
+
+  const cpfBaseInputs = {
+    currentAge,
+    stopWorkingAge,
+    cpfWithdrawalAge,
+    cpfRetirementAge,
+    startingSalary,
+    salaryGrowthRate,
+    cpfOA,
+    cpfSA,
+    cpfMA,
+    cpfRA,
+    cpfLifeFrs,
+    endAge: deathAge,
+    salarySeries: resolvedSalarySeries,
+  };
+
+  const rows = useMemo(() => {
+    // Pass 1: raw projection (no BTO) to get OA balances at DP ages
+    const rawRows = buildCpfProjection(cpfBaseInputs);
+
+    const oaAtDp1Age = rawRows.find((r) => r.age === btoApplicationAge)?.oaBalance ?? 0;
+    const oaAtDp2Age = rawRows.find((r) => r.age === btoCollectionAge)?.oaBalance ?? 0;
+
+    // Compute BTO breakdown using raw OA balances (same as BTO page)
+    const bto = btoFlatPrice > 0
+      ? computeBtoBreakdown(inputs, oaAtDp1Age, oaAtDp2Age)
+      : null;
+
+    // Build OA deductions list: DP1, DP2, and annual mortgage instalments.
+    const oaDeductions: { age: number; amount: number }[] = [];
+    if (bto) {
+      if (bto.dp1.fromOA > 0 && btoApplicationAge >= currentAge && btoApplicationAge <= deathAge  ) {
+        oaDeductions.push({ age: btoApplicationAge, amount: bto.dp1.fromOA });
+      }
+      if (bto.dp2.fromOA > 0 && btoCollectionAge >= currentAge && btoCollectionAge <= deathAge) {
+        oaDeductions.push({ age: btoCollectionAge, amount: bto.dp2.fromOA });
+      }
+      const annualMortgage = bto.monthlyMortgage * 12;
+      if (annualMortgage > 0) {
+        for (let age = btoCollectionAge; age <= bto.mortgageEndAge; age++) {
+          if (age >= currentAge && age <= deathAge) {
+            oaDeductions.push({ age, amount: annualMortgage });
+          }
+        }
+      }
+    }
+
+    // Pass 2: projection with BTO deductions applied
+    return buildCpfProjection({ ...cpfBaseInputs, oaDeductions });
+  }, [
+    currentAge, stopWorkingAge, cpfWithdrawalAge, cpfRetirementAge,
+    startingSalary, salaryGrowthRate, cpfOA, cpfSA, cpfMA, cpfRA, cpfLifeFrs,
+    deathAge, resolvedSalarySeries,
+    btoFlatPrice, btoApplicationAge, btoCollectionAge, btoLoanTenureYears, inputs,
+  ]);
 
   const conversionRow = rows.find((r) => r.raConversionHappened);
   const cpfLifeRow = rows.find((r) => r.cpfLifeHappened);
@@ -152,6 +196,10 @@ export default function CpfPage() {
   const gridColor = "var(--grid-color, #1e293b)";
   const refLineColor = "#a78bfa";
   const cpfLifeLineColor = "#f97316";
+  const btoLineColor = "#f43f5e";
+
+  const btoMortgageEndAge = btoCollectionAge + btoLoanTenureYears - 1;
+  const hasBto = btoFlatPrice > 0 && btoApplicationAge >= currentAge;
 
   const [hiddenCols, setHiddenCols] = useState<Set<ColId>>(
     () => new Set<ColId>(["oaBalance", "saBalance", "maBalance", "raBalance"] as ColId[]),
@@ -270,6 +318,34 @@ export default function CpfPage() {
                 strokeWidth={1.5}
                 label={{ value: `CPF LIFE (${cpfWithdrawalAge})`, position: "insideTopLeft", fill: cpfLifeLineColor, fontSize: 10 }}
               />
+              {/* BTO reference lines */}
+              {hasBto && (
+                <ReferenceLine
+                  x={btoApplicationAge}
+                  stroke={btoLineColor}
+                  strokeDasharray="3 3"
+                  strokeWidth={1}
+                  label={{ value: `DP1 (${btoApplicationAge})`, position: "insideBottomRight", fill: btoLineColor, fontSize: 9 }}
+                />
+              )}
+              {hasBto && btoCollectionAge >= currentAge && (
+                <ReferenceLine
+                  x={btoCollectionAge}
+                  stroke={btoLineColor}
+                  strokeDasharray="3 3"
+                  strokeWidth={1}
+                  label={{ value: `DP2+Mortgage (${btoCollectionAge})`, position: "insideBottomLeft", fill: btoLineColor, fontSize: 9 }}
+                />
+              )}
+              {hasBto && btoMortgageEndAge > btoCollectionAge && btoMortgageEndAge <= deathAge && (
+                <ReferenceLine
+                  x={btoMortgageEndAge}
+                  stroke={btoLineColor}
+                  strokeDasharray="3 3"
+                  strokeWidth={1}
+                  label={{ value: `Mortgage end (${btoMortgageEndAge})`, position: "insideBottomRight", fill: btoLineColor, fontSize: 9 }}
+                />
+              )}
               <Area
                 type="monotone"
                 dataKey="MA"
