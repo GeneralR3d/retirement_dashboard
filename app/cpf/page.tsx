@@ -43,6 +43,7 @@ function CpfTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
 type ColId =
   | "salary"
   | "totalContrib"
+  | "hdbDeductions"
   | "oaContrib"
   | "saContrib"
   | "maContrib"
@@ -52,21 +53,23 @@ type ColId =
   | "raBalance";
 
 const COLS: { id: ColId; label: string }[] = [
-  { id: "salary",       label: "Gross Salary" },
-  { id: "totalContrib", label: "Total Contribution" },
-  { id: "oaContrib",    label: "OA Contribution" },
-  { id: "saContrib",    label: "SA Contribution" },
-  { id: "maContrib",    label: "MA Contribution" },
-  { id: "oaBalance",    label: "OA Balance" },
-  { id: "saBalance",    label: "SA Balance" },
-  { id: "maBalance",    label: "MA Balance" },
-  { id: "raBalance",    label: "RA Balance" },
+  { id: "salary",        label: "Gross Salary" },
+  { id: "totalContrib",  label: "Total Contribution" },
+  { id: "hdbDeductions", label: "HDB Deductions" },
+  { id: "oaContrib",     label: "OA Contribution" },
+  { id: "saContrib",     label: "SA Contribution" },
+  { id: "maContrib",     label: "MA Contribution" },
+  { id: "oaBalance",     label: "OA Balance" },
+  { id: "saBalance",     label: "SA Balance" },
+  { id: "maBalance",     label: "MA Balance" },
+  { id: "raBalance",     label: "RA Balance" },
 ];
 
 function cellContent(id: ColId, r: CpfYearRow): React.ReactNode {
   switch (id) {
     case "salary":       return fmtMoney(r.salary);
     case "totalContrib": return fmtMoney(r.totalContribution);
+    case "hdbDeductions": return <span className="text-foreground/30">—</span>;
     case "oaContrib":    return fmtMoney(r.oaContribution);
     case "saContrib":    return fmtMoney(r.saContribution);
     case "maContrib":    return fmtMoney(r.maContribution);
@@ -151,7 +154,7 @@ export default function CpfPage() {
   const cpfLifeLineColor = "#f97316";
 
   const [hiddenCols, setHiddenCols] = useState<Set<ColId>>(
-    () => new Set<ColId>(["oaBalance", "saBalance", "maBalance", "raBalance"]),
+    () => new Set<ColId>(["oaBalance", "saBalance", "maBalance", "raBalance"] as ColId[]),
   );
   const [showHidden, setShowHidden] = useState(false);
   const [openMenu, setOpenMenu] = useState<ColId | null>(null);

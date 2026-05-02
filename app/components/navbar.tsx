@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SplitNavButton } from "@/components/ui/button";
 
 const NAV_LINKS_BEFORE = [
   { href: "/config", label: "Config" },
   { href: "/main", label: "Networth" },
+  { href: "/accumulation", label: "Accumulation" },
+  { href: "/retirement", label: "Retirement" },
 ];
 
 const NAV_LINKS_AFTER = [
@@ -69,7 +70,6 @@ export default function Navbar() {
               </Link>
             );
           })}
-          <SplitNavButton />
           {NAV_LINKS_AFTER.map((link) => {
             const active = pathname === link.href;
             return (
