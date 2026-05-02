@@ -25,6 +25,7 @@ import {
   SRS_ANNUAL_CAP,
 } from "@/lib/tax";
 import { buildAccumulation } from "@/lib/cash-flow";
+import { computeBtoBreakdown } from "@/lib/bto";
 import { useProfile } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
 import { StatCard } from "@/app/components/ui";
@@ -272,6 +273,10 @@ export default function MainPage() {
     cash,
     srsAnnualCap,
     srsAccepted,
+    btoFlatPrice,
+    btoApplicationAge,
+    btoCollectionAge,
+    btoLoanTenureYears,
   } = inputs;
 
   const annualExpensesToday = monthlyExpensesToday * 12;
@@ -336,7 +341,7 @@ export default function MainPage() {
       const srsAnnualIncome = w.netFromSrs / SRS_WITHDRAWAL_YEARS;
       const srsYearlyWithdrawal = finalSrsPot / SRS_WITHDRAWAL_YEARS;
 
-      const cpfRows = buildCpfProjection({
+      const cpfBaseInputs = {
         currentAge,
         stopWorkingAge,
         cpfWithdrawalAge,
@@ -350,7 +355,50 @@ export default function MainPage() {
         cpfLifeFrs,
         endAge: deathAge,
         salarySeries: seriesOverride,
-      });
+      };
+
+      let cpfRows;
+      if (btoFlatPrice <= 0) {
+        cpfRows = buildCpfProjection(cpfBaseInputs);
+      } else {
+        // Pass 1: no deductions — get OA at DP1 age
+        const pass1 = buildCpfProjection(cpfBaseInputs);
+        const oaAtDp1Age = pass1.find((r) => r.age === btoApplicationAge)?.oaBalance ?? 0;
+
+        // DP1 allocation only depends on oaAtDp1Age
+        const btoPass1 = computeBtoBreakdown(inputs, oaAtDp1Age, 0);
+        const dp1Deductions: { age: number; amount: number }[] = [];
+        if (btoPass1.dp1.fromOA > 0 && btoApplicationAge >= currentAge && btoApplicationAge <= deathAge) {
+          dp1Deductions.push({ age: btoApplicationAge, amount: btoPass1.dp1.fromOA });
+        }
+
+        // Pass 2: DP1 deduction only — get corrected OA at DP2 age
+        const pass2 = buildCpfProjection({ ...cpfBaseInputs, oaDeductions: dp1Deductions });
+        const oaAtDp2Age = pass2.find((r) => r.age === btoCollectionAge)?.oaBalance ?? 0;
+
+        // Full BTO breakdown with correct OA at both DP ages
+        const bto = computeBtoBreakdown(inputs, oaAtDp1Age, oaAtDp2Age);
+
+        // Build complete deductions list: DP1, DP2, annual mortgage
+        const cpfOaDeductions: { age: number; amount: number }[] = [];
+        if (bto.dp1.fromOA > 0 && btoApplicationAge >= currentAge && btoApplicationAge <= deathAge) {
+          cpfOaDeductions.push({ age: btoApplicationAge, amount: bto.dp1.fromOA });
+        }
+        if (bto.dp2.fromOA > 0 && btoCollectionAge >= currentAge && btoCollectionAge <= deathAge) {
+          cpfOaDeductions.push({ age: btoCollectionAge, amount: bto.dp2.fromOA });
+        }
+        const annualMortgage = bto.monthlyMortgage * 12;
+        if (annualMortgage > 0) {
+          for (let age = btoCollectionAge; age <= bto.mortgageEndAge; age++) {
+            if (age >= currentAge && age <= deathAge) {
+              cpfOaDeductions.push({ age, amount: annualMortgage });
+            }
+          }
+        }
+
+        // Pass 3: all deductions applied — final rows
+        cpfRows = buildCpfProjection({ ...cpfBaseInputs, oaDeductions: cpfOaDeductions });
+      }
 
       const convRow = cpfRows.find((r) => r.raConversionHappened);
       const oaBalance = convRow?.oaBalance ?? 0;
@@ -485,6 +533,11 @@ export default function MainPage() {
       cash,
       srsAnnualCap,
       srsAccepted,
+      btoFlatPrice,
+      btoApplicationAge,
+      btoCollectionAge,
+      btoLoanTenureYears,
+      inputs,
     ]);
 
   const brokerageChartData = useMemo(

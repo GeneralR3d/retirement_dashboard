@@ -10,7 +10,7 @@ export type Investment = {
 };
 
 const DEFAULT_INVESTMENTS: Investment[] = [
-  { id: "stocks",  name: "Stocks & ETFs",               value: 5000, returnRate: 0.07  },
+  { id: "stocks",  name: "Stocks & ETFs",               value: 5000, returnRate: 0.06  },
   { id: "bonds",   name: "Bonds & Money Market Funds",   value: 0,    returnRate: 0.03  },
   { id: "fd",      name: "Fixed Deposits",               value: 0,    returnRate: 0.035 },
 ];

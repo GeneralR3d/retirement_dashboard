@@ -79,10 +79,16 @@ export default function ConfigPage() {
       ? salarySeries
       : buildDefaultSeries(startingSalary, salaryGrowthRate, workingYears);
 
-  const expenseDisplaySeries =
-    monthlyExpenseSeries.length === workingYears
-      ? monthlyExpenseSeries
-      : buildDefaultExpenseSeries(monthlyExpensesToday, workingYears);
+  const expenseDisplaySeries: number[] = (() => {
+    if (monthlyExpenseSeries.length === 0) {
+      return buildDefaultExpenseSeries(monthlyExpensesToday, workingYears);
+    }
+    if (monthlyExpenseSeries.length >= workingYears) {
+      return monthlyExpenseSeries.slice(0, workingYears);
+    }
+    const last = monthlyExpenseSeries[monthlyExpenseSeries.length - 1];
+    return [...monthlyExpenseSeries, ...Array(workingYears - monthlyExpenseSeries.length).fill(last)];
+  })();
 
   // Accordion state
   const [showSalaryTable, setShowSalaryTable] = useState(false);
@@ -171,13 +177,6 @@ export default function ConfigPage() {
           wYears,
         );
       }
-      if (key === "currentAge" || key === "stopWorkingAge") {
-        const wYears = Math.max(0, next.stopWorkingAge - next.currentAge);
-        next.monthlyExpenseSeries = buildDefaultExpenseSeries(
-          next.monthlyExpensesToday,
-          wYears,
-        );
-      }
       setDraft(next);
     };
   }
@@ -219,7 +218,18 @@ export default function ConfigPage() {
   }
 
   function handleSave() {
-    setInputs(latestDraft.current);
+    const d = latestDraft.current;
+    const wYears = Math.max(0, d.stopWorkingAge - d.currentAge);
+    let normalizedExpenses = d.monthlyExpenseSeries;
+    if (normalizedExpenses.length > 0 && normalizedExpenses.length !== wYears) {
+      if (normalizedExpenses.length > wYears) {
+        normalizedExpenses = normalizedExpenses.slice(0, wYears);
+      } else {
+        const last = normalizedExpenses[normalizedExpenses.length - 1];
+        normalizedExpenses = [...normalizedExpenses, ...Array(wYears - normalizedExpenses.length).fill(last)];
+      }
+    }
+    setInputs({ ...d, monthlyExpenseSeries: normalizedExpenses });
   }
 
   return (

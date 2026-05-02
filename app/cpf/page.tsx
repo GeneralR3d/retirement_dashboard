@@ -135,37 +135,46 @@ export default function CpfPage() {
   };
 
   const rows = useMemo(() => {
-    // Pass 1: raw projection (no BTO) to get OA balances at DP ages
-    const rawRows = buildCpfProjection(cpfBaseInputs);
+    if (btoFlatPrice <= 0) {
+      return buildCpfProjection(cpfBaseInputs);
+    }
 
-    const oaAtDp1Age = rawRows.find((r) => r.age === btoApplicationAge)?.oaBalance ?? 0;
-    const oaAtDp2Age = rawRows.find((r) => r.age === btoCollectionAge)?.oaBalance ?? 0;
+    // Pass 1: no deductions — get OA at DP1 age
+    const pass1 = buildCpfProjection(cpfBaseInputs);
+    const oaAtDp1Age = pass1.find((r) => r.age === btoApplicationAge)?.oaBalance ?? 0;
 
-    // Compute BTO breakdown using raw OA balances (same as BTO page)
-    const bto = btoFlatPrice > 0
-      ? computeBtoBreakdown(inputs, oaAtDp1Age, oaAtDp2Age)
-      : null;
+    // DP1 allocation only depends on oaAtDp1Age, so pass 0 for DP2 to get dp1.fromOA
+    const btoPass1 = computeBtoBreakdown(inputs, oaAtDp1Age, 0);
+    const dp1Deductions: { age: number; amount: number }[] = [];
+    if (btoPass1.dp1.fromOA > 0 && btoApplicationAge >= currentAge && btoApplicationAge <= deathAge) {
+      dp1Deductions.push({ age: btoApplicationAge, amount: btoPass1.dp1.fromOA });
+    }
 
-    // Build OA deductions list: DP1, DP2, and annual mortgage instalments.
+    // Pass 2: DP1 deduction applied — get corrected OA at DP2 age (post-DP1 balance)
+    const pass2 = buildCpfProjection({ ...cpfBaseInputs, oaDeductions: dp1Deductions });
+    const oaAtDp2Age = pass2.find((r) => r.age === btoCollectionAge)?.oaBalance ?? 0;
+
+    // Full BTO breakdown with correct OA at both DP ages
+    const bto = computeBtoBreakdown(inputs, oaAtDp1Age, oaAtDp2Age);
+
+    // Build complete deductions list: DP1, DP2, annual mortgage
     const oaDeductions: { age: number; amount: number }[] = [];
-    if (bto) {
-      if (bto.dp1.fromOA > 0 && btoApplicationAge >= currentAge && btoApplicationAge <= deathAge  ) {
-        oaDeductions.push({ age: btoApplicationAge, amount: bto.dp1.fromOA });
-      }
-      if (bto.dp2.fromOA > 0 && btoCollectionAge >= currentAge && btoCollectionAge <= deathAge) {
-        oaDeductions.push({ age: btoCollectionAge, amount: bto.dp2.fromOA });
-      }
-      const annualMortgage = bto.monthlyMortgage * 12;
-      if (annualMortgage > 0) {
-        for (let age = btoCollectionAge; age <= bto.mortgageEndAge; age++) {
-          if (age >= currentAge && age <= deathAge) {
-            oaDeductions.push({ age, amount: annualMortgage });
-          }
+    if (bto.dp1.fromOA > 0 && btoApplicationAge >= currentAge && btoApplicationAge <= deathAge) {
+      oaDeductions.push({ age: btoApplicationAge, amount: bto.dp1.fromOA });
+    }
+    if (bto.dp2.fromOA > 0 && btoCollectionAge >= currentAge && btoCollectionAge <= deathAge) {
+      oaDeductions.push({ age: btoCollectionAge, amount: bto.dp2.fromOA });
+    }
+    const annualMortgage = bto.monthlyMortgage * 12;
+    if (annualMortgage > 0) {
+      for (let age = btoCollectionAge; age <= bto.mortgageEndAge; age++) {
+        if (age >= currentAge && age <= deathAge) {
+          oaDeductions.push({ age, amount: annualMortgage });
         }
       }
     }
 
-    // Pass 2: projection with BTO deductions applied
+    // Pass 3: all deductions applied — final displayed rows
     return buildCpfProjection({ ...cpfBaseInputs, oaDeductions });
   }, [
     currentAge, stopWorkingAge, cpfWithdrawalAge, cpfRetirementAge,

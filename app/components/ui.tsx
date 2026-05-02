@@ -127,7 +127,7 @@ export function Stat({
   );
 }
 
-export function InfoTooltip({ children }: { children: React.ReactNode }) {
+export function InfoTooltip({ children, className }: { children: React.ReactNode; className?: string }) {
   const iconRef = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
@@ -172,7 +172,7 @@ export function InfoTooltip({ children }: { children: React.ReactNode }) {
             transform: "translate(-50%, -100%)",
             zIndex: 9999,
           }}
-          className="pointer-events-auto w-64 rounded-lg border border-foreground/10 bg-[var(--tooltip-bg,#0f172a)] p-3 text-xs font-normal text-foreground/80 shadow-xl"
+          className={`pointer-events-auto w-64 rounded-lg border border-foreground/10 bg-[var(--tooltip-bg,#0f172a)] p-3 text-xs font-normal text-foreground/80 shadow-xl${className ? ` ${className}` : ""}`}
         >
           {children}
         </span>,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ProfileInputs } from "@/lib/profile-context";
-import { NumberField, Slider } from "@/app/components/ui";
+import { NumberField, Slider, InfoTooltip } from "@/app/components/ui";
 import { fmtMoney } from "@/lib/format";
 import {
   GRANT_CAPS,
@@ -126,6 +126,29 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
           <div className="flex justify-between items-center text-sm">
             <span className="flex items-center gap-2 text-foreground/80">
               Housing grants
+              <span onClick={(e) => e.stopPropagation()}>
+                <InfoTooltip>
+                  <p className="font-semibold text-foreground mb-2">Housing Grant Guide</p>
+
+                  <p className="font-medium text-foreground/90 mb-0.5">CPF Housing Grant (Family)</p>
+                  <p className="mb-2 text-foreground/70">Up to $80,000 for first-timer couples/families buying direct from HDB. Amount varies by flat type and income.</p>
+
+                  <p className="font-medium text-foreground/90 mb-0.5">Enhanced Housing Grant (EHG)</p>
+                  <p className="mb-2 text-foreground/70">Up to $120,000 based on average monthly household income. Eligible if income ≤ $9,000/month. Amount decreases in $5,000 steps per $500 income band.</p>
+
+                  <p className="font-medium text-foreground/90 mb-0.5">Proximity Housing Grant (PHG)</p>
+                  <p className="mb-2 text-foreground/70">$30,000 to live with parents; $20,000 to live near parents (within 4 km).</p>
+
+                  <a
+                    href="https://www.hdb.gov.sg/-/media/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant/EHG-amount-Couples-and-Families-Aug-2024.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sky-400 underline hover:text-sky-300"
+                  >
+                    EHG table source (HDB PDF) ↗
+                  </a>
+                </InfoTooltip>
+              </span>
               <svg
                 className={`w-4 h-4 text-foreground/60 transition-transform duration-200 ${showGrants ? "rotate-180" : ""}`}
                 viewBox="0 0 24 24"
