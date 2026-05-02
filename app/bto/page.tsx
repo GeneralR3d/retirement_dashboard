@@ -3,20 +3,21 @@
 import { useMemo, useRef, useState } from "react";
 import { useProfile, type ProfileInputs } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
-import { StatCard, Stat } from "@/app/components/ui";
+import { StatCard, Stat, Th, Td } from "@/app/components/ui";
 import { BtoInputsPanel } from "@/app/components/bto-inputs";
-import { computeBtoBreakdown } from "@/lib/bto";
-import { buildCpfProjection } from "@/lib/tax";
+import { computeBtoBreakdown, type BtoBreakdown } from "@/lib/bto";
+import { buildCpfProjection, type CpfYearRow } from "@/lib/tax";
 
-function oaBalanceAtAge(rows: ReturnType<typeof buildCpfProjection>, age: number, fallback: number): number {
+function oaBalanceAtAge(rows: CpfYearRow[], age: number, fallback: number): number {
   if (rows.length === 0) return fallback;
   const exact = rows.find((r) => r.age === age);
   if (exact) return exact.oaBalance;
-  // Before currentAge → use starting OA. After end → last row.
   const first = rows[0];
   if (age < first.age) return fallback;
   return rows[rows.length - 1].oaBalance;
 }
+
+type BtoData = { breakdown: BtoBreakdown; cpfRowsFull: CpfYearRow[] };
 
 export default function BtoPage() {
   const { inputs, setInputs } = useProfile();
@@ -31,36 +32,99 @@ export default function BtoPage() {
     setInputs(latestDraft.current);
   }
 
-  // CPF projection comes from the *saved* inputs so the OA lookup reflects
-  // committed assumptions; draft changes only commit on Recalculate.
-  const cpfRows = useMemo(
-    () =>
-      buildCpfProjection({
-        currentAge: inputs.currentAge,
-        stopWorkingAge: inputs.stopWorkingAge,
-        cpfWithdrawalAge: inputs.cpfWithdrawalAge,
-        cpfRetirementAge: inputs.cpfRetirementAge,
-        startingSalary: inputs.startingSalary,
-        salaryGrowthRate: inputs.salaryGrowthRate,
-        cpfOA: inputs.cpfOA,
-        cpfSA: inputs.cpfSA,
-        cpfMA: inputs.cpfMA,
-        cpfRA: inputs.cpfRA,
-        cpfLifeFrs: inputs.cpfLifeFrs,
-        endAge: inputs.deathAge,
-        salarySeries:
-          inputs.salarySeries.length === Math.max(0, inputs.stopWorkingAge - inputs.currentAge)
-            ? inputs.salarySeries
-            : undefined,
-      }),
-    [inputs],
-  );
+  // 3-pass CPF projection from saved inputs (draft changes only commit on Recalculate).
+  // Returns accurate BTO breakdown (with correct post-DP1 OA for DP2) and the full CPF
+  // projection with all BTO deductions applied (used for the mortgage repayment table).
+  const { breakdown, cpfRowsFull } = useMemo((): BtoData => {
+    const cpfBase = {
+      currentAge: inputs.currentAge,
+      stopWorkingAge: inputs.stopWorkingAge,
+      cpfWithdrawalAge: inputs.cpfWithdrawalAge,
+      cpfRetirementAge: inputs.cpfRetirementAge,
+      startingSalary: inputs.startingSalary,
+      salaryGrowthRate: inputs.salaryGrowthRate,
+      cpfOA: inputs.cpfOA,
+      cpfSA: inputs.cpfSA,
+      cpfMA: inputs.cpfMA,
+      cpfRA: inputs.cpfRA,
+      cpfLifeFrs: inputs.cpfLifeFrs,
+      endAge: inputs.deathAge,
+      salarySeries:
+        inputs.salarySeries.length === Math.max(0, inputs.stopWorkingAge - inputs.currentAge)
+          ? inputs.salarySeries
+          : undefined,
+    };
 
-  const breakdown = useMemo(() => {
-    const oa1 = oaBalanceAtAge(cpfRows, inputs.btoApplicationAge, inputs.cpfOA);
-    const oa2 = oaBalanceAtAge(cpfRows, inputs.btoCollectionAge, inputs.cpfOA);
-    return computeBtoBreakdown(inputs, oa1, oa2);
-  }, [cpfRows, inputs]);
+    if (inputs.btoFlatPrice <= 0) {
+      return {
+        breakdown: computeBtoBreakdown(inputs, 0, 0),
+        cpfRowsFull: buildCpfProjection(cpfBase),
+      };
+    }
+
+    // Pass 1: no BTO deductions → OA at DP1 age
+    const pass1 = buildCpfProjection(cpfBase);
+    const oa1 = oaBalanceAtAge(pass1, inputs.btoApplicationAge, inputs.cpfOA);
+
+    // Pass 2: DP1 deduction only → corrected OA at DP2 age
+    const bto1 = computeBtoBreakdown(inputs, oa1, 0);
+    const dp1Deds = bto1.dp1.fromOA > 0
+      ? [{ age: inputs.btoApplicationAge, amount: bto1.dp1.fromOA }]
+      : [];
+    const pass2 = buildCpfProjection({ ...cpfBase, oaDeductions: dp1Deds });
+    const oa2 = oaBalanceAtAge(pass2, inputs.btoCollectionAge, inputs.cpfOA);
+
+    // Full BTO breakdown with accurate OA values for both DPs
+    const bto = computeBtoBreakdown(inputs, oa1, oa2);
+
+    // Pass 3: all deductions (DP1, DP2, annual mortgage for every mortgage year)
+    const allDeds: { age: number; amount: number }[] = [];
+    if (bto.dp1.fromOA > 0) allDeds.push({ age: inputs.btoApplicationAge, amount: bto.dp1.fromOA });
+    if (bto.dp2.fromOA > 0) allDeds.push({ age: inputs.btoCollectionAge, amount: bto.dp2.fromOA });
+    if (bto.monthlyMortgage > 0) {
+      const annualMortgage = bto.monthlyMortgage * 12;
+      for (let age = inputs.btoCollectionAge; age <= bto.mortgageEndAge; age++) {
+        allDeds.push({ age, amount: annualMortgage });
+      }
+    }
+
+    return {
+      breakdown: bto,
+      cpfRowsFull: buildCpfProjection({ ...cpfBase, oaDeductions: allDeds }),
+    };
+  }, [inputs]);
+
+  // Per-year mortgage repayment split: how much from CPF OA vs cash.
+  // At btoCollectionAge, DP2 is deducted before mortgage, so the OA available
+  // for mortgage = (oaBeforeAnyDeduction - dp2.fromOA). For subsequent years,
+  // oaDeducted in cpfRowsFull is purely the mortgage deduction.
+  const mortgageRows = useMemo(() => {
+    if (breakdown.monthlyMortgage <= 0) return [];
+    const annualMortgage = breakdown.monthlyMortgage * 12;
+    return Array.from(
+      { length: inputs.btoLoanTenureYears },
+      (_, k) => {
+        const age = inputs.btoCollectionAge + k;
+        const cpfRow = cpfRowsFull.find((r) => r.age === age);
+        let fromCPF: number;
+        if (k === 0) {
+          // At collection age DP2 is deducted first; mortgage gets what remains
+          const oaAfterDp2 = Math.max(0, breakdown.dp2.oaAvailable - breakdown.dp2.fromOA);
+          fromCPF = Math.min(annualMortgage, oaAfterDp2);
+        } else {
+          // All other mortgage years: oaDeducted is solely the mortgage payment
+          fromCPF = cpfRow?.oaDeducted ?? 0;
+        }
+        return {
+          age,
+          annualMortgage,
+          fromCPF,
+          fromCash: annualMortgage - fromCPF,
+          oaBalance: cpfRow?.oaBalance ?? 0,
+        };
+      },
+    );
+  }, [breakdown, cpfRowsFull, inputs.btoCollectionAge, inputs.btoLoanTenureYears]);
 
   const ratiosPct = {
     dp1: ((breakdown.dp1Amount / Math.max(1, breakdown.flatPrice)) * 100).toFixed(1),
@@ -87,8 +151,9 @@ export default function BtoPage() {
             onClick={handleRecalculate}
             disabled={!isDirty}
             className="px-6 py-3 rounded-lg text-base font-semibold transition-colors
-              disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer
-              bg-emerald-600 hover:bg-emerald-500 text-white shadow-md"
+              disabled:cursor-not-allowed cursor-pointer
+              bg-emerald-600 hover:bg-emerald-500 text-white shadow-md
+              disabled:bg-foreground/15 disabled:text-foreground/30 disabled:shadow-none"
           >
             Recalculate
           </button>
@@ -206,6 +271,78 @@ export default function BtoPage() {
             sub={`Age ${breakdown.mortgageStartAge} → ${breakdown.mortgageEndAge} (${inputs.btoLoanTenureYears} yrs)`}
           />
       </div>
+
+      {/* Mortgage repayment table */}
+      {mortgageRows.length > 0 && (
+        <section className="mt-10 rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5">
+          <div className="mb-4">
+            <h2 className="font-semibold">Annual mortgage repayment</h2>
+            <p className="text-foreground/60 text-xs mt-0.5">
+              Shows how much of each year&apos;s mortgage is covered by CPF OA and how much requires cash.
+              When the OA balance hits zero, the full annual payment shifts to cash.
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-foreground/60 border-b border-foreground/10">
+                  <Th>Age</Th>
+                  <Th>Annual mortgage</Th>
+                  <Th>From CPF OA</Th>
+                  <Th>From cash</Th>
+                  <Th>OA balance (after)</Th>
+                </tr>
+              </thead>
+              <tbody className="font-mono">
+                {mortgageRows.map((r) => {
+                  const cpfDepleted = r.fromCash > 0;
+                  return (
+                    <tr
+                      key={r.age}
+                      className={`border-b border-foreground/5 ${cpfDepleted ? "bg-rose-500/[0.07]" : "hover:bg-foreground/[0.04]"}`}
+                    >
+                      <Td>
+                        <div className="flex items-center gap-2">
+                          <span>{r.age}</span>
+                          {cpfDepleted && r.fromCPF === 0 && (
+                            <span className="text-[10px] font-sans font-semibold text-rose-400 whitespace-nowrap">
+                              OA depleted
+                            </span>
+                          )}
+                        </div>
+                      </Td>
+                      <Td>{fmtMoney(r.annualMortgage)}</Td>
+                      <Td className={r.fromCPF === 0 ? "text-foreground/30" : "text-blue-400"}>
+                        {r.fromCPF === 0 ? "—" : fmtMoney(r.fromCPF)}
+                      </Td>
+                      <Td className={cpfDepleted ? "text-rose-400 font-semibold" : "text-foreground/30"}>
+                        {cpfDepleted ? fmtMoney(r.fromCash) : "—"}
+                      </Td>
+                      <Td className={r.oaBalance <= 0 ? "text-foreground/30" : "text-blue-400/70"}>
+                        {r.oaBalance <= 0 ? "—" : fmtMoney(r.oaBalance)}
+                      </Td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-foreground/15 bg-foreground/[0.04] font-medium">
+                  <td className="py-3 px-2 text-sm text-foreground/70" colSpan={2}>
+                    Total ({inputs.btoLoanTenureYears} yrs)
+                  </td>
+                  <td className="py-3 px-2 font-mono text-sm text-blue-400">
+                    {fmtMoney(mortgageRows.reduce((s, r) => s + r.fromCPF, 0))}
+                  </td>
+                  <td className="py-3 px-2 font-mono text-sm text-rose-400">
+                    {fmtMoney(mortgageRows.reduce((s, r) => s + r.fromCash, 0))}
+                  </td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

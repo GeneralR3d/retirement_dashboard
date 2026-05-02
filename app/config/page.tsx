@@ -3,8 +3,8 @@
 import { useRef, useState } from "react";
 import { useProfile, CPF_RATES, ProfileInputs, Investment, LumpsumExpense } from "@/lib/profile-context";
 import { CPF_EMPLOYEE_RATE } from "@/lib/tax";
+import { LumpsumTablesPanel } from "@/app/components/lumpsum-tables";
 import { NumberField, Slider, Th, Td } from "@/app/components/ui";
-import { LumpsumTable } from "@/app/components/lumpsum-table";
 import { BtoInputsPanel } from "@/app/components/bto-inputs";
 import { fmtMoney } from "@/lib/format";
 
@@ -67,6 +67,7 @@ export default function ConfigPage() {
     lumpsumExpenses,
     lumpsumInflows,
     srsAnnualCap,
+    monthlyExpensesRetirement,
   } = draft;
 
   const { total: totalInvestments, weightedRate } = deriveInvestmentAggregates(investments);
@@ -229,7 +230,9 @@ export default function ConfigPage() {
         normalizedExpenses = [...normalizedExpenses, ...Array(wYears - normalizedExpenses.length).fill(last)];
       }
     }
-    setInputs({ ...d, monthlyExpenseSeries: normalizedExpenses });
+    const saved = { ...d, monthlyExpenseSeries: normalizedExpenses };
+    setInputs(saved);
+    setDraft(saved);
   }
 
   return (
@@ -251,8 +254,9 @@ export default function ConfigPage() {
             onClick={handleSave}
             disabled={!isDirty}
             className="px-6 py-3 rounded-lg text-base font-semibold transition-colors
-              disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer
-              bg-emerald-600 hover:bg-emerald-500 text-white shadow-md"
+              disabled:cursor-not-allowed cursor-pointer
+              bg-emerald-600 hover:bg-emerald-500 text-white shadow-md
+              disabled:bg-foreground/15 disabled:text-foreground/30 disabled:shadow-none"
           >
             Recalculate
           </button>
@@ -548,15 +552,15 @@ export default function ConfigPage() {
             </div>
             <NumberField
               label="Monthly expenses in retirement (today's money)"
-              value={monthlyExpensesToday}
-              onChange={update("monthlyExpensesToday")}
+              value={monthlyExpensesRetirement}
+              onChange={update("monthlyExpensesRetirement")}
               prefix="$"
               step={100}
             />
             <div className="rounded-md border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm flex justify-between items-center">
               <span className="text-foreground/60">Annual equivalent</span>
               <span className="font-mono text-foreground/80">
-                {fmtMoney(monthlyExpensesToday * 12)}/yr
+                {fmtMoney(monthlyExpensesRetirement * 12)}/yr
               </span>
             </div>
             <NumberField
@@ -861,24 +865,13 @@ export default function ConfigPage() {
             </div>
 
             {/* Lumpsum Inflows + Expenses — side-by-side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <LumpsumTable
-                title="Lumpsum Inflows"
-                description="One-time inflows (inheritance, bonuses, etc.) added to that year's available cash."
-                rows={lumpsumInflows}
-                onChange={setLumpsumInflows}
-                totalAccent="emerald"
-                idPrefix="inflow"
-              />
-              <LumpsumTable
-                title="Lumpsum Expenses"
-                description="One-time expenses applied at a specific age. Added on top of the monthly living expenses for that year."
-                rows={lumpsumExpenses}
-                onChange={setLumpsumExpenses}
-                totalAccent="red"
-                idPrefix="exp"
-              />
-            </div>
+            <LumpsumTablesPanel
+              profileInputs={draft}
+              lumpsumExpenses={lumpsumExpenses}
+              lumpsumInflows={lumpsumInflows}
+              onExpensesChange={setLumpsumExpenses}
+              onInflowsChange={setLumpsumInflows}
+            />
           </div>
         )}
       </div>

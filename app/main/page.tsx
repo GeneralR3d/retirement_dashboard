@@ -25,7 +25,7 @@ import {
   SRS_ANNUAL_CAP,
 } from "@/lib/tax";
 import { buildAccumulation } from "@/lib/cash-flow";
-import { computeBtoBreakdown } from "@/lib/bto";
+import { computeBtoBreakdown, computeMortgageCashPayments } from "@/lib/bto";
 import { useProfile } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
 import { StatCard } from "@/app/components/ui";
@@ -63,7 +63,9 @@ function NetWorthTooltip({
   srsWithdrawalAge: number;
 }) {
   if (!active || !payload?.length) return null;
-  const total = payload.reduce((s, p) => s + (p.value ?? 0), 0);
+  const totalEntry = payload.find((p) => p.name === "Total Net Worth");
+  const components = payload.filter((p) => p.name !== "Total Net Worth");
+  const total = totalEntry?.value ?? components.reduce((s, p) => s + (p.value ?? 0), 0);
   return (
     <div
       style={{
@@ -76,7 +78,7 @@ function NetWorthTooltip({
       }}
     >
       <p className="font-semibold mb-1 text-foreground/80">Age {label}</p>
-      {[...payload].reverse().map((p) => (
+      {[...components].reverse().map((p) => (
         <p key={p.name} style={{ color: p.color }} className="mt-0.5">
           {p.name}: {fmtMoney(p.value)}
         </p>
@@ -266,6 +268,7 @@ export default function MainPage() {
     cpfLifeMonthlyPayout,
     salarySeries,
     monthlyExpensesToday,
+    monthlyExpensesRetirement,
     monthlyExpenseSeries,
     emergencyMonths,
     lumpsumExpenses,
@@ -279,7 +282,7 @@ export default function MainPage() {
     btoLoanTenureYears,
   } = inputs;
 
-  const annualExpensesToday = monthlyExpensesToday * 12;
+  const annualExpensesToday = monthlyExpensesRetirement * 12;
 
   const workingYears = Math.max(0, stopWorkingAge - currentAge);
   const seriesOverride =
@@ -290,7 +293,7 @@ export default function MainPage() {
     12 *
     Math.pow(1 + CPF_FRS_INFLATION_RATE, cpfWithdrawalAge - currentAge);
 
-  const { brokerageRows, oaAtRetirement, srsPotData, cashData, srsPotAtWithdrawal, srsWithdrawal, netWorthData, brokerageContributions } =
+  const { brokerageRows, oaAtRetirement, oaTransferAge, srsPotData, cashData, srsPotAtWithdrawal, srsWithdrawal, netWorthData, brokerageContributions } =
     useMemo(() => {
       // Compute recommended SRS top-ups per year, honouring per-year accept/reject from context.
       const srsTopUps = Array.from({ length: workingYears }, (_, i) => {
@@ -300,6 +303,10 @@ export default function MainPage() {
         const takeHome = salary * (1 - CPF_EMPLOYEE_RATE);
         return recommendedSrsTopUp(takeHome, srsAnnualCap ?? SRS_ANNUAL_CAP).topUp;
       });
+
+      const workingMortgageLumpsums = computeMortgageCashPayments(inputs)
+        .filter((p) => p.age >= currentAge && p.age < stopWorkingAge)
+        .map((p) => ({ id: `bto-mtg-${p.age}`, age: p.age, name: "BTO Mortgage", amount: p.amount }));
 
       const accRows = buildAccumulation({
         currentAge,
@@ -311,7 +318,7 @@ export default function MainPage() {
         monthlyExpenseSeries:
           monthlyExpenseSeries.length === workingYears ? monthlyExpenseSeries : undefined,
         emergencyMonths,
-        lumpsumExpenses,
+        lumpsumExpenses: [...lumpsumExpenses, ...workingMortgageLumpsums],
         lumpsumInflows,
         cashStart: cash,
         brokerageStart: startingCash,
@@ -401,7 +408,11 @@ export default function MainPage() {
       }
 
       const convRow = cpfRows.find((r) => r.raConversionHappened);
-      const oaBalance = convRow?.oaBalance ?? 0;
+      // Delay OA transfer until after mortgage is fully paid if that happens after cpfRetirementAge
+      const oaTransferAge = btoFlatPrice > 0
+        ? Math.max(cpfRetirementAge, btoCollectionAge + btoLoanTenureYears)
+        : cpfRetirementAge;
+      const oaBalance = cpfRows.find((r) => r.age === oaTransferAge)?.oaBalance ?? convRow?.oaBalance ?? 0;
 
       // Brokerage projection using acc row contributions
       const contributions = accRows.map((r) => r.invested);
@@ -415,6 +426,7 @@ export default function MainPage() {
         investmentGrowthRateRetirement,
         contributions,
         oaAtRetirement: oaBalance,
+        oaTransferAge,
         stopWorkingAge,
         srsWithdrawalAge,
         cpfWithdrawalAge,
@@ -463,7 +475,7 @@ export default function MainPage() {
       cpfMap.set(currentAge, cpfOA + cpfSA + cpfMA + cpfRA);
       for (const r of cpfRows) {
         const val =
-          convRow && r.age >= cpfRetirementAge
+          convRow && r.age >= oaTransferAge
             ? r.totalBalance - r.oaBalance
             : r.totalBalance;
         cpfMap.set(r.age, Math.max(0, val));
@@ -497,6 +509,7 @@ export default function MainPage() {
       return {
         brokerageRows: rows,
         oaAtRetirement: oaBalance,
+        oaTransferAge,
         srsPotData: srsPotArr,
         cashData: cashArr,
         srsPotAtWithdrawal: finalSrsPot,
@@ -524,7 +537,7 @@ export default function MainPage() {
       workingYears,
       seriesOverride,
       cpfLifeAnnualPayout,
-      annualExpensesToday,
+      annualExpensesToday, monthlyExpensesRetirement,
       monthlyExpensesToday,
       monthlyExpenseSeries,
       emergencyMonths,
@@ -548,12 +561,12 @@ export default function MainPage() {
         contribution: k > 0 && k - 1 < workingYears ? Math.round(brokerageContributions[k - 1] ?? 0) : null,
         withdrawal: r.brokerageIncome > 0 ? Math.round(r.brokerageIncome) : null,
         oaInjected:
-          r.age === cpfRetirementAge && oaAtRetirement > 0
+          r.age === oaTransferAge && oaAtRetirement > 0
             ? Math.round(oaAtRetirement)
             : null,
         reinvestment: r.srsReinvestment > 0 ? Math.round(r.srsReinvestment) : null,
       })),
-    [brokerageRows, brokerageContributions, workingYears, cpfRetirementAge, oaAtRetirement],
+    [brokerageRows, brokerageContributions, workingYears, oaTransferAge, oaAtRetirement],
   );
 
   const peakRow = brokerageRows.reduce(

@@ -362,12 +362,18 @@ export function buildBrokerageProjection(inputs: {
   cpfLifeAnnualPayout: number; // already inflated to cpfWithdrawalAge, fixed thereafter
   srsAnnualIncome: number;     // net annual SRS income from srsWithdrawalAge onwards
   annualExpensesToday?: number; // inflation base; defaults to ANNUAL_EXPENSES_TODAY
+  extraExpensesByAge?: Map<number, number>; // one-off extra expenses per start-of-year age
+  // Age at which OA balance transfers to brokerage. Defaults to cpfRetirementAge; delayed when
+  // BTO mortgage finishes after cpfRetirementAge so OA keeps servicing the loan.
+  oaTransferAge?: number;
 }): BrokerageRow[] {
   const {
     startingCash, currentAge, workingYears, cpfRetirementAge, deathAge,
     investmentGrowthRate, investmentGrowthRateRetirement, contributions, oaAtRetirement,
     stopWorkingAge, srsWithdrawalAge, cpfWithdrawalAge, cpfLifeAnnualPayout, srsAnnualIncome,
     annualExpensesToday = ANNUAL_EXPENSES_TODAY,
+    extraExpensesByAge,
+    oaTransferAge = cpfRetirementAge,
   } = inputs;
 
   const totalYears = Math.max(0, deathAge - currentAge);
@@ -379,14 +385,15 @@ export function buildBrokerageProjection(inputs: {
     const endAge = startAge + 1;
 
     const contribution = i < workingYears ? (contributions[i] ?? 0) : 0;
-    const oaInjection = endAge === cpfRetirementAge ? oaAtRetirement : 0;
+    const oaInjection = endAge === oaTransferAge ? oaAtRetirement : 0;
 
     let brokerageIncome = 0;
     let srsReinvestment = 0;
 
     // Phase 1 — drawdown: withdraw shortfall while waiting for SRS
     if (startAge >= stopWorkingAge && startAge < srsWithdrawalAge) {
-      const expenses = annualExpensesToday * Math.pow(1 + EXPENSES_INFLATION_RATE, i);
+      const baseExpenses = annualExpensesToday * Math.pow(1 + EXPENSES_INFLATION_RATE, i);
+      const expenses = baseExpenses + (extraExpensesByAge?.get(startAge) ?? 0);
       const cpfLife = startAge >= cpfWithdrawalAge ? cpfLifeAnnualPayout : 0;
       const shortfall = Math.max(0, expenses - cpfLife);
       brokerageIncome = Math.min(shortfall, Math.max(0, balance + oaInjection));
@@ -394,7 +401,8 @@ export function buildBrokerageProjection(inputs: {
 
     // Phase 2 — SRS active: cover any remaining shortfall from brokerage, or reinvest surplus
     if (startAge >= srsWithdrawalAge) {
-      const expenses = annualExpensesToday * Math.pow(1 + EXPENSES_INFLATION_RATE, i);
+      const baseExpenses = annualExpensesToday * Math.pow(1 + EXPENSES_INFLATION_RATE, i);
+      const expenses = baseExpenses + (extraExpensesByAge?.get(startAge) ?? 0);
       const cpfLife = startAge >= cpfWithdrawalAge ? cpfLifeAnnualPayout : 0;
       const net = cpfLife + srsAnnualIncome - expenses;
       if (net >= 0) {

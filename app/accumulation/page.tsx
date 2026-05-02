@@ -5,26 +5,15 @@ import { buildAccumulation } from "@/lib/cash-flow";
 import { useProfile, LumpsumExpense } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
 import { Td, Th, InfoTooltip } from "@/app/components/ui";
-import { LumpsumTable } from "@/app/components/lumpsum-table";
+import { LumpsumTablesPanel, useBtoEffectiveExpenses } from "@/app/components/lumpsum-tables";
 import { recommendedSrsTopUp, SRS_ANNUAL_CAP, CPF_EMPLOYEE_RATE } from "@/lib/tax";
+import { computeMortgageCashPayments } from "@/lib/bto";
 
 export default function AccumulationPage() {
   const { inputs, setInputs } = useProfile();
 
   const [draftExpenses, setDraftExpenses] = useState<LumpsumExpense[]>(inputs.lumpsumExpenses);
   const [draftInflows, setDraftInflows] = useState<LumpsumExpense[]>(inputs.lumpsumInflows);
-
-  const isDirty =
-    JSON.stringify(draftExpenses) !== JSON.stringify(inputs.lumpsumExpenses) ||
-    JSON.stringify(draftInflows) !== JSON.stringify(inputs.lumpsumInflows);
-
-  function handleRecalculate() {
-    setInputs({
-      ...inputs,
-      lumpsumExpenses: draftExpenses,
-      lumpsumInflows: draftInflows,
-    });
-  }
 
   const {
     currentAge,
@@ -43,6 +32,41 @@ export default function AccumulationPage() {
   } = inputs;
 
   const workingYears = Math.max(0, stopWorkingAge - currentAge);
+
+  const { effectiveExpenses: effectiveDraftExpenses } = useBtoEffectiveExpenses(inputs, draftExpenses);
+
+  // Mortgage cash payments for working years — injected into buildAccumulation but NOT
+  // shown in the lumpsum table (there can be 25+ years, which would clutter the UI).
+  const mortgageCashPayments = useMemo(
+    () => computeMortgageCashPayments(inputs),
+    [inputs],
+  );
+
+  const workingYearMortgageLumpsums = useMemo(
+    () =>
+      mortgageCashPayments
+        .filter((p) => p.age >= currentAge && p.age < stopWorkingAge)
+        .map((p) => ({ id: `bto-mtg-${p.age}`, age: p.age, name: "BTO Mortgage", amount: p.amount })),
+    [mortgageCashPayments, currentAge, stopWorkingAge],
+  );
+
+  // All expenses fed to buildAccumulation: user draft (with BTO DP overrides) + mortgage cash
+  const allAccumulationExpenses = useMemo(
+    () => [...effectiveDraftExpenses, ...workingYearMortgageLumpsums],
+    [effectiveDraftExpenses, workingYearMortgageLumpsums],
+  );
+
+  const isDirty =
+    JSON.stringify(effectiveDraftExpenses) !== JSON.stringify(inputs.lumpsumExpenses) ||
+    JSON.stringify(draftInflows) !== JSON.stringify(inputs.lumpsumInflows);
+
+  function handleRecalculate() {
+    setInputs({
+      ...inputs,
+      lumpsumExpenses: effectiveDraftExpenses,
+      lumpsumInflows: draftInflows,
+    });
+  }
 
   // srsAccepted lives in profile context so it persists across navigation.
   // [] means all-accepted; missing indices also default to true.
@@ -97,8 +121,8 @@ export default function AccumulationPage() {
             ? monthlyExpenseSeries
             : undefined,
         emergencyMonths,
-        lumpsumExpenses,
-        lumpsumInflows,
+        lumpsumExpenses: allAccumulationExpenses,
+        lumpsumInflows: draftInflows,
         cashStart: cash,
         brokerageStart: startingCash,
         investmentGrowthRate,
@@ -113,8 +137,8 @@ export default function AccumulationPage() {
       monthlyExpensesToday,
       monthlyExpenseSeries,
       emergencyMonths,
-      lumpsumExpenses,
-      lumpsumInflows,
+      allAccumulationExpenses,
+      draftInflows,
       cash,
       startingCash,
       investmentGrowthRate,
@@ -148,8 +172,9 @@ export default function AccumulationPage() {
             onClick={handleRecalculate}
             disabled={!isDirty}
             className="px-6 py-3 rounded-lg text-base font-semibold transition-colors
-              disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer
-              bg-emerald-600 hover:bg-emerald-500 text-white shadow-md"
+              disabled:cursor-not-allowed cursor-pointer
+              bg-emerald-600 hover:bg-emerald-500 text-white shadow-md
+              disabled:bg-foreground/15 disabled:text-foreground/30 disabled:shadow-none"
           >
             Recalculate
           </button>
@@ -157,22 +182,13 @@ export default function AccumulationPage() {
       </header>
 
       {/* Lumpsum tables (synced with config) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <LumpsumTable
-          title="Lumpsum Inflows"
-          description="One-time inflows (inheritance, bonuses, etc.) added to that year's available cash."
-          rows={draftInflows}
-          onChange={setDraftInflows}
-          totalAccent="emerald"
-          idPrefix="inflow"
-        />
-        <LumpsumTable
-          title="Lumpsum Expenses"
-          description="One-time expenses applied at a specific age. Added on top of the monthly living expenses for that year."
-          rows={draftExpenses}
-          onChange={setDraftExpenses}
-          totalAccent="red"
-          idPrefix="exp"
+      <div className="mb-6">
+        <LumpsumTablesPanel
+          profileInputs={inputs}
+          lumpsumExpenses={draftExpenses}
+          lumpsumInflows={draftInflows}
+          onExpensesChange={setDraftExpenses}
+          onInflowsChange={setDraftInflows}
         />
       </div>
 

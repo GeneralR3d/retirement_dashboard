@@ -16,6 +16,7 @@ import {
   SRS_ANNUAL_CAP,
 } from "@/lib/tax";
 import { buildAccumulation } from "@/lib/cash-flow";
+import { computeMortgageCashPayments } from "@/lib/bto";
 
 type WithdrawalRow = {
   age: number;
@@ -36,11 +37,13 @@ function buildWithdrawalRows(
   cpfLifeAnnualPayout: number,
   srsAnnualIncome: number,
   annualExpensesToday: number,
+  extraExpensesByAge?: Map<number, number>,
 ): WithdrawalRow[] {
   const rows: WithdrawalRow[] = [];
   for (let age = stopWorkingAge; age <= deathAge; age++) {
     const yearsFromNow = age - currentAge;
-    const annualExpenses = annualExpensesToday * Math.pow(1 + EXPENSES_INFLATION_RATE, yearsFromNow);
+    const baseExpenses = annualExpensesToday * Math.pow(1 + EXPENSES_INFLATION_RATE, yearsFromNow);
+    const annualExpenses = baseExpenses + (extraExpensesByAge?.get(age) ?? 0);
     const cpfLifeIncome = age >= cpfWithdrawalAge ? cpfLifeAnnualPayout : 0;
     const srsIncome = age >= srsWithdrawalAge ? srsAnnualIncome : 0;
     const shortfall = annualExpenses - cpfLifeIncome - srsIncome;
@@ -79,6 +82,7 @@ export default function RetirementPage() {
     cpfRA,
     cpfLifeFrs,
     monthlyExpensesToday,
+    monthlyExpensesRetirement,
     monthlyExpenseSeries,
     emergencyMonths,
     lumpsumExpenses,
@@ -86,15 +90,32 @@ export default function RetirementPage() {
     cash,
     srsAnnualCap,
     srsAccepted,
+    btoFlatPrice,
+    btoCollectionAge,
+    btoLoanTenureYears,
   } = inputs;
 
-  const annualExpensesToday = monthlyExpensesToday * 12;
+  const annualExpensesToday = monthlyExpensesRetirement * 12;
 
   const workingYears = Math.max(0, stopWorkingAge - currentAge);
   const seriesOverride = salarySeries.length === workingYears ? salarySeries : undefined;
 
   const cpfLifeAnnualPayout =
     cpfLifeMonthlyPayout * 12 * Math.pow(1 + CPF_FRS_INFLATION_RATE, cpfWithdrawalAge - currentAge);
+
+  const mortgageCashPayments = useMemo(
+    () => computeMortgageCashPayments(inputs),
+    [inputs],
+  );
+
+  // Map of retirement-year ages → mortgage cash amount (for table display and brokerage drawdown)
+  const retirementMortgageByAge = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const p of mortgageCashPayments) {
+      if (p.age >= stopWorkingAge && p.age <= deathAge) map.set(p.age, p.amount);
+    }
+    return map;
+  }, [mortgageCashPayments, stopWorkingAge, deathAge]);
 
   const { srsAnnualIncome, srsPotAtWithdrawal, srsWithdrawalInfo, brokerageByAge } = useMemo(() => {
     // Compute recommended SRS top-ups per year, honouring per-year accept/reject from context.
@@ -106,6 +127,11 @@ export default function RetirementPage() {
       return recommendedSrsTopUp(takeHome, srsAnnualCap ?? SRS_ANNUAL_CAP).topUp;
     });
 
+    // Working-year mortgage cash as lumpsum expenses so contributions are reduced accurately
+    const workingMortgageLumpsums = mortgageCashPayments
+      .filter((p) => p.age >= currentAge && p.age < stopWorkingAge)
+      .map((p) => ({ id: `bto-mtg-${p.age}`, age: p.age, name: "BTO Mortgage", amount: p.amount }));
+
     const accRows = buildAccumulation({
       currentAge,
       stopWorkingAge,
@@ -115,7 +141,7 @@ export default function RetirementPage() {
       monthlyExpensesToday,
       monthlyExpenseSeries: monthlyExpenseSeries.length === workingYears ? monthlyExpenseSeries : undefined,
       emergencyMonths,
-      lumpsumExpenses,
+      lumpsumExpenses: [...lumpsumExpenses, ...workingMortgageLumpsums],
       lumpsumInflows,
       cashStart: cash,
       brokerageStart: startingCash,
@@ -152,7 +178,11 @@ export default function RetirementPage() {
       endAge: deathAge,
       salarySeries: seriesOverride,
     });
-    const oaAtRetirement = cpfRows.find((r) => r.raConversionHappened)?.oaBalance ?? 0;
+    const oaTransferAge = btoFlatPrice > 0
+      ? Math.max(cpfRetirementAge, btoCollectionAge + btoLoanTenureYears)
+      : cpfRetirementAge;
+    const convRow = cpfRows.find((r) => r.raConversionHappened);
+    const oaAtRetirement = cpfRows.find((r) => r.age === oaTransferAge)?.oaBalance ?? convRow?.oaBalance ?? 0;
 
     const contributions = accRows.map((r) => r.invested);
     const brokerageRows = buildBrokerageProjection({
@@ -165,12 +195,14 @@ export default function RetirementPage() {
       investmentGrowthRateRetirement,
       contributions,
       oaAtRetirement,
+      oaTransferAge,
       stopWorkingAge,
       srsWithdrawalAge,
       cpfWithdrawalAge,
       cpfLifeAnnualPayout,
       srsAnnualIncome: annualSrs,
       annualExpensesToday,
+      extraExpensesByAge: retirementMortgageByAge,
     });
 
     const map = new Map<number, { brokerageIncome: number; balance: number; srsReinvestment: number }>();
@@ -194,9 +226,10 @@ export default function RetirementPage() {
     workingYears, seriesOverride,
     currentAge, stopWorkingAge, cpfWithdrawalAge, cpfRetirementAge, deathAge,
     cpfOA, cpfSA, cpfMA, cpfRA, cpfLifeFrs, startingCash, srsWithdrawalAge, cpfLifeAnnualPayout,
-    annualExpensesToday,
+    annualExpensesToday, monthlyExpensesRetirement,
     monthlyExpensesToday, monthlyExpenseSeries, emergencyMonths,
     lumpsumExpenses, lumpsumInflows, cash, srsAnnualCap, srsAccepted,
+    mortgageCashPayments, retirementMortgageByAge,
   ]);
 
   const rows = useMemo(
@@ -210,8 +243,9 @@ export default function RetirementPage() {
         cpfLifeAnnualPayout,
         srsAnnualIncome,
         annualExpensesToday,
+        retirementMortgageByAge,
       ),
-    [currentAge, stopWorkingAge, deathAge, cpfWithdrawalAge, srsWithdrawalAge, cpfLifeAnnualPayout, srsAnnualIncome, annualExpensesToday],
+    [currentAge, stopWorkingAge, deathAge, cpfWithdrawalAge, srsWithdrawalAge, cpfLifeAnnualPayout, srsAnnualIncome, annualExpensesToday, retirementMortgageByAge],
   );
 
   const retirementYears = Math.max(0, deathAge - stopWorkingAge);
@@ -224,7 +258,7 @@ export default function RetirementPage() {
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-widest text-foreground/40 mb-1">
-          Base: S${monthlyExpensesToday.toLocaleString("en-SG")}/mo (S$
+          Base: S${monthlyExpensesRetirement.toLocaleString("en-SG")}/mo (S$
           {annualExpensesToday.toLocaleString("en-SG")}/yr) in today&apos;s money
           &middot; Inflation {EXPENSES_INFLATION_RATE * 100}% p.a. &middot; Expenses
           grown from current age ({currentAge}) to each retirement year
@@ -302,7 +336,7 @@ export default function RetirementPage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Annual expenses</h2>
           <span className="text-xs text-foreground/60">
-            S${monthlyExpensesToday.toLocaleString("en-SG")}/mo today &rarr; inflated at{" "}
+            S${monthlyExpensesRetirement.toLocaleString("en-SG")}/mo today &rarr; inflated at{" "}
             {EXPENSES_INFLATION_RATE * 100}% p.a. for {Math.max(0, stopWorkingAge - currentAge)}+ years
           </span>
         </div>
@@ -328,15 +362,25 @@ export default function RetirementPage() {
                 const brokerageBalance = brok?.balance ?? 0;
                 const srsReinvestment = brok?.srsReinvestment ?? 0;
                 const residual = r.shortfall - brokerageIncome;
+                const mortgageCash = retirementMortgageByAge.get(r.age) ?? 0;
                 return (
                   <tr
                     key={r.age}
-                    className="border-b border-foreground/5 hover:bg-foreground/[0.04]"
+                    className={`border-b border-foreground/5 ${mortgageCash > 0 ? "bg-rose-500/[0.04]" : "hover:bg-foreground/[0.04]"}`}
                   >
                     <Td>{r.age}</Td>
                     <Td className="text-foreground/60">+{r.yearsFromNow}</Td>
                     <Td>{fmtMoney(r.monthlyExpenses)}</Td>
-                    <Td>{fmtMoney(r.annualExpenses)}</Td>
+                    <td className="py-2 px-2 whitespace-nowrap">
+                      <div className="flex flex-col items-start leading-tight gap-0.5">
+                        <span>{fmtMoney(r.annualExpenses)}</span>
+                        {mortgageCash > 0 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/25 text-rose-300 font-sans whitespace-nowrap">
+                            BTO Mortgage +{fmtMoney(mortgageCash)}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <Td className={r.cpfLifeIncome > 0 ? "text-orange-400" : "text-foreground/30"}>
                       {r.cpfLifeIncome > 0 ? fmtMoney(r.cpfLifeIncome) : "—"}
                     </Td>

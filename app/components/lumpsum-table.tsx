@@ -11,6 +11,7 @@ type Props = {
   onChange: (rows: LumpsumExpense[]) => void;
   totalAccent: "red" | "emerald";
   idPrefix: string;
+  lockedIds?: Set<string>;
 };
 
 export function LumpsumTable({
@@ -20,6 +21,7 @@ export function LumpsumTable({
   onChange,
   totalAccent,
   idPrefix,
+  lockedIds,
 }: Props) {
   function update(id: string, field: keyof LumpsumExpense, value: string | number) {
     onChange(rows.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
@@ -64,49 +66,69 @@ export function LumpsumTable({
             </tr>
           </thead>
           <tbody className="font-mono">
-            {rows.map((r) => (
-              <tr key={r.id} className="border-b border-foreground/5 hover:bg-foreground/[0.04]">
-                <td className="py-2 px-2 w-20">
-                  <input
-                    type="number"
-                    value={r.age}
-                    step={1}
-                    onChange={(e) => update(r.id, "age", parseInt(e.target.value) || 0)}
-                    className="w-16 bg-foreground/10 border border-foreground/15 rounded-lg px-2 py-1 outline-none focus:border-emerald-500 text-center"
-                  />
-                </td>
-                <td className="py-2 px-2">
-                  <input
-                    type="text"
-                    value={r.name}
-                    onChange={(e) => update(r.id, "name", e.target.value)}
-                    className="w-full bg-transparent outline-none border-b border-transparent hover:border-foreground/20 focus:border-emerald-500 px-1 py-0.5 transition-colors"
-                  />
-                </td>
-                <td className="py-2 px-2">
-                  <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500 w-32">
-                    <span className="pl-2 text-foreground/50 font-mono text-xs">$</span>
-                    <input
-                      type="number"
-                      value={r.amount}
-                      step={1000}
-                      min={0}
-                      onChange={(e) => update(r.id, "amount", parseFloat(e.target.value) || 0)}
-                      className="w-full bg-transparent px-2 py-1.5 outline-none font-mono text-sm"
-                    />
-                  </div>
-                </td>
-                <td className="py-2 px-2">
-                  <button
-                    onClick={() => remove(r.id)}
-                    className="text-foreground/30 hover:text-red-400 transition-colors cursor-pointer"
-                    title="Remove"
-                  >
-                    ×
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {rows.map((r) => {
+              const locked = lockedIds?.has(r.id) ?? false;
+              return (
+                <tr key={r.id} className={`border-b border-foreground/5 ${locked ? "bg-foreground/[0.02]" : "hover:bg-foreground/[0.04]"}`}>
+                  <td className="py-2 px-2 w-20">
+                    {locked ? (
+                      <span className="w-16 inline-block text-center text-foreground/70 font-mono text-sm">{r.age}</span>
+                    ) : (
+                      <input
+                        type="number"
+                        value={r.age}
+                        step={1}
+                        onChange={(e) => update(r.id, "age", parseInt(e.target.value) || 0)}
+                        className="w-16 bg-foreground/10 border border-foreground/15 rounded-lg px-2 py-1 outline-none focus:border-emerald-500 text-center"
+                      />
+                    )}
+                  </td>
+                  <td className="py-2 px-2">
+                    {locked ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-foreground/70 px-1 py-0.5 text-sm">{r.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 font-sans">from BTO</span>
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={r.name}
+                        onChange={(e) => update(r.id, "name", e.target.value)}
+                        className="w-full bg-transparent outline-none border-b border-transparent hover:border-foreground/20 focus:border-emerald-500 px-1 py-0.5 transition-colors"
+                      />
+                    )}
+                  </td>
+                  <td className="py-2 px-2">
+                    {locked ? (
+                      <span className="text-foreground/70 font-mono text-sm">{fmtMoney(r.amount)}</span>
+                    ) : (
+                      <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500 w-32">
+                        <span className="pl-2 text-foreground/50 font-mono text-xs">$</span>
+                        <input
+                          type="number"
+                          value={r.amount}
+                          step={1000}
+                          min={0}
+                          onChange={(e) => update(r.id, "amount", parseFloat(e.target.value) || 0)}
+                          className="w-full bg-transparent px-2 py-1.5 outline-none font-mono text-sm"
+                        />
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-2 px-2">
+                    {!locked && (
+                      <button
+                        onClick={() => remove(r.id)}
+                        className="text-foreground/30 hover:text-red-400 transition-colors cursor-pointer"
+                        title="Remove"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
           <tfoot>
             <tr className="border-t border-foreground/15 bg-foreground/[0.04] font-medium">

@@ -192,15 +192,6 @@ export default function CpfPage() {
   const saBeforeConversion = conversionRow?.saBalanceAtConversion ?? 0;
   const conversionSurplus = saBeforeConversion - frsTarget; // positive = excess to OA, negative = deficit drawn from OA
 
-  // OA is transferred to real networth at cpfRetirementAge — zero it out from that point
-  const chartData = rows.map((r) => ({
-    age: r.age,
-    OA: conversionRow && r.age >= cpfRetirementAge ? 0 : Math.round(r.oaBalance),
-    SA: Math.round(r.saBalance),
-    MA: Math.round(r.maBalance),
-    RA: Math.round(r.raBalance),
-  }));
-
   const axisColor = "var(--axis-color, #94a3b8)";
   const gridColor = "var(--grid-color, #1e293b)";
   const refLineColor = "#a78bfa";
@@ -209,6 +200,18 @@ export default function CpfPage() {
 
   const btoMortgageEndAge = btoCollectionAge + btoLoanTenureYears - 1;
   const hasBto = btoFlatPrice > 0 && btoApplicationAge >= currentAge;
+  const oaTransferAge = btoFlatPrice > 0
+    ? Math.max(cpfRetirementAge, btoMortgageEndAge + 1)
+    : cpfRetirementAge;
+
+  // OA is transferred to brokerage at oaTransferAge — zero it out from that point
+  const chartData = rows.map((r) => ({
+    age: r.age,
+    OA: conversionRow && r.age >= oaTransferAge ? 0 : Math.round(r.oaBalance),
+    SA: Math.round(r.saBalance),
+    MA: Math.round(r.maBalance),
+    RA: Math.round(r.raBalance),
+  }));
 
   const [hiddenCols, setHiddenCols] = useState<Set<ColId>>(
     () => new Set<ColId>(["oaBalance", "saBalance", "maBalance", "raBalance"] as ColId[]),
@@ -317,8 +320,18 @@ export default function CpfPage() {
                 stroke={refLineColor}
                 strokeDasharray="5 4"
                 strokeWidth={1.5}
-                label={{ value: `SA→RA + OA→Brok (${cpfRetirementAge})`, position: "insideTopRight", fill: refLineColor, fontSize: 10 }}
+                label={{ value: oaTransferAge === cpfRetirementAge ? `SA→RA + OA→Brok (${cpfRetirementAge})` : `SA→RA (${cpfRetirementAge})`, position: "insideTopRight", fill: refLineColor, fontSize: 10 }}
               />
+              {/* OA→Brok line only when delayed past cpfRetirementAge by BTO mortgage */}
+              {oaTransferAge !== cpfRetirementAge && (
+                <ReferenceLine
+                  x={oaTransferAge}
+                  stroke={refLineColor}
+                  strokeDasharray="5 4"
+                  strokeWidth={1.5}
+                  label={{ value: `OA→Brok (${oaTransferAge})`, position: "insideTopRight", fill: refLineColor, fontSize: 10 }}
+                />
+              )}
               {/* Dotted reference line at CPF LIFE annuity purchase age */}
               <ReferenceLine
                 x={cpfWithdrawalAge}
@@ -526,14 +539,14 @@ export default function CpfPage() {
                   <Td>
                     <span>{r.age}</span>
                     {r.raConversionHappened && (
-                      <>
-                        <span className="ml-2 text-[10px] font-sans font-semibold text-violet-400 uppercase tracking-wide">
-                          SA→RA
-                        </span>
-                        <span className="ml-1 text-[10px] font-sans font-semibold text-sky-400 uppercase tracking-wide">
-                          OA→Brok
-                        </span>
-                      </>
+                      <span className="ml-2 text-[10px] font-sans font-semibold text-violet-400 uppercase tracking-wide">
+                        SA→RA
+                      </span>
+                    )}
+                    {r.age === oaTransferAge && (
+                      <span className="ml-1 text-[10px] font-sans font-semibold text-sky-400 uppercase tracking-wide">
+                        OA→Brok
+                      </span>
                     )}
                     {r.cpfLifeHappened && (
                       <span className="ml-2 text-[10px] font-sans font-semibold text-orange-400 uppercase tracking-wide">
@@ -556,7 +569,7 @@ export default function CpfPage() {
                     ) : null,
                   )}
                   <Td className="font-semibold">
-                    {fmtMoney(conversionRow && r.age >= cpfRetirementAge
+                    {fmtMoney(conversionRow && r.age >= oaTransferAge
                       ? r.totalBalance - r.oaBalance
                       : r.totalBalance)}
                   </Td>

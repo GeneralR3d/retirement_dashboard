@@ -23,8 +23,8 @@ export type LumpsumExpense = {
 };
 
 const DEFAULT_LUMPSUM_EXPENSES: LumpsumExpense[] = [
-  { id: "exp-1", age: 0, name: "BTO Downpayment (application)", amount: 0 },
-  { id: "exp-2", age: 0, name: "BTO Downpayment (key collection)", amount: 0 },
+  { id: "exp-1", age: 0, name: "BTO Downpayment one", amount: 0 },
+  { id: "exp-2", age: 0, name: "BTO Downpayment two", amount: 0 },
   { id: "exp-3", age: 0, name: "Wedding", amount: 0 },
   { id: "exp-4", age: 0, name: "Renovation", amount: 0 },
   { id: "exp-5", age: 0, name: "Honeymoon", amount: 0 },
@@ -63,6 +63,7 @@ export type ProfileInputs = {
   monthlyExpenseSeries: number[];
   lumpsumExpenses: LumpsumExpense[];
   lumpsumInflows: LumpsumExpense[];
+  monthlyExpensesRetirement: number;
   srsAnnualCap: number;
   srsAccepted: boolean[]; // per working-year accept/reject; [] = all accepted (default)
   btoApplicantType: "single" | "couple";
@@ -105,13 +106,14 @@ const DEFAULTS: ProfileInputs = {
   cpfLifeMonthlyPayout: 1610,
   salarySeries: [],
   startingCash: 5000,
-  monthlyExpensesToday: 4000,
+  monthlyExpensesToday: 3000,
   investments: DEFAULT_INVESTMENTS,
   cash: 10000,
-  emergencyMonths: 6,
+  emergencyMonths: 5,
   monthlyExpenseSeries: [],
   lumpsumExpenses: DEFAULT_LUMPSUM_EXPENSES,
   lumpsumInflows: DEFAULT_LUMPSUM_INFLOWS,
+  monthlyExpensesRetirement: 3000,
   srsAnnualCap: 15300,
   srsAccepted: [],
   btoApplicantType: "couple",

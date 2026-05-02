@@ -1,4 +1,5 @@
 import type { ProfileInputs } from "./profile-context";
+import { buildCpfProjection, type CpfYearRow } from "./tax";
 
 export const HDB_LOAN_RATE = 0.026;
 export const MAX_TENURE_HDB = 25;
@@ -154,4 +155,81 @@ export function computeBtoBreakdown(
     mortgageStartAge,
     mortgageEndAge,
   };
+}
+
+function oaAt(rows: CpfYearRow[], age: number, fallback: number): number {
+  const row = rows.find((r) => r.age === age);
+  if (row) return row.oaBalance;
+  if (rows.length === 0 || age < rows[0].age) return fallback;
+  return rows[rows.length - 1].oaBalance;
+}
+
+// Returns per-age cash amounts the owner must pay for the mortgage (i.e. the portion
+// not covered by CPF OA). Only years where cash > 0 are included.
+export function computeMortgageCashPayments(inputs: ProfileInputs): { age: number; amount: number }[] {
+  if (inputs.btoFlatPrice <= 0) return [];
+
+  const cpfBase = {
+    currentAge: inputs.currentAge,
+    stopWorkingAge: inputs.stopWorkingAge,
+    cpfWithdrawalAge: inputs.cpfWithdrawalAge,
+    cpfRetirementAge: inputs.cpfRetirementAge,
+    startingSalary: inputs.startingSalary,
+    salaryGrowthRate: inputs.salaryGrowthRate,
+    cpfOA: inputs.cpfOA,
+    cpfSA: inputs.cpfSA,
+    cpfMA: inputs.cpfMA,
+    cpfRA: inputs.cpfRA,
+    cpfLifeFrs: inputs.cpfLifeFrs,
+    endAge: inputs.deathAge,
+    salarySeries:
+      inputs.salarySeries.length === Math.max(0, inputs.stopWorkingAge - inputs.currentAge)
+        ? inputs.salarySeries
+        : undefined,
+  };
+
+  // Pass 1 — no BTO deductions
+  const pass1 = buildCpfProjection(cpfBase);
+  const oa1 = oaAt(pass1, inputs.btoApplicationAge, inputs.cpfOA);
+
+  // Pass 2 — DP1 deduction only, to get accurate OA at DP2 age
+  const bto1 = computeBtoBreakdown(inputs, oa1, 0);
+  const dp1Deds = bto1.dp1.fromOA > 0
+    ? [{ age: inputs.btoApplicationAge, amount: bto1.dp1.fromOA }]
+    : [];
+  const pass2 = buildCpfProjection({ ...cpfBase, oaDeductions: dp1Deds });
+  const oa2 = oaAt(pass2, inputs.btoCollectionAge, inputs.cpfOA);
+
+  // Full BTO breakdown
+  const bto = computeBtoBreakdown(inputs, oa1, oa2);
+  if (bto.monthlyMortgage <= 0) return [];
+
+  const annualMortgage = bto.monthlyMortgage * 12;
+
+  // Pass 3 — all BTO deductions (DP1, DP2, and full mortgage period)
+  const allDeds: { age: number; amount: number }[] = [];
+  if (bto.dp1.fromOA > 0) allDeds.push({ age: inputs.btoApplicationAge, amount: bto.dp1.fromOA });
+  if (bto.dp2.fromOA > 0) allDeds.push({ age: inputs.btoCollectionAge, amount: bto.dp2.fromOA });
+  for (let age = inputs.btoCollectionAge; age <= bto.mortgageEndAge; age++) {
+    allDeds.push({ age, amount: annualMortgage });
+  }
+  const pass3 = buildCpfProjection({ ...cpfBase, oaDeductions: allDeds });
+
+  const result: { age: number; amount: number }[] = [];
+
+  // Year 0 of mortgage (btoCollectionAge): DP2 is deducted before the mortgage payment,
+  // so only the remaining OA after DP2 can cover the mortgage.
+  const oaAfterDp2 = Math.max(0, oa2 - bto.dp2.fromOA);
+  const cashAtCollection = Math.max(0, annualMortgage - Math.min(annualMortgage, oaAfterDp2));
+  if (cashAtCollection > 0) result.push({ age: inputs.btoCollectionAge, amount: cashAtCollection });
+
+  // Subsequent mortgage years: oaDeducted in pass3 is solely the mortgage deduction
+  for (let k = 1; k < inputs.btoLoanTenureYears; k++) {
+    const age = inputs.btoCollectionAge + k;
+    const row = pass3.find((r) => r.age === age);
+    const fromCash = annualMortgage - (row?.oaDeducted ?? 0);
+    if (fromCash > 0) result.push({ age, amount: fromCash });
+  }
+
+  return result;
 }
