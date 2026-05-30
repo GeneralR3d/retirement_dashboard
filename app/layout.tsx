@@ -43,10 +43,10 @@ export default function RootLayout({
           gtag('config', 'G-R2YV0686Q1');
         `}
       </Script>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex">
         <ProfileProvider>
           <Navbar />
-          <div className="flex-1">{children}</div>
+          <div className="flex-1 min-w-0">{children}</div>
         </ProfileProvider>
       </body>
     </html>
