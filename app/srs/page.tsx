@@ -97,7 +97,7 @@ function InfoTooltip({ text }: { text: string }) {
         i
       </button>
       {visible && (
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 rounded-lg border border-foreground/15 bg-[var(--tooltip-bg,#0f172a)] shadow-xl px-3 py-2 text-xs text-foreground/80 z-30 pointer-events-none">
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 border border-foreground/15 bg-[var(--tooltip-bg,#0f172a)] shadow-xl px-3 py-2 text-xs text-foreground/80 z-30 pointer-events-none">
           {text}
         </span>
       )}
@@ -214,7 +214,7 @@ export default function SrsPage() {
         </p>
       </header>
 
-      <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-400/80 space-y-1.5">
+      <div className="mb-6 border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-400/80 space-y-1.5">
         <p>
           <span className="font-semibold text-amber-400">Projection only</span> — All figures on this page are illustrative comparisons between using SRS and not using SRS. A key assumption is that <span className="font-medium">no withdrawals are made from the brokerage pot before age {srsWithdrawalAge}</span>, which is almost certainly not true in practice.
         </p>
@@ -230,7 +230,7 @@ export default function SrsPage() {
       </div>
 
       {/* ── Demo parameter controls ─────────────────────────────────────────── */}
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
         <h2 className="font-semibold mb-4">Demo parameters</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-5">
 
@@ -351,7 +351,7 @@ export default function SrsPage() {
         />
       </section>
 
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="font-semibold flex items-center">
             Pot growth
@@ -403,7 +403,7 @@ export default function SrsPage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="font-semibold flex items-center">
             Brokerage pot — accumulation
@@ -447,13 +447,13 @@ export default function SrsPage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Annual projection</h2>
           {hiddenCount > 0 && (
             <button
               onClick={() => setShowHidden((v) => !v)}
-              className="text-xs px-3 py-1.5 rounded-md border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors"
+              className="text-xs px-3 py-1.5 border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors"
             >
               {showHidden
                 ? "Hide hidden columns"
@@ -502,7 +502,7 @@ export default function SrsPage() {
                         </svg>
                       </button>
                       {openMenu === col.id && (
-                        <div className="absolute top-full left-0 mt-1 z-20 rounded-lg border border-foreground/15 bg-[var(--tooltip-bg,#0f172a)] shadow-xl py-1 min-w-[160px]">
+                        <div className="absolute top-full left-0 mt-1 z-20 border border-foreground/15 bg-[var(--tooltip-bg,#0f172a)] shadow-xl py-1 min-w-[160px]">
                           <button
                             onClick={() => {
                               toggleHiddenCol(col.id);
@@ -550,7 +550,7 @@ export default function SrsPage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-5">
         <h2 className="font-semibold mb-1">SRS withdrawal</h2>
         <p className="text-xs text-foreground/60 mb-5">
           Pot drawn down over {SRS_WITHDRAWAL_YEARS} years after the

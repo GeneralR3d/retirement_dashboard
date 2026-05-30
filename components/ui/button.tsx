@@ -27,7 +27,7 @@ export function SplitNavButton({ className }: { className?: string }) {
     <button
       className={cn(
         "relative flex items-center justify-center overflow-hidden cursor-pointer",
-        "px-3 py-1.5 rounded-md text-sm transition-colors",
+        "px-3 py-1.5 text-sm transition-colors",
         isActive
           ? "bg-foreground/10 text-foreground font-medium"
           : "text-foreground/60",

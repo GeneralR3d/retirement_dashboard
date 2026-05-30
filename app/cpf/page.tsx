@@ -287,7 +287,7 @@ export default function CpfPage() {
       </section>
 
       {/* Chart */}
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="font-semibold">Account composition over time</h2>
           <span className="text-xs text-foreground/60">
@@ -411,7 +411,7 @@ export default function CpfPage() {
 
       {/* RA conversion summary */}
       {conversionRow && (
-        <section className="rounded-xl border border-violet-500/20 bg-violet-500/[0.04] p-5 mb-8">
+        <section className="border border-violet-500/20 bg-violet-500/[0.04] p-5 mb-8">
           <h2 className="font-semibold mb-1">
             SA → RA conversion at age {cpfRetirementAge}
           </h2>
@@ -437,7 +437,7 @@ export default function CpfPage() {
       )}
 
       {/* Annual projection table */}
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-5">
         <div className="flex items-center justify-between mb-4">
           <span className="flex items-center gap-1.5">
             <h2 className="font-semibold">Annual projection</h2>
@@ -456,7 +456,7 @@ export default function CpfPage() {
           {hiddenCount > 0 && (
             <button
               onClick={() => setShowHidden((v) => !v)}
-              className="text-xs px-3 py-1.5 rounded-md border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors"
+              className="text-xs px-3 py-1.5 border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors"
             >
               {showHidden
                 ? "Hide hidden columns"
@@ -504,7 +504,7 @@ export default function CpfPage() {
                         </svg>
                       </button>
                       {openMenu === col.id && (
-                        <div className="absolute top-full left-0 mt-1 z-20 rounded-lg border border-foreground/15 bg-[var(--tooltip-bg,#0f172a)] shadow-xl py-1 min-w-[160px]">
+                        <div className="absolute top-full left-0 mt-1 z-20 border border-foreground/15 bg-[var(--tooltip-bg,#0f172a)] shadow-xl py-1 min-w-[160px]">
                           <button
                             onClick={() => {
                               toggleHiddenCol(col.id);

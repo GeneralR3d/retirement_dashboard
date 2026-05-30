@@ -53,7 +53,7 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
               key={opt}
               type="button"
               onClick={() => update("btoApplicantType", opt)}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors ${
+              className={`flex-1 border px-3 py-2 text-sm capitalize transition-colors ${
                 draft.btoApplicantType === opt
                   ? "border-foreground/40 bg-foreground/10 font-medium"
                   : "border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.07]"
@@ -103,7 +103,7 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
               key={id}
               type="button"
               onClick={() => update("btoDownpaymentScheme", id)}
-              className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
+              className={`border px-3 py-2 text-sm transition-colors ${
                 draft.btoDownpaymentScheme === id
                   ? "border-foreground/40 bg-foreground/10 font-medium"
                   : "border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.07]"
@@ -117,7 +117,7 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
       </div>
 
       {/* Grants accordion */}
-      <div className="rounded-xl border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
+      <div className="border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
         <button
           type="button"
           onClick={() => setShowGrants((v) => !v)}
@@ -208,7 +208,7 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
               key={id}
               type="button"
               onClick={() => update("btoLoanType", id)}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+              className={`flex-1 border px-3 py-2 text-sm transition-colors ${
                 draft.btoLoanType === id
                   ? "border-foreground/40 bg-foreground/10 font-medium"
                   : "border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.07]"

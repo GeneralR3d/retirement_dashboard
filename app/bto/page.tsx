@@ -150,7 +150,7 @@ export default function BtoPage() {
           <button
             onClick={handleRecalculate}
             disabled={!isDirty}
-            className="px-6 py-3 rounded-lg text-base font-semibold transition-colors
+            className="px-6 py-3 text-base font-semibold transition-colors
               disabled:cursor-not-allowed cursor-pointer
               bg-emerald-600 hover:bg-emerald-500 text-white shadow-md
               disabled:bg-foreground/15 disabled:text-foreground/30 disabled:shadow-none"
@@ -161,7 +161,7 @@ export default function BtoPage() {
       </header>
 
       {/* Inputs — split layout: house SVG left, config panel right */}
-      <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] mb-10 overflow-hidden flex min-h-[420px]">
+      <div className="border border-foreground/10 bg-foreground/[0.03] mb-10 overflow-hidden flex min-h-[420px]">
         {/* Left: house illustration */}
         <div className="hidden md:flex flex-1 items-center justify-center bg-gradient-to-br from-emerald-950/40 via-foreground/[0.02] to-blue-950/30 relative overflow-hidden">
           <svg
@@ -322,7 +322,7 @@ export default function BtoPage() {
           />
 
           {/* Downpayment 1 */}
-          <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5">
+          <div className="border border-foreground/10 bg-foreground/[0.03] p-5">
             <div className="text-xs uppercase tracking-wide text-foreground/60">
               Downpayment 1
             </div>
@@ -356,7 +356,7 @@ export default function BtoPage() {
           />
 
           {/* Downpayment 2 */}
-          <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5">
+          <div className="border border-foreground/10 bg-foreground/[0.03] p-5">
             <div className="text-xs uppercase tracking-wide text-foreground/60">
               Downpayment 2
             </div>
@@ -403,7 +403,7 @@ export default function BtoPage() {
 
       {/* Mortgage repayment table */}
       {mortgageRows.length > 0 && (
-        <section className="mt-10 rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5">
+        <section className="mt-10 border border-foreground/10 bg-foreground/[0.03] p-5">
           <div className="mb-4">
             <h2 className="font-semibold">Annual mortgage repayment</h2>
             <p className="text-foreground/60 text-xs mt-0.5">

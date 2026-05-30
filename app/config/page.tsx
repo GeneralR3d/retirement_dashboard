@@ -253,7 +253,7 @@ export default function ConfigPage() {
           <button
             onClick={handleSave}
             disabled={!isDirty}
-            className="px-6 py-3 rounded-lg text-base font-semibold transition-colors
+            className="px-6 py-3 text-base font-semibold transition-colors
               disabled:cursor-not-allowed cursor-pointer
               bg-emerald-600 hover:bg-emerald-500 text-white shadow-md
               disabled:bg-foreground/15 disabled:text-foreground/30 disabled:shadow-none"
@@ -268,7 +268,7 @@ export default function ConfigPage() {
         <div className="flex flex-col gap-8">
 
           {/* Personal Details */}
-          <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
+          <div className="border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
             <div>
               <h2 className="font-semibold">Personal Details</h2>
               <p className="text-foreground/60 text-xs mt-0.5">Your age milestones, salary, and investment assumptions.</p>
@@ -300,7 +300,7 @@ export default function ConfigPage() {
                   <div className="w-4 h-4 rounded-full border border-foreground/40 text-foreground/50 flex items-center justify-center text-[10px] font-semibold cursor-default select-none">
                     i
                   </div>
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 rounded-lg border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
                     invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
                     <p className="text-foreground/80 font-medium mb-1">Zero-interest cash account</p>
                     <p className="text-foreground/60">This balance earns no interest. It&apos;s your liquid emergency reserve and is tracked separately from your invested networth.</p>
@@ -332,7 +332,7 @@ export default function ConfigPage() {
                   <div className="w-4 h-4 rounded-full border border-foreground/40 text-foreground/50 flex items-center justify-center text-[10px] font-semibold cursor-default select-none">
                     i
                   </div>
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 rounded-lg border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
                     invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
                     <p className="text-foreground/80 font-medium mb-1">CPF Employee Contribution</p>
                     <p className="text-foreground/60">{(CPF_EMPLOYEE_RATE * 100).toFixed(0)}% of gross salary is deducted and paid into your CPF accounts before you receive your take-home pay.</p>
@@ -353,7 +353,7 @@ export default function ConfigPage() {
             </label>
 
             {/* Salary growth rate accordion */}
-            <div className="rounded-xl border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
+            <div className="border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
               <button
                 type="button"
                 onClick={() => setShowSalaryTable((v) => !v)}
@@ -393,12 +393,12 @@ export default function ConfigPage() {
                     </p>
                     <button
                       onClick={resetSeries}
-                      className="text-xs px-2.5 py-1 rounded-md border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+                      className="text-xs px-2.5 py-1 border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors cursor-pointer"
                     >
                       Reset
                     </button>
                   </div>
-                  <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] overflow-hidden">
+                  <div className="border border-foreground/10 bg-foreground/[0.03] overflow-hidden">
                     <div className="max-h-[300px] overflow-y-auto">
                       <table className="w-full text-sm">
                         <thead className="sticky top-0 bg-foreground/[0.06] backdrop-blur-sm z-10">
@@ -454,7 +454,7 @@ export default function ConfigPage() {
             </div>
 
             {/* Monthly living expenses accordion (per-age, today's money) */}
-            <div className="rounded-xl border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
+            <div className="border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
               <button
                 type="button"
                 onClick={() => setShowExpenseTable((v) => !v)}
@@ -483,12 +483,12 @@ export default function ConfigPage() {
                     </p>
                     <button
                       onClick={resetExpenseSeries}
-                      className="text-xs px-2.5 py-1 rounded-md border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors cursor-pointer shrink-0 ml-2"
+                      className="text-xs px-2.5 py-1 border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors cursor-pointer shrink-0 ml-2"
                     >
                       Reset
                     </button>
                   </div>
-                  <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] overflow-hidden">
+                  <div className="border border-foreground/10 bg-foreground/[0.03] overflow-hidden">
                     <div className="max-h-[300px] overflow-y-auto">
                       <table className="w-full text-sm">
                         <thead className="sticky top-0 bg-foreground/[0.06] backdrop-blur-sm z-10">
@@ -545,7 +545,7 @@ export default function ConfigPage() {
           </div>
 
           {/* Retirement Settings */}
-          <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
+          <div className="border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
             <div>
               <h2 className="font-semibold">Retirement Settings</h2>
               <p className="text-foreground/60 text-xs mt-0.5">Spending and withdrawal assumptions used across all retirement projection pages.</p>
@@ -557,7 +557,7 @@ export default function ConfigPage() {
               prefix="$"
               step={100}
             />
-            <div className="rounded-md border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm flex justify-between items-center">
+            <div className="border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm flex justify-between items-center">
               <span className="text-foreground/60">Annual equivalent</span>
               <span className="font-mono text-foreground/80">
                 {fmtMoney(monthlyExpensesRetirement * 12)}/yr
@@ -576,7 +576,7 @@ export default function ConfigPage() {
                 <button
                   type="button"
                   onClick={() => setSrsCapEditMode((v) => !v)}
-                  className={`p-1 rounded transition-colors ${srsCapEditMode ? "text-foreground" : "text-foreground/40 hover:text-foreground/70"}`}
+                  className={`p-1 transition-colors ${srsCapEditMode ? "text-foreground" : "text-foreground/40 hover:text-foreground/70"}`}
                   title="Edit manually"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
@@ -596,7 +596,7 @@ export default function ConfigPage() {
                       update("srsAnnualCap")(value);
                       setSrsCapEditMode(false);
                     }}
-                    className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                    className={`flex-1 border px-3 py-2 text-sm transition-colors ${
                       srsAnnualCap === value && !srsCapEditMode
                         ? "border-foreground/40 bg-foreground/10 font-medium"
                         : "border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.07]"
@@ -631,7 +631,7 @@ export default function ConfigPage() {
         </div>
 
         {/* CPF column */}
-        <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
+        <div className="border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
           <div>
             <h2 className="font-semibold mb-0.5">CPF Starting Balances</h2>
             <p className="text-foreground/60 text-xs">Enter your current CPF balances. Interest rates are fixed by CPF Board.</p>
@@ -696,7 +696,7 @@ export default function ConfigPage() {
       </div>
 
       {/* Real Networth — full width */}
-      <div className="mt-8 rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6">
+      <div className="mt-8 border border-foreground/10 bg-foreground/[0.03] p-6">
         <div className="flex items-start justify-between mb-5">
           <div>
             <h2 className="font-semibold">Investment Account</h2>
@@ -706,7 +706,7 @@ export default function ConfigPage() {
           </div>
           <button
             onClick={addInvestment}
-            className="text-xs px-3 py-1.5 rounded-md border border-foreground/15 hover:border-emerald-500/50 hover:text-emerald-400 text-foreground/60 transition-colors cursor-pointer shrink-0"
+            className="text-xs px-3 py-1.5 border border-foreground/15 hover:border-emerald-500/50 hover:text-emerald-400 text-foreground/60 transition-colors cursor-pointer shrink-0"
           >
             + Add row
           </button>
@@ -729,7 +729,7 @@ export default function ConfigPage() {
           </span>
         </div>
 
-        <div className="rounded-xl border border-foreground/10 overflow-hidden">
+        <div className="border border-foreground/10 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-foreground/[0.06]">
               <tr className="text-left text-foreground/60 border-b border-foreground/10">
@@ -854,7 +854,7 @@ export default function ConfigPage() {
         {showAdvanced && (
           <div className="mt-4 space-y-8">
             {/* BTO / Housing */}
-            <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6">
+            <div className="border border-foreground/10 bg-foreground/[0.03] p-6">
               <div className="mb-5">
                 <h2 className="font-semibold">BTO / Housing</h2>
                 <p className="text-foreground/60 text-xs mt-0.5">
