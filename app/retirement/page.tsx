@@ -271,7 +271,7 @@ export default function RetirementPage() {
       </header>
 
       {/* Hero + SRS side-by-side */}
-      <section className="flex flex-col md:flex-row mb-8 rounded-xl border border-foreground/10 overflow-hidden">
+      <section className="flex flex-col md:flex-row mb-8 border border-foreground/10 overflow-hidden">
         {/* Left half: total retirement spend */}
         <div className="flex-1 flex flex-col justify-center px-8 py-10 border-b md:border-b-0 md:border-r border-foreground/10">
           <p className="text-xs uppercase tracking-widest text-foreground/40 mb-3">
@@ -321,7 +321,7 @@ export default function RetirementPage() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Annual expenses</h2>
           <span className="text-xs text-foreground/60">
@@ -364,7 +364,7 @@ export default function RetirementPage() {
                       <div className="flex flex-col items-start leading-tight gap-0.5">
                         <span>{fmtMoney(r.annualExpenses)}</span>
                         {mortgageCash > 0 && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/25 text-rose-300 font-sans whitespace-nowrap">
+                          <span className="text-[10px] px-1.5 py-0.5 bg-rose-500/25 text-rose-300 font-sans whitespace-nowrap">
                             BTO Mortgage +{fmtMoney(mortgageCash)}
                           </span>
                         )}

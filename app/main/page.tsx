@@ -634,7 +634,7 @@ export default function MainPage() {
       </div>
 
       {/* Net Worth Chart */}
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 mb-8">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-6 mb-8">
         <div className="flex items-center justify-between mb-1">
           <h2 className="font-semibold">Net Worth Breakdown</h2>
           <span className="text-xs text-foreground/60">
@@ -744,7 +744,7 @@ export default function MainPage() {
       </section>
 
       {/* Brokerage Chart */}
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-6">
         <h2 className="font-semibold mb-1">Investment Account</h2>
         <p className="text-foreground/60 text-xs mb-4">
           Annual brokerage surplus during working years. OA balance injected at age {cpfRetirementAge}. Growth:{" "}
@@ -760,7 +760,7 @@ export default function MainPage() {
             accent="emerald"
           />
         </div>
-        <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400/90 mb-6">
+        <div className="mt-3 flex items-start gap-2 border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400/90 mb-6">
           <span className="mt-px shrink-0">⚠</span>
           <span>
             <strong>Assumption:</strong> combined investments earning a flat{" "}
@@ -864,7 +864,7 @@ export default function MainPage() {
       </section>
 
       {/* SRS Pot Chart */}
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 mb-8 mt-8">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-6 mb-8 mt-8">
         <h2 className="font-semibold mb-1">SRS Account</h2>
         <p className="text-foreground/60 text-xs mb-4">
           Contributions optimised to reduce tax brackets each year. Pot grows at{" "}
@@ -946,7 +946,7 @@ export default function MainPage() {
       </section>
 
       {/* Cash Chart */}
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6 mb-8">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-6 mb-8">
         <h2 className="font-semibold mb-1">Cash Reserve</h2>
         <p className="text-foreground/60 text-xs mb-4">
           Emergency fund targeting {inputs.emergencyMonths} months of expenses. Zero interest — held flat after retirement.

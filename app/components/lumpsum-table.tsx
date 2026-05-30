@@ -42,7 +42,7 @@ export function LumpsumTable({
   const totalColor = totalAccent === "red" ? "text-red-400" : "text-emerald-400";
 
   return (
-    <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-6">
+    <div className="border border-foreground/10 bg-foreground/[0.03] p-6">
       <div className="flex items-start justify-between mb-5">
         <div>
           <h2 className="font-semibold">{title}</h2>
@@ -50,12 +50,12 @@ export function LumpsumTable({
         </div>
         <button
           onClick={add}
-          className="text-xs px-3 py-1.5 rounded-md border border-foreground/15 hover:border-emerald-500/50 hover:text-emerald-400 text-foreground/60 transition-colors cursor-pointer shrink-0"
+          className="text-xs px-3 py-1.5 border border-foreground/15 hover:border-emerald-500/50 hover:text-emerald-400 text-foreground/60 transition-colors cursor-pointer shrink-0"
         >
           + Add row
         </button>
       </div>
-      <div className="rounded-xl border border-foreground/10 overflow-hidden">
+      <div className="border border-foreground/10 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-foreground/[0.06]">
             <tr className="text-left text-foreground/60 border-b border-foreground/10">
@@ -87,7 +87,7 @@ export function LumpsumTable({
                     {locked ? (
                       <div className="flex items-center gap-1.5">
                         <span className="text-foreground/70 px-1 py-0.5 text-sm">{r.name}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 font-sans">from BTO</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-sky-500/20 text-sky-400 font-sans">from BTO</span>
                       </div>
                     ) : (
                       <input

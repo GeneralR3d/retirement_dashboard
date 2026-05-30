@@ -61,7 +61,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                className={`px-3 py-1.5 text-sm transition-colors ${
                   active
                     ? "bg-foreground/10 text-foreground font-medium"
                     : "text-foreground/60 hover:text-foreground hover:bg-foreground/5"
@@ -77,7 +77,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                className={`px-3 py-1.5 text-sm transition-colors ${
                   active
                     ? "bg-foreground/10 text-foreground font-medium"
                     : "text-foreground/60 hover:text-foreground hover:bg-foreground/5"
@@ -95,7 +95,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
+                className={`px-3 py-1.5 text-sm transition-colors ${
                   active
                     ? "bg-foreground/10 text-foreground font-medium"
                     : "text-foreground/60 hover:text-foreground hover:bg-foreground/5"
@@ -107,7 +107,7 @@ export default function Navbar() {
           })}
           <button
             onClick={toggle}
-            className="rounded-md border border-foreground/15 px-3 py-1.5 text-sm hover:bg-foreground/5 transition"
+            className="border border-foreground/15 px-3 py-1.5 text-sm hover:bg-foreground/5 transition"
             aria-label="Toggle theme"
           >
             {theme === "dark" ? "☀ Light" : "☾ Dark"}

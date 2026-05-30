@@ -171,7 +171,7 @@ export default function AccumulationPage() {
           <button
             onClick={handleRecalculate}
             disabled={!isDirty}
-            className="px-6 py-3 rounded-lg text-base font-semibold transition-colors
+            className="px-6 py-3 text-base font-semibold transition-colors
               disabled:cursor-not-allowed cursor-pointer
               bg-emerald-600 hover:bg-emerald-500 text-white shadow-md
               disabled:bg-foreground/15 disabled:text-foreground/30 disabled:shadow-none"
@@ -192,7 +192,7 @@ export default function AccumulationPage() {
         />
       </div>
 
-      <section className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-5">
+      <section className="border border-foreground/10 bg-foreground/[0.03] p-5">
         <h2 className="font-semibold mb-4">Annual accumulation</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -270,7 +270,7 @@ export default function AccumulationPage() {
                       <div className="flex items-center gap-2">
                         <span>{fmtMoney(r.takeHome)}</span>
                         {hasInflow && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/30 text-emerald-300 font-sans whitespace-nowrap">
+                          <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/30 text-emerald-300 font-sans whitespace-nowrap">
                             {r.lumpsumInflowName} +{fmtMoney(r.lumpsumInflowThisYear)}
                           </span>
                         )}
@@ -296,7 +296,7 @@ export default function AccumulationPage() {
                           <div className="flex items-center gap-1 mt-0.5">
                             <button
                               onClick={() => toggleSrs(i, true)}
-                              className={`w-6 h-6 rounded text-xs font-bold transition-colors cursor-pointer ${
+                              className={`w-6 h-6 text-xs font-bold transition-colors cursor-pointer ${
                                 accepted
                                   ? "bg-emerald-500 text-white"
                                   : "bg-foreground/10 text-foreground/40 hover:bg-emerald-500/40 hover:text-emerald-300"
@@ -307,7 +307,7 @@ export default function AccumulationPage() {
                             </button>
                             <button
                               onClick={() => toggleSrs(i, false)}
-                              className={`w-6 h-6 rounded text-xs font-bold transition-colors cursor-pointer ${
+                              className={`w-6 h-6 text-xs font-bold transition-colors cursor-pointer ${
                                 !accepted
                                   ? "bg-red-500 text-white"
                                   : "bg-foreground/10 text-foreground/40 hover:bg-red-500/40 hover:text-red-300"
@@ -328,7 +328,7 @@ export default function AccumulationPage() {
                       <div className="flex flex-col items-start leading-tight gap-0.5">
                         <span>{fmtMoney(r.livingExpenses)}</span>
                         {hasExpense && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 font-sans whitespace-nowrap">
+                          <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/30 text-amber-300 font-sans whitespace-nowrap">
                             {r.lumpsumName} +{fmtMoney(r.lumpsumThisYear)}
                           </span>
                         )}
