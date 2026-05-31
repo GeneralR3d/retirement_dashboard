@@ -591,12 +591,23 @@ export default function MainPage() {
 
   return (
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
-      <header className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Overview</h1>
+      <header className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Networth</h1>
         <p className="text-foreground/60 text-sm mt-1">
           Net worth across CPF, SRS, and investments — age {currentAge} to {deathAge}.
         </p>
       </header>
+
+      <div className="mb-8 flex items-start gap-2 border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-300/90">
+        <span className="shrink-0 mt-0.5">ℹ</span>
+        <span>
+          For an accurate projection, enter your financial details in{" "}
+          <a href="/config" className="underline underline-offset-2 hover:text-blue-200 transition-colors">
+            Settings
+          </a>
+          . Your financial goals are unique to you!
+        </span>
+      </div>
 
       {/* Retirement verdict banner */}
       <div className="mb-8 text-center">
@@ -747,9 +758,7 @@ export default function MainPage() {
       <section className="border border-foreground/10 bg-foreground/[0.03] p-6">
         <h2 className="font-semibold mb-1">Investment Account</h2>
         <p className="text-foreground/60 text-xs mb-4">
-          Annual brokerage surplus during working years. OA balance injected at age {cpfRetirementAge}. Growth:{" "}
-          {(investmentGrowthRate * 100).toFixed(1)}% until retirement,{" "}
-          {(investmentGrowthRateRetirement * 100).toFixed(1)}% after.
+          OA balance injected at age {cpfRetirementAge}.
         </p>
         <div className="grid grid-cols-2 gap-4 mb-6">
           <StatCard label="Brokerage seed" value={fmtMoney(startingCash)} />
@@ -763,10 +772,10 @@ export default function MainPage() {
         <div className="mt-3 flex items-start gap-2 border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400/90 mb-6">
           <span className="mt-px shrink-0">⚠</span>
           <span>
-            <strong>Assumption:</strong> combined investments earning a flat{" "}
+            Combined investments earning{" "}
             <strong>{(investmentGrowthRate * 100).toFixed(1)}% p.a.</strong> (pre-retirement) /{" "}
             <strong>{(investmentGrowthRateRetirement * 100).toFixed(1)}% p.a.</strong>{" "}
-            (post-retirement) — infinitely liquid, no spreads or cash-drag modelled.
+            (post-retirement).
           </span>
         </div>
         {(() => {
@@ -949,7 +958,7 @@ export default function MainPage() {
       <section className="border border-foreground/10 bg-foreground/[0.03] p-6 mb-8">
         <h2 className="font-semibold mb-1">Cash Reserve</h2>
         <p className="text-foreground/60 text-xs mb-4">
-          Emergency fund targeting {inputs.emergencyMonths} months of expenses. Zero interest — held flat after retirement.
+          Emergency fund targeting {inputs.emergencyMonths} months of expenses. 0% interest.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <StatCard

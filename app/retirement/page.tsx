@@ -254,12 +254,6 @@ export default function RetirementPage() {
   return (
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
       <header className="mb-8">
-        <p className="text-xs uppercase tracking-widest text-foreground/40 mb-1">
-          Base: S${monthlyExpensesRetirement.toLocaleString("en-SG")}/mo (S$
-          {annualExpensesToday.toLocaleString("en-SG")}/yr) in today&apos;s money
-          &middot; Inflation {EXPENSES_INFLATION_RATE * 100}% p.a. &middot; Expenses
-          grown from current age ({currentAge}) to each retirement year
-        </p>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
           Retirement Phase
         </h1>
@@ -275,7 +269,7 @@ export default function RetirementPage() {
         {/* Left half: total retirement spend */}
         <div className="flex-1 flex flex-col justify-center px-8 py-10 border-b md:border-b-0 md:border-r border-foreground/10">
           <p className="text-xs uppercase tracking-widest text-foreground/40 mb-3">
-            Total retirement spend
+            Total retirement sum requirement
           </p>
           <div className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-emerald-400 leading-none">
             {fmtMoney(totalNeeded)}

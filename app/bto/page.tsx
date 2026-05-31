@@ -139,10 +139,7 @@ export default function BtoPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">BTO Mortgage</h1>
           <p className="text-foreground/60 text-sm mt-1">
-            Plan your BTO downpayments, grants, and mortgage. These inputs are shared with the Config page.
-          </p>
-          <p className="text-foreground/50 text-xs mt-2">
-            Edit fields below — click Recalculate to commit. Display cards on the right reflect saved inputs.
+            Plan your BTO downpayments, grants, and mortgage.
           </p>
         </div>
         <div className="flex items-center gap-3 pt-1 shrink-0">
@@ -292,9 +289,6 @@ export default function BtoPage() {
         <div className="w-full md:w-1/2 shrink-0 p-6 border-l border-foreground/10">
           <div className="mb-4">
             <h2 className="font-semibold">Inputs</h2>
-            <p className="text-foreground/60 text-xs mt-0.5">
-              Source of truth lives on the Config page; edits here update the same shared profile.
-            </p>
           </div>
           <BtoInputsPanel draft={draft} setDraft={setDraft} />
         </div>
@@ -302,11 +296,8 @@ export default function BtoPage() {
 
       {/* Display cards — full width, vertical timeline */}
       <div className="mb-3">
-        <h2 className="font-semibold">Breakdown</h2>
-        <p className="text-foreground/60 text-xs mt-0.5">
-          Chronological view of payments, from application through to monthly mortgage.
-        </p>
-      </div>
+        <h2 className="font-semibold">Timeline</h2>
+        </div>
       <div className="relative pl-10 flex flex-col gap-7 before:content-[''] before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-foreground/20 [&>*]:relative [&>*]:before:content-[''] [&>*]:before:absolute [&>*]:before:-left-[1.85rem] [&>*]:before:top-6 [&>*]:before:w-2.5 [&>*]:before:h-2.5 [&>*]:before:rounded-full [&>*]:before:bg-emerald-500 [&>*]:before:ring-4 [&>*]:before:ring-background">
           <StatCard label="Total price of flat" value={fmtMoney(breakdown.flatPrice)} />
 

@@ -32,6 +32,144 @@ function deriveInvestmentAggregates(investments: Investment[]) {
   return { total, weightedRate };
 }
 
+function LifelineSlider({
+  currentAge,
+  stopWorkingAge,
+  deathAge,
+  onCurrentAgeChange,
+  onStopWorkingAgeChange,
+  onDeathAgeChange,
+}: {
+  currentAge: number;
+  stopWorkingAge: number;
+  deathAge: number;
+  onCurrentAgeChange: (v: number) => void;
+  onStopWorkingAgeChange: (v: number) => void;
+  onDeathAgeChange: (v: number) => void;
+}) {
+  const MIN = 0;
+  const MAX = 120;
+  const trackRef = useRef<HTMLDivElement>(null);
+  const activeHandle = useRef<"current" | "stop" | "death" | null>(null);
+  const latestValues = useRef({ currentAge, stopWorkingAge, deathAge });
+  latestValues.current = { currentAge, stopWorkingAge, deathAge };
+
+  const pct = (v: number) => ((v - MIN) / (MAX - MIN)) * 100;
+
+  function ageFromClientX(clientX: number): number {
+    if (!trackRef.current) return 0;
+    const rect = trackRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    return Math.round(ratio * (MAX - MIN) + MIN);
+  }
+
+  function onPointerDown(handle: "current" | "stop" | "death") {
+    return (e: React.PointerEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      activeHandle.current = handle;
+      e.currentTarget.setPointerCapture(e.pointerId);
+    };
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!activeHandle.current) return;
+    const age = ageFromClientX(e.clientX);
+    const { currentAge: ca, stopWorkingAge: swa, deathAge: da } = latestValues.current;
+    if (activeHandle.current === "current") {
+      onCurrentAgeChange(Math.max(MIN, Math.min(age, swa - 1)));
+    } else if (activeHandle.current === "stop") {
+      onStopWorkingAgeChange(Math.max(ca + 1, Math.min(age, da - 1)));
+    } else {
+      onDeathAgeChange(Math.max(swa + 1, Math.min(age, MAX)));
+    }
+  }
+
+  function onPointerUp() {
+    activeHandle.current = null;
+  }
+
+  const pCurrent = pct(currentAge);
+  const pStop = pct(stopWorkingAge);
+  const pDeath = pct(deathAge);
+
+  const handles = [
+    { left: pCurrent, handle: "current" as const, label: "Current age", age: currentAge },
+    { left: pStop,    handle: "stop" as const,    label: "Stop working", age: stopWorkingAge },
+    { left: pDeath,   handle: "death" as const,   label: "Death age",    age: deathAge },
+  ];
+
+  return (
+    <div className="py-2 select-none">
+      <p className="text-sm text-foreground/70 mb-5">Age milestones</p>
+
+      {/* Age numbers above handles */}
+      <div className="relative h-5 mb-3">
+        {handles.map(({ left, handle, age }) => (
+          <span
+            key={handle}
+            className="absolute -translate-x-1/2 text-xs font-semibold font-mono text-foreground"
+            style={{ left: `${left}%` }}
+          >
+            {age}
+          </span>
+        ))}
+      </div>
+
+      {/* Track */}
+      <div ref={trackRef} className="relative h-5">
+        {/* Dotted base — full width, thin, centered */}
+        <div
+          className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] pointer-events-none"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, rgba(255,255,255,0.18) 0, rgba(255,255,255,0.18) 5px, transparent 5px, transparent 11px)",
+          }}
+        />
+
+        {/* Working segment: currentAge → stopWorkingAge */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 h-[6px] bg-emerald-500 pointer-events-none"
+          style={{ left: `${pCurrent}%`, width: `${pStop - pCurrent}%` }}
+        />
+
+        {/* Retirement segment: stopWorkingAge → deathAge */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 h-[6px] bg-emerald-300 pointer-events-none"
+          style={{ left: `${pStop}%`, width: `${pDeath - pStop}%` }}
+        />
+
+        {/* Handles */}
+        {handles.map(({ left, handle }) => (
+          <div
+            key={handle}
+            className="absolute top-1/2 z-10 -translate-x-1/2 -translate-y-1/2
+              w-[18px] h-[18px] rounded-full bg-emerald-400 border-2 border-background
+              shadow-lg cursor-grab active:cursor-grabbing hover:scale-110 transition-transform"
+            style={{ left: `${left}%` }}
+            onPointerDown={onPointerDown(handle)}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+          />
+        ))}
+      </div>
+
+      {/* Role labels below handles */}
+      <div className="relative h-5 mt-3">
+        {handles.map(({ left, handle, label }) => (
+          <span
+            key={handle}
+            className="absolute -translate-x-1/2 text-[10px] text-foreground/50 whitespace-nowrap"
+            style={{ left: `${left}%` }}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ConfigPage() {
   const { inputs, setInputs } = useProfile();
 
@@ -273,23 +411,13 @@ export default function ConfigPage() {
               <h2 className="font-semibold">Personal Details</h2>
               <p className="text-foreground/60 text-xs mt-0.5">Your age milestones, salary, and investment assumptions.</p>
             </div>
-            <NumberField
-              label="Current age"
-              value={currentAge}
-              onChange={update("currentAge")}
-              step={1}
-            />
-            <NumberField
-              label="Stop working age"
-              value={stopWorkingAge}
-              onChange={update("stopWorkingAge")}
-              step={1}
-            />
-            <NumberField
-              label="Death age"
-              value={deathAge}
-              onChange={update("deathAge")}
-              step={1}
+            <LifelineSlider
+              currentAge={currentAge}
+              stopWorkingAge={stopWorkingAge}
+              deathAge={deathAge}
+              onCurrentAgeChange={update("currentAge")}
+              onStopWorkingAgeChange={update("stopWorkingAge")}
+              onDeathAgeChange={update("deathAge")}
             />
 
             {/* Cash account */}
@@ -318,12 +446,52 @@ export default function ConfigPage() {
                 />
               </div>
             </label>
-            <NumberField
-              label="Emergency funds (months)"
-              value={emergencyMonths}
-              onChange={update("emergencyMonths")}
-              step={1}
-            />
+            {/* Emergency months — pill selector */}
+            <div className="space-y-2">
+              <span className="text-sm text-foreground/80">Emergency funds (months)</span>
+              <div className="flex flex-wrap gap-2">
+                {[3, 4, 5, 6, 7, 8, 9].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => update("emergencyMonths")(m)}
+                    className={`px-3 py-1.5 text-sm font-medium border transition-colors cursor-pointer ${
+                      emergencyMonths === m
+                        ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
+                        : "border-foreground/15 bg-foreground/[0.03] text-foreground/60 hover:border-foreground/30 hover:text-foreground/80"
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (![3,4,5,6,7,8,9].includes(emergencyMonths)) return;
+                    update("emergencyMonths")(10);
+                  }}
+                  className={`px-3 py-1.5 text-sm font-medium border transition-colors cursor-pointer ${
+                    ![3,4,5,6,7,8,9].includes(emergencyMonths)
+                      ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
+                      : "border-foreground/15 bg-foreground/[0.03] text-foreground/60 hover:border-foreground/30 hover:text-foreground/80"
+                  }`}
+                >
+                  Other
+                </button>
+              </div>
+              {![3,4,5,6,7,8,9].includes(emergencyMonths) && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    value={emergencyMonths}
+                    onChange={(e) => update("emergencyMonths")(Math.max(1, parseFloat(e.target.value) || 1))}
+                    className="w-24 bg-foreground/5 border border-foreground/15 focus:border-emerald-500 px-3 py-1.5 text-sm font-mono outline-none"
+                  />
+                  <span className="text-sm text-foreground/50">months</span>
+                </div>
+              )}
+            </div>
 
             <label className="block">
               <div className="flex items-center gap-1.5 mb-1">
@@ -563,12 +731,13 @@ export default function ConfigPage() {
                 {fmtMoney(monthlyExpensesRetirement * 12)}/yr
               </span>
             </div>
-            <NumberField
-              label="SRS withdrawal age"
-              value={srsWithdrawalAge}
-              onChange={update("srsWithdrawalAge")}
-              step={1}
-            />
+            <div className="border border-foreground/10 bg-foreground/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground/50">SRS withdrawal age</span>
+                <span className="font-mono font-semibold text-foreground/70">{srsWithdrawalAge}</span>
+              </div>
+              <p className="text-[10px] text-foreground/30 mt-1.5">Fixed by MAS regulation</p>
+            </div>
             {/* SRS annual cap */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -664,33 +833,25 @@ export default function ConfigPage() {
             prefix="$"
             step={1000}
           />
-          <div className="border-t border-foreground/10 pt-5 space-y-5">
-            <NumberField
-              label="CPF Retirement Account age"
-              value={cpfRetirementAge}
-              onChange={update("cpfRetirementAge")}
-              step={1}
-            />
-            <NumberField
-              label="CPF withdrawal age"
-              value={cpfWithdrawalAge}
-              onChange={update("cpfWithdrawalAge")}
-              step={1}
-            />
-            <NumberField
-              label="CPF LIFE FRS (current)"
-              value={cpfLifeFrs}
-              onChange={update("cpfLifeFrs")}
-              prefix="$"
-              step={1000}
-            />
-            <NumberField
-              label="CPF LIFE monthly payout (current)"
-              value={cpfLifeMonthlyPayout}
-              onChange={update("cpfLifeMonthlyPayout")}
-              prefix="$"
-              step={10}
-            />
+          <div className="border-t border-foreground/10 pt-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-foreground/40">CPF related age milestones</span>
+              <div className="flex-1 border-t border-foreground/10" />
+            </div>
+            <div className="border border-foreground/10 divide-y divide-foreground/10">
+              {[
+                { label: "Retirement Account (RA) age", value: String(cpfRetirementAge) },
+                { label: "CPF withdrawal age",           value: String(cpfWithdrawalAge) },
+                { label: "Full Retirement Sum (FRS)",    value: fmtMoney(cpfLifeFrs) },
+                { label: "CPF LIFE monthly payout",      value: `${fmtMoney(cpfLifeMonthlyPayout)}/mo` },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-sm text-foreground/50">{label}</span>
+                  <span className="font-mono text-sm font-semibold text-foreground/70">{value}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-foreground/30 mt-2">Values set by CPF Board. Update when official figures change.</p>
           </div>
         </div>
       </div>

@@ -251,7 +251,7 @@ export default function CpfPage() {
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
       <header className="mb-8">
         <p className="text-xs uppercase tracking-widest text-foreground/40 mb-1">
-          OA {CPF_OA_RATE * 100}% · SA {CPF_SA_RATE * 100}% · MA {CPF_MA_RATE * 100}% · RA {CPF_RA_RATE * 100}% · Total contribution {CPF_TOTAL_CONTRIBUTION_RATE * 100}% of gross salary
+          OA {CPF_OA_RATE * 100}% · SA {CPF_SA_RATE * 100}% · MA {CPF_MA_RATE * 100}% · RA {CPF_RA_RATE * 100}%
         </p>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
           Central Provident Fund

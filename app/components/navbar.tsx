@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const NAV_LINKS_MAIN = [
-  { href: "/config", label: "Config" },
   { href: "/main", label: "Networth" },
   { href: "/accumulation", label: "Accumulation" },
   { href: "/retirement", label: "Retirement" },
@@ -68,7 +67,7 @@ export default function Navbar() {
     <nav className="w-56 h-screen sticky top-0 shrink-0 flex flex-col border-r border-foreground/10 bg-background">
       <div className="px-5 py-7">
         <span className="text-sm font-black uppercase tracking-widest text-foreground/40">
-          SG Retirement
+          Retirement.sg
         </span>
       </div>
 
@@ -96,7 +95,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="px-3 py-4 border-t border-foreground/10">
+      <div className="px-3 py-4 border-t border-foreground/10 flex flex-col gap-2">
+        <NavLink href="/config" label="Settings" />
         <button
           onClick={toggle}
           className="w-full border border-foreground/15 px-4 py-2.5 text-sm font-bold uppercase tracking-wider hover:bg-foreground/5 transition"

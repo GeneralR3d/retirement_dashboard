@@ -52,6 +52,7 @@ export type NumberFieldProps = {
   onChange: (v: number) => void;
   step?: number;
   prefix?: string;
+  disabled?: boolean;
 };
 
 export function NumberField({
@@ -60,9 +61,10 @@ export function NumberField({
   onChange,
   step = 1000,
   prefix,
+  disabled,
 }: NumberFieldProps) {
   return (
-    <label className="block">
+    <label className={`block ${disabled ? "opacity-40 pointer-events-none" : ""}`}>
       <span className="block text-sm text-foreground/80 mb-1">{label}</span>
       <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
         {prefix && (
@@ -72,6 +74,7 @@ export function NumberField({
           type="number"
           value={value}
           step={step}
+          disabled={disabled}
           onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
           className="w-full bg-transparent px-3 py-2 outline-none font-mono"
         />

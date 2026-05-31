@@ -1,13 +1,128 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { buildAccumulation } from "@/lib/cash-flow";
+import { useMemo, useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { buildAccumulation, AccumulationRow } from "@/lib/cash-flow";
 import { useProfile, LumpsumExpense } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
 import { Td, Th, InfoTooltip } from "@/app/components/ui";
 import { LumpsumTablesPanel, useBtoEffectiveExpenses } from "@/app/components/lumpsum-tables";
 import { recommendedSrsTopUp, SRS_ANNUAL_CAP, CPF_EMPLOYEE_RATE } from "@/lib/tax";
 import { computeMortgageCashPayments } from "@/lib/bto";
+
+type LumpsumItem = { name: string; amount: number };
+
+function LivingExpensesCell({
+  row,
+  lumpsums,
+}: {
+  row: AccumulationRow;
+  lumpsums: LumpsumItem[];
+}) {
+  const hasBreakdown = lumpsums.length > 0;
+  const tdRef = useRef<HTMLTableCellElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [entered, setEntered] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const enterFrames = useRef<number[]>([]);
+
+  function show() {
+    if (!hasBreakdown) return;
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    const rect = tdRef.current?.getBoundingClientRect();
+    if (rect) {
+      const cardHeight = 48 + lumpsums.length * 24 + 32;
+      const cardWidth = 224;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const top =
+        spaceBelow > cardHeight
+          ? rect.bottom + window.scrollY + 6
+          : rect.top + window.scrollY - cardHeight - 6;
+      const spaceRight = window.innerWidth - rect.left;
+      const left =
+        spaceRight > cardWidth
+          ? rect.left + window.scrollX
+          : rect.right + window.scrollX - cardWidth;
+      setCoords({ top, left });
+    }
+    setVisible(true);
+    const f1 = requestAnimationFrame(() => {
+      const f2 = requestAnimationFrame(() => setEntered(true));
+      enterFrames.current.push(f2);
+    });
+    enterFrames.current.push(f1);
+  }
+
+  function hide() {
+    enterFrames.current.forEach(cancelAnimationFrame);
+    enterFrames.current = [];
+    setEntered(false);
+    hideTimer.current = setTimeout(() => setVisible(false), 100);
+  }
+
+  useEffect(
+    () => () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+      enterFrames.current.forEach(cancelAnimationFrame);
+    },
+    [],
+  );
+
+  return (
+    <td
+      ref={tdRef}
+      className="py-2 px-2 whitespace-nowrap"
+      onMouseEnter={show}
+      onMouseLeave={hide}
+    >
+      <div className="flex items-center gap-1.5">
+        <span>{fmtMoney(row.livingExpenses)}</span>
+        {hasBreakdown && (
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400/70 shrink-0" />
+        )}
+      </div>
+      {visible &&
+        createPortal(
+          <div
+            onMouseEnter={show}
+            onMouseLeave={hide}
+            style={{
+              position: "absolute",
+              top: coords.top,
+              left: coords.left,
+              zIndex: 9999,
+              transition: "opacity 80ms ease, transform 80ms ease",
+              opacity: entered ? 1 : 0,
+              transform: entered ? "translateY(0)" : "translateY(-4px)",
+            }}
+            className="w-56 border border-foreground/15 bg-[var(--tooltip-bg,#0f172a)] p-3 text-xs font-sans shadow-xl pointer-events-auto"
+          >
+            <div className="text-foreground/50 text-[10px] uppercase tracking-wide mb-2">
+              Expenses breakdown
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="text-foreground/70">Base living</span>
+                <span className="font-mono text-foreground/90">{fmtMoney(row.baseLiving)}</span>
+              </div>
+              {lumpsums.map((l, idx) => (
+                <div key={idx} className="flex justify-between items-center">
+                  <span className="text-amber-300/80 truncate max-w-[120px]">{l.name}</span>
+                  <span className="font-mono text-amber-300 ml-2">+{fmtMoney(l.amount)}</span>
+                </div>
+              ))}
+              <div className="border-t border-foreground/10 pt-1.5 flex justify-between items-center font-semibold">
+                <span className="text-foreground/80">Total</span>
+                <span className="font-mono">{fmtMoney(row.livingExpenses)}</span>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </td>
+  );
+}
 
 export default function AccumulationPage() {
   const { inputs, setInputs } = useProfile();
@@ -106,6 +221,18 @@ export default function AccumulationPage() {
     [recommendations, srsAccepted]
   );
 
+  const lumpsumBreakdownByAge = useMemo(() => {
+    const map = new Map<number, LumpsumItem[]>();
+    for (const exp of allAccumulationExpenses) {
+      if (exp.amount > 0) {
+        const list = map.get(exp.age) ?? [];
+        list.push({ name: exp.name, amount: exp.amount });
+        map.set(exp.age, list);
+      }
+    }
+    return map;
+  }, [allAccumulationExpenses]);
+
   const rows = useMemo(
     () =>
       buildAccumulation({
@@ -159,9 +286,6 @@ export default function AccumulationPage() {
             {currentAge} to {stopWorkingAge} ({workingYears} working years).
           </p>
           <p className="text-foreground/50 text-xs mt-2">
-            Edit lumpsum tables below — click Recalculate to apply. Living-expense
-            and cash-target settings live on the Config page. Inflow years are
-            highlighted in emerald, expense years in amber.
           </p>
         </div>
         <div className="flex items-center gap-3 pt-1 shrink-0">
@@ -235,18 +359,8 @@ export default function AccumulationPage() {
             </thead>
             <tbody className="font-mono">
               {rows.map((r, i) => {
-                const hasExpense = r.lumpsumThisYear > 0;
                 const hasInflow = r.lumpsumInflowThisYear > 0;
                 const brokerageInsolvent = r.brokerageBalance <= 0;
-                const rowClass = brokerageInsolvent
-                  ? "bg-red-500/10 hover:bg-red-500/15"
-                  : hasExpense && hasInflow
-                    ? "bg-gradient-to-r from-emerald-500/10 to-amber-500/10 hover:from-emerald-500/15 hover:to-amber-500/15"
-                    : hasExpense
-                      ? "bg-amber-500/10 hover:bg-amber-500/15"
-                      : hasInflow
-                        ? "bg-emerald-500/10 hover:bg-emerald-500/15"
-                        : "hover:bg-foreground/[0.04]";
 
                 const rec = recommendations[i];
                 const accepted = i < srsAccepted.length ? srsAccepted[i] : true;
@@ -254,7 +368,7 @@ export default function AccumulationPage() {
                 return (
                   <tr
                     key={r.year}
-                    className={`border-b border-foreground/5 ${rowClass}`}
+                    className={`border-b border-foreground/5 ${brokerageInsolvent ? "bg-red-500/10 hover:bg-red-500/15" : "hover:bg-foreground/[0.04]"}`}
                   >
                     <Td>
                       <div className="flex items-center gap-2">
@@ -324,16 +438,10 @@ export default function AccumulationPage() {
                     </td>
 
                     <Td className="text-red-400">{fmtMoney(r.tax)}</Td>
-                    <td className="py-2 px-2 whitespace-nowrap">
-                      <div className="flex flex-col items-start leading-tight gap-0.5">
-                        <span>{fmtMoney(r.livingExpenses)}</span>
-                        {hasExpense && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/30 text-amber-300 font-sans whitespace-nowrap">
-                            {r.lumpsumName} +{fmtMoney(r.lumpsumThisYear)}
-                          </span>
-                        )}
-                      </div>
-                    </td>
+                    <LivingExpensesCell
+                      row={r}
+                      lumpsums={lumpsumBreakdownByAge.get(r.age) ?? []}
+                    />
                     <td className="py-2 px-2 whitespace-nowrap">
                       <div className="flex flex-col leading-tight">
                         <span className={r.cashBalance < r.cashTarget ? "text-amber-400" : ""}>
