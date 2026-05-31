@@ -87,18 +87,18 @@ function NetWorthTooltip({
         Total: {fmtMoney(total)}
       </p>
       {label === stopWorkingAge && (
-        <p className="text-amber-400/80 mt-1 text-[11px]">Stop working</p>
+        <p className="text-amber-700 dark:text-amber-400/80 mt-1 text-[11px]">Stop working</p>
       )}
       {label === cpfRetirementAge && (
-        <p className="text-violet-400/80 mt-1 text-[11px]">
+        <p className="text-violet-700 dark:text-violet-400/80 mt-1 text-[11px]">
           CPF retirement · OA → brokerage
         </p>
       )}
       {label === cpfWithdrawalAge && (
-        <p className="text-orange-400/80 mt-1 text-[11px]">CPF LIFE starts</p>
+        <p className="text-orange-700 dark:text-orange-400/80 mt-1 text-[11px]">CPF LIFE starts</p>
       )}
       {label === srsWithdrawalAge && (
-        <p className="text-cyan-400/80 mt-1 text-[11px]">SRS withdrawals start</p>
+        <p className="text-cyan-700 dark:text-cyan-400/80 mt-1 text-[11px]">SRS withdrawals start</p>
       )}
     </div>
   );
@@ -143,31 +143,31 @@ function BrokerageTooltip({
       }}
     >
       <p className="font-semibold mb-1">Age {label}</p>
-      <p className="text-emerald-400">Balance: {fmtMoney(balance)}</p>
+      <p className="text-emerald-600 dark:text-emerald-400">Balance: {fmtMoney(balance)}</p>
       {contribution !== null && (
-        <p className="text-foreground/60 mt-0.5">
+        <p className="text-foreground/85 dark:text-foreground/60 mt-0.5">
           Annual contribution: {fmtMoney(contribution)}
         </p>
       )}
       {oaInjected !== null && (
-        <p className="text-violet-400 mt-0.5">OA injected: {fmtMoney(oaInjected)}</p>
+        <p className="text-violet-700 dark:text-violet-400 mt-0.5">OA injected: {fmtMoney(oaInjected)}</p>
       )}
       {withdrawal !== null && (
-        <p className="text-sky-400 mt-0.5">Annual withdrawal: {fmtMoney(withdrawal)}</p>
+        <p className="text-sky-700 dark:text-sky-400 mt-0.5">Annual withdrawal: {fmtMoney(withdrawal)}</p>
       )}
       {reinvestment !== null && (
-        <p className="text-violet-400 mt-0.5">
+        <p className="text-violet-700 dark:text-violet-400 mt-0.5">
           Surplus reinvested: {fmtMoney(reinvestment)}
         </p>
       )}
       {label === stopWorkingAge && (
-        <p className="text-foreground/40 mt-1 text-[11px]">Last working year</p>
+        <p className="text-foreground/65 dark:text-foreground/40 mt-1 text-[11px]">Last working year</p>
       )}
       {label === srsWithdrawalAge && (
-        <p className="text-foreground/40 mt-1 text-[11px]">SRS withdrawals start</p>
+        <p className="text-foreground/65 dark:text-foreground/40 mt-1 text-[11px]">SRS withdrawals start</p>
       )}
       {label === cpfRetirementAge && !oaInjected && (
-        <p className="text-foreground/40 mt-1 text-[11px]">
+        <p className="text-foreground/65 dark:text-foreground/40 mt-1 text-[11px]">
           OA transferred to brokerage
         </p>
       )}
@@ -232,15 +232,15 @@ function SrsTooltip({
       }}
     >
       <p className="font-semibold mb-1">Age {label}</p>
-      <p className="text-emerald-400">Pot balance: {fmtMoney(srs)}</p>
+      <p className="text-emerald-600 dark:text-emerald-400">Pot balance: {fmtMoney(srs)}</p>
       {contribution !== null && contribution > 0 && (
-        <p className="text-emerald-300/70 mt-0.5">Annual top-up: {fmtMoney(contribution)}</p>
+        <p className="text-emerald-700 dark:text-emerald-300/70 mt-0.5">Annual top-up: {fmtMoney(contribution)}</p>
       )}
       {contribution !== null && contribution === 0 && (label ?? 0) <= stopWorkingAge && (
-        <p className="text-foreground/40 mt-0.5">No top-up this year</p>
+        <p className="text-foreground/65 dark:text-foreground/40 mt-0.5">No top-up this year</p>
       )}
       {isDrawdown && (
-        <p className="text-cyan-400/70 mt-0.5 text-[11px]">Drawdown phase</p>
+        <p className="text-cyan-700 dark:text-cyan-400/70 mt-0.5 text-[11px]">Drawdown phase</p>
       )}
     </div>
   );
@@ -593,16 +593,16 @@ export default function MainPage() {
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
       <header className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Networth</h1>
-        <p className="text-foreground/60 text-sm mt-1">
+        <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
           Net worth across CPF, SRS, and investments — age {currentAge} to {deathAge}.
         </p>
       </header>
 
-      <div className="mb-8 flex items-start gap-2 border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-300/90">
+      <div className="mb-8 flex items-start gap-2 border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-700 dark:text-blue-300/90">
         <span className="shrink-0 mt-0.5">ℹ</span>
         <span>
           For an accurate projection, enter your financial details in{" "}
-          <a href="/config" className="underline underline-offset-2 hover:text-blue-200 transition-colors">
+          <a href="/config" className="underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-200 transition-colors">
             Settings
           </a>
           . Your financial goals are unique to you!
@@ -612,17 +612,17 @@ export default function MainPage() {
       {/* Retirement verdict banner */}
       <div className="mb-8 text-center">
         {canRetire ? (
-          <h2 className="text-2xl font-semibold text-emerald-400">
+          <h2 className="text-2xl font-semibold text-emerald-600 dark:text-emerald-400">
             You can retire at age{" "}
             <span className="text-4xl font-black italic">{stopWorkingAge}</span>
           </h2>
         ) : (
           <>
-            <h2 className="text-2xl font-semibold text-red-400">
+            <h2 className="text-2xl font-semibold text-red-600 dark:text-red-400">
               You cannot retire at age{" "}
               <span className="text-4xl font-black italic">{stopWorkingAge}</span>
             </h2>
-            <p className="text-sm text-red-400/70 mt-1">
+            <p className="text-sm text-red-600 dark:text-red-400/70 mt-1">
               You will run out of money at age {runOutRow!.age}
             </p>
           </>
@@ -648,11 +648,11 @@ export default function MainPage() {
       <section className="border border-foreground/10 bg-foreground/[0.03] p-6 mb-8">
         <div className="flex items-center justify-between mb-1">
           <h2 className="font-semibold">Net Worth Breakdown</h2>
-          <span className="text-xs text-foreground/60">
+          <span className="text-xs text-foreground/85 dark:text-foreground/60">
             Age {currentAge}–{deathAge}
           </span>
         </div>
-        <p className="text-foreground/60 text-xs mb-6">
+        <p className="text-foreground/85 dark:text-foreground/60 text-xs mb-6">
           CPF (OA excluded after age {cpfRetirementAge}), SRS pot (drawn down over 10 yrs from age{" "}
           {srsWithdrawalAge}), investments, and combined total.
         </p>
@@ -694,20 +694,20 @@ export default function MainPage() {
             {stopWorkingAge !== cpfRetirementAge && (
               <ReferenceLine
                 x={stopWorkingAge}
-                stroke="#f59e0b"
+                stroke="var(--chart-stop)"
                 strokeDasharray="4 4"
                 strokeWidth={1.5}
                 label={{
                   value: `Retire (${stopWorkingAge})`,
                   position: "insideTopRight",
-                  fill: "#f59e0b",
+                  fill: "var(--chart-stop)",
                   fontSize: 10,
                 }}
               />
             )}
             <ReferenceLine
               x={cpfRetirementAge}
-              stroke="#8b5cf6"
+              stroke="var(--chart-cpf-ret)"
               strokeDasharray="4 4"
               strokeWidth={1.5}
               label={{
@@ -716,40 +716,40 @@ export default function MainPage() {
                     ? `Retire / OA→Brok (${cpfRetirementAge})`
                     : `OA→Brok (${cpfRetirementAge})`,
                 position: "insideTopLeft",
-                fill: "#8b5cf6",
+                fill: "var(--chart-cpf-ret)",
                 fontSize: 10,
               }}
             />
             <ReferenceLine
               x={srsWithdrawalAge}
-              stroke="#22d3ee"
+              stroke="var(--chart-cpf-wit)"
               strokeDasharray="4 4"
               strokeWidth={1.5}
               label={{
                 value: `SRS starts (${srsWithdrawalAge})`,
                 position: "insideTopRight",
-                fill: "#22d3ee",
+                fill: "var(--chart-cpf-wit)",
                 fontSize: 10,
               }}
             />
             <ReferenceLine
               x={cpfWithdrawalAge}
-              stroke="#f97316"
+              stroke="var(--chart-srs-wit)"
               strokeDasharray="4 4"
               strokeWidth={1.5}
               label={{
                 value: `CPF LIFE (${cpfWithdrawalAge})`,
                 position: "insideTopLeft",
-                fill: "#f97316",
+                fill: "var(--chart-srs-wit)",
                 fontSize: 10,
               }}
             />
 
-            <Line type="monotone" dataKey="total" name="Total Net Worth" stroke="#f8fafc" strokeWidth={2.5} dot={false} />
-            <Line type="monotone" dataKey="brokerage" name="Investments" stroke="#38bdf8" strokeWidth={1.5} dot={false} />
-            <Line type="monotone" dataKey="srs" name="SRS Pot" stroke="#10b981" strokeWidth={1.5} dot={false} />
-            <Line type="monotone" dataKey="cpf" name="CPF" stroke="#eab308" strokeWidth={1.5} dot={false} />
-            <Line type="monotone" dataKey="cash" name="Cash" stroke="#a3a3a3" strokeWidth={1.5} dot={false} />
+            <Line type="monotone" dataKey="total" name="Total Net Worth" stroke="var(--chart-total)" strokeWidth={2.5} dot={false} />
+            <Line type="monotone" dataKey="brokerage" name="Investments" stroke="var(--chart-inv)" strokeWidth={1.5} dot={false} />
+            <Line type="monotone" dataKey="srs" name="SRS Pot" stroke="var(--chart-srs)" strokeWidth={1.5} dot={false} />
+            <Line type="monotone" dataKey="cpf" name="CPF" stroke="var(--chart-cpf)" strokeWidth={1.5} dot={false} />
+            <Line type="monotone" dataKey="cash" name="Cash" stroke="var(--chart-cash)" strokeWidth={1.5} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </section>
@@ -757,7 +757,7 @@ export default function MainPage() {
       {/* Brokerage Chart */}
       <section className="border border-foreground/10 bg-foreground/[0.03] p-6">
         <h2 className="font-semibold mb-1">Investment Account</h2>
-        <p className="text-foreground/60 text-xs mb-4">
+        <p className="text-foreground/85 dark:text-foreground/60 text-xs mb-4">
           OA balance injected at age {cpfRetirementAge}.
         </p>
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -769,7 +769,7 @@ export default function MainPage() {
             accent="emerald"
           />
         </div>
-        <div className="mt-3 flex items-start gap-2 border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400/90 mb-6">
+        <div className="mt-3 flex items-start gap-2 border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400/90 mb-6">
           <span className="mt-px shrink-0">⚠</span>
           <span>
             Combined investments earning{" "}
@@ -789,8 +789,8 @@ export default function MainPage() {
               <AreaChart data={brokerageChartData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
                 <defs>
                   <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
-                    <stop offset={`${zeroOffset * 100}%`} stopColor="#10b981" stopOpacity={0.1} />
+                    <stop offset="0%" stopColor="var(--chart-srs)" stopOpacity={0.25} />
+                    <stop offset={`${zeroOffset * 100}%`} stopColor="var(--chart-srs)" stopOpacity={0.1} />
                     {hasNegative && (
                       <stop offset={`${zeroOffset * 100}%`} stopColor="#ef4444" stopOpacity={0.15} />
                     )}
@@ -799,8 +799,8 @@ export default function MainPage() {
                     )}
                   </linearGradient>
                   <linearGradient id="balanceStroke" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" />
-                    <stop offset={`${zeroOffset * 100}%`} stopColor="#10b981" />
+                    <stop offset="0%" stopColor="var(--chart-srs)" />
+                    <stop offset={`${zeroOffset * 100}%`} stopColor="var(--chart-srs)" />
                     {hasNegative && (
                       <stop offset={`${zeroOffset * 100}%`} stopColor="#ef4444" />
                     )}
@@ -832,27 +832,27 @@ export default function MainPage() {
                 {stopWorkingAge !== cpfRetirementAge && (
                   <ReferenceLine
                     x={stopWorkingAge}
-                    stroke="#f59e0b"
+                    stroke="var(--chart-stop)"
                     strokeDasharray="4 4"
-                    label={{ value: "Retire", position: "insideTopRight", fill: "#f59e0b", fontSize: 11 }}
+                    label={{ value: "Retire", position: "insideTopRight", fill: "var(--chart-stop)", fontSize: 11 }}
                   />
                 )}
                 <ReferenceLine
                   x={cpfRetirementAge}
-                  stroke="#8b5cf6"
+                  stroke="var(--chart-cpf-ret)"
                   strokeDasharray="4 4"
                   label={{
                     value: stopWorkingAge === cpfRetirementAge ? "Retire / OA Transfer" : "OA Transfer",
                     position: "insideTopLeft",
-                    fill: "#8b5cf6",
+                    fill: "var(--chart-cpf-ret)",
                     fontSize: 11,
                   }}
                 />
                 <ReferenceLine
                   x={srsWithdrawalAge}
-                  stroke="#22d3ee"
+                  stroke="var(--chart-cpf-wit)"
                   strokeDasharray="4 4"
-                  label={{ value: "SRS starts", position: "insideTopRight", fill: "#22d3ee", fontSize: 11 }}
+                  label={{ value: "SRS starts", position: "insideTopRight", fill: "var(--chart-cpf-wit)", fontSize: 11 }}
                 />
                 {hasNegative && (
                   <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.6} />
@@ -875,7 +875,7 @@ export default function MainPage() {
       {/* SRS Pot Chart */}
       <section className="border border-foreground/10 bg-foreground/[0.03] p-6 mb-8 mt-8">
         <h2 className="font-semibold mb-1">SRS Account</h2>
-        <p className="text-foreground/60 text-xs mb-4">
+        <p className="text-foreground/85 dark:text-foreground/60 text-xs mb-4">
           Contributions optimised to reduce tax brackets each year. Pot grows at{" "}
           {(investmentGrowthRate * 100).toFixed(1)}% (pre-retirement) /{" "}
           {(investmentGrowthRateRetirement * 100).toFixed(1)}% (post-retirement). Drawdown over 10 years from age {srsWithdrawalAge}.
@@ -910,8 +910,8 @@ export default function MainPage() {
               <AreaChart data={srsPotData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
                 <defs>
                   <linearGradient id="srsGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.05} />
+                    <stop offset="0%" stopColor="var(--chart-srs)" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="var(--chart-srs)" stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
@@ -929,21 +929,21 @@ export default function MainPage() {
                 <Tooltip content={<SrsTooltip srsWithdrawalAge={srsWithdrawalAge} stopWorkingAge={stopWorkingAge} />} />
                 <ReferenceLine
                   x={stopWorkingAge}
-                  stroke="#f59e0b"
+                  stroke="var(--chart-stop)"
                   strokeDasharray="4 4"
-                  label={{ value: `Stop work (${stopWorkingAge})`, position: "insideTopRight", fill: "#f59e0b", fontSize: 10 }}
+                  label={{ value: `Stop work (${stopWorkingAge})`, position: "insideTopRight", fill: "var(--chart-stop)", fontSize: 10 }}
                 />
                 <ReferenceLine
                   x={srsWithdrawalAge}
-                  stroke="#22d3ee"
+                  stroke="var(--chart-cpf-wit)"
                   strokeDasharray="4 4"
-                  label={{ value: `Withdrawals start (${srsWithdrawalAge})`, position: "insideTopLeft", fill: "#22d3ee", fontSize: 10 }}
+                  label={{ value: `Withdrawals start (${srsWithdrawalAge})`, position: "insideTopLeft", fill: "var(--chart-cpf-wit)", fontSize: 10 }}
                 />
                 <Area
                   type="monotone"
                   dataKey="srs"
                   name="SRS Pot"
-                  stroke="#10b981"
+                  stroke="var(--chart-srs)"
                   strokeWidth={2}
                   fill="url(#srsGradient)"
                   dot={false}
@@ -957,7 +957,7 @@ export default function MainPage() {
       {/* Cash Chart */}
       <section className="border border-foreground/10 bg-foreground/[0.03] p-6 mb-8">
         <h2 className="font-semibold mb-1">Cash Reserve</h2>
-        <p className="text-foreground/60 text-xs mb-4">
+        <p className="text-foreground/85 dark:text-foreground/60 text-xs mb-4">
           Emergency fund targeting {inputs.emergencyMonths} months of expenses. 0% interest.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -980,8 +980,8 @@ export default function MainPage() {
               <AreaChart data={cashData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
                 <defs>
                   <linearGradient id="cashGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#a3a3a3" stopOpacity={0.25} />
-                    <stop offset="100%" stopColor="#a3a3a3" stopOpacity={0.05} />
+                    <stop offset="0%" stopColor="var(--chart-cash)" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="var(--chart-cash)" stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
@@ -996,18 +996,18 @@ export default function MainPage() {
                   width={72}
                   domain={[0, Math.ceil((maxCash * 1.2) / 10_000) * 10_000]}
                 />
-                <Tooltip content={<SimpleTooltip color="#a3a3a3" />} />
+                <Tooltip content={<SimpleTooltip color="var(--chart-cash)" />} />
                 <ReferenceLine
                   x={stopWorkingAge}
-                  stroke="#f59e0b"
+                  stroke="var(--chart-stop)"
                   strokeDasharray="4 4"
-                  label={{ value: `Retire (${stopWorkingAge})`, position: "insideTopRight", fill: "#f59e0b", fontSize: 10 }}
+                  label={{ value: `Retire (${stopWorkingAge})`, position: "insideTopRight", fill: "var(--chart-stop)", fontSize: 10 }}
                 />
                 <Area
                   type="monotone"
                   dataKey="cash"
                   name="Cash"
-                  stroke="#a3a3a3"
+                  stroke="var(--chart-cash)"
                   strokeWidth={2}
                   fill="url(#cashGradient)"
                   dot={false}

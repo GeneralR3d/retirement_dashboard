@@ -159,7 +159,7 @@ function LifelineSlider({
         {handles.map(({ left, handle, label }) => (
           <span
             key={handle}
-            className="absolute -translate-x-1/2 text-[10px] text-foreground/50 whitespace-nowrap"
+            className="absolute -translate-x-1/2 text-[10px] text-foreground/75 dark:text-foreground/50 whitespace-nowrap"
             style={{ left: `${left}%` }}
           >
             {label}
@@ -380,13 +380,13 @@ export default function ConfigPage() {
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
             Config
           </h1>
-          <p className="text-foreground/60 text-sm mt-1">
+          <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
             Your personal financial details — shared across all projection pages.
           </p>
         </div>
         <div className="flex items-center gap-3 pt-1 shrink-0">
           {isDirty && (
-            <span className="text-xs text-amber-400/80">Unsaved changes</span>
+            <span className="text-xs text-amber-700 dark:text-amber-400/80">Unsaved changes</span>
           )}
           <button
             onClick={handleSave}
@@ -409,7 +409,7 @@ export default function ConfigPage() {
           <div className="border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
             <div>
               <h2 className="font-semibold">Personal Details</h2>
-              <p className="text-foreground/60 text-xs mt-0.5">Your age milestones, salary, and investment assumptions.</p>
+              <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">Your age milestones, salary, and investment assumptions.</p>
             </div>
             <LifelineSlider
               currentAge={currentAge}
@@ -425,18 +425,18 @@ export default function ConfigPage() {
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="text-sm text-foreground/80">Current Cash</span>
                 <div className="relative group">
-                  <div className="w-4 h-4 rounded-full border border-foreground/40 text-foreground/50 flex items-center justify-center text-[10px] font-semibold cursor-default select-none">
+                  <div className="w-4 h-4 rounded-full border border-foreground/40 text-foreground/75 dark:text-foreground/50 flex items-center justify-center text-[10px] font-semibold cursor-default select-none">
                     i
                   </div>
                   <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
                     invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
                     <p className="text-foreground/80 font-medium mb-1">Zero-interest cash account</p>
-                    <p className="text-foreground/60">This balance earns no interest. It&apos;s your liquid emergency reserve and is tracked separately from your invested networth.</p>
+                    <p className="text-foreground/85 dark:text-foreground/60">This balance earns no interest. It&apos;s your liquid emergency reserve and is tracked separately from your invested networth.</p>
                   </div>
                 </div>
               </div>
               <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
-                <span className="pl-3 text-foreground/60 font-mono">$</span>
+                <span className="pl-3 text-foreground/85 dark:text-foreground/60 font-mono">$</span>
                 <input
                   type="number"
                   value={cash}
@@ -457,8 +457,8 @@ export default function ConfigPage() {
                     onClick={() => update("emergencyMonths")(m)}
                     className={`px-3 py-1.5 text-sm font-medium border transition-colors cursor-pointer ${
                       emergencyMonths === m
-                        ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
-                        : "border-foreground/15 bg-foreground/[0.03] text-foreground/60 hover:border-foreground/30 hover:text-foreground/80"
+                        ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                        : "border-foreground/15 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/60 hover:border-foreground/30 hover:text-foreground/80"
                     }`}
                   >
                     {m}
@@ -472,8 +472,8 @@ export default function ConfigPage() {
                   }}
                   className={`px-3 py-1.5 text-sm font-medium border transition-colors cursor-pointer ${
                     ![3,4,5,6,7,8,9].includes(emergencyMonths)
-                      ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
-                      : "border-foreground/15 bg-foreground/[0.03] text-foreground/60 hover:border-foreground/30 hover:text-foreground/80"
+                      ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                      : "border-foreground/15 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/60 hover:border-foreground/30 hover:text-foreground/80"
                   }`}
                 >
                   Other
@@ -488,7 +488,7 @@ export default function ConfigPage() {
                     onChange={(e) => update("emergencyMonths")(Math.max(1, parseFloat(e.target.value) || 1))}
                     className="w-24 bg-foreground/5 border border-foreground/15 focus:border-emerald-500 px-3 py-1.5 text-sm font-mono outline-none"
                   />
-                  <span className="text-sm text-foreground/50">months</span>
+                  <span className="text-sm text-foreground/75 dark:text-foreground/50">months</span>
                 </div>
               )}
             </div>
@@ -497,19 +497,19 @@ export default function ConfigPage() {
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="text-sm text-foreground/80">Starting annual salary</span>
                 <div className="relative group">
-                  <div className="w-4 h-4 rounded-full border border-foreground/40 text-foreground/50 flex items-center justify-center text-[10px] font-semibold cursor-default select-none">
+                  <div className="w-4 h-4 rounded-full border border-foreground/40 text-foreground/75 dark:text-foreground/50 flex items-center justify-center text-[10px] font-semibold cursor-default select-none">
                     i
                   </div>
                   <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
                     invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
                     <p className="text-foreground/80 font-medium mb-1">CPF Employee Contribution</p>
-                    <p className="text-foreground/60">{(CPF_EMPLOYEE_RATE * 100).toFixed(0)}% of gross salary is deducted and paid into your CPF accounts before you receive your take-home pay.</p>
+                    <p className="text-foreground/85 dark:text-foreground/60">{(CPF_EMPLOYEE_RATE * 100).toFixed(0)}% of gross salary is deducted and paid into your CPF accounts before you receive your take-home pay.</p>
                     <p className="text-foreground font-mono mt-1.5">{fmtMoney(startingSalary * CPF_EMPLOYEE_RATE)}/yr at current salary</p>
                   </div>
                 </div>
               </div>
               <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
-                <span className="pl-3 text-foreground/60 font-mono">$</span>
+                <span className="pl-3 text-foreground/85 dark:text-foreground/60 font-mono">$</span>
                 <input
                   type="number"
                   value={startingSalary}
@@ -531,7 +531,7 @@ export default function ConfigPage() {
                   <span className="flex items-center gap-2 text-foreground/80">
                     Salary growth rate
                     <svg
-                      className={`w-4 h-4 text-foreground/60 transition-transform duration-200 ${showSalaryTable ? "rotate-180" : ""}`}
+                      className={`w-4 h-4 text-foreground/85 dark:text-foreground/60 transition-transform duration-200 ${showSalaryTable ? "rotate-180" : ""}`}
                       viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -556,12 +556,12 @@ export default function ConfigPage() {
               {showSalaryTable && (
                 <div className="border-t border-foreground/10 px-4 pt-3 pb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-foreground/60">
+                    <p className="text-xs text-foreground/85 dark:text-foreground/60">
                       Click any gross value to edit — rows below cascade automatically.
                     </p>
                     <button
                       onClick={resetSeries}
-                      className="text-xs px-2.5 py-1 border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+                      className="text-xs px-2.5 py-1 border border-foreground/15 hover:border-foreground/30 text-foreground/85 dark:text-foreground/60 hover:text-foreground transition-colors cursor-pointer"
                     >
                       Reset
                     </button>
@@ -570,7 +570,7 @@ export default function ConfigPage() {
                     <div className="max-h-[300px] overflow-y-auto">
                       <table className="w-full text-sm">
                         <thead className="sticky top-0 bg-foreground/[0.06] backdrop-blur-sm z-10">
-                          <tr className="text-left text-foreground/60 border-b border-foreground/10">
+                          <tr className="text-left text-foreground/85 dark:text-foreground/60 border-b border-foreground/10">
                             <Th>Age</Th>
                             <Th>Gross Annual Salary</Th>
                           </tr>
@@ -604,7 +604,7 @@ export default function ConfigPage() {
                                     <button
                                       onClick={() => startEdit(i)}
                                       title="Click to edit"
-                                      className="text-right w-40 hover:text-emerald-400 transition-colors cursor-text"
+                                      className="text-right w-40 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-text"
                                     >
                                       {fmtMoney(gross)}
                                     </button>
@@ -632,7 +632,7 @@ export default function ConfigPage() {
                   <span className="flex items-center gap-2 text-foreground/80">
                     Monthly living expenses (today&apos;s $)
                     <svg
-                      className={`w-4 h-4 text-foreground/60 transition-transform duration-200 ${showExpenseTable ? "rotate-180" : ""}`}
+                      className={`w-4 h-4 text-foreground/85 dark:text-foreground/60 transition-transform duration-200 ${showExpenseTable ? "rotate-180" : ""}`}
                       viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -646,12 +646,12 @@ export default function ConfigPage() {
               {showExpenseTable && (
                 <div className="border-t border-foreground/10 px-4 pt-3 pb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-foreground/60">
+                    <p className="text-xs text-foreground/85 dark:text-foreground/60">
                       Values are per month, in today&apos;s money. 2% annual inflation is applied automatically. Editing a row cascades the same value to all rows below.
                     </p>
                     <button
                       onClick={resetExpenseSeries}
-                      className="text-xs px-2.5 py-1 border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors cursor-pointer shrink-0 ml-2"
+                      className="text-xs px-2.5 py-1 border border-foreground/15 hover:border-foreground/30 text-foreground/85 dark:text-foreground/60 hover:text-foreground transition-colors cursor-pointer shrink-0 ml-2"
                     >
                       Reset
                     </button>
@@ -660,7 +660,7 @@ export default function ConfigPage() {
                     <div className="max-h-[300px] overflow-y-auto">
                       <table className="w-full text-sm">
                         <thead className="sticky top-0 bg-foreground/[0.06] backdrop-blur-sm z-10">
-                          <tr className="text-left text-foreground/60 border-b border-foreground/10">
+                          <tr className="text-left text-foreground/85 dark:text-foreground/60 border-b border-foreground/10">
                             <Th>Age</Th>
                             <Th>Monthly expenses (today&apos;s $)</Th>
                           </tr>
@@ -694,7 +694,7 @@ export default function ConfigPage() {
                                     <button
                                       onClick={() => startExpenseEdit(i)}
                                       title="Click to edit"
-                                      className="text-right w-40 hover:text-emerald-400 transition-colors cursor-text"
+                                      className="text-right w-40 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-text"
                                     >
                                       {fmtMoney(monthly)}
                                     </button>
@@ -716,7 +716,7 @@ export default function ConfigPage() {
           <div className="border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
             <div>
               <h2 className="font-semibold">Retirement Settings</h2>
-              <p className="text-foreground/60 text-xs mt-0.5">Spending and withdrawal assumptions used across all retirement projection pages.</p>
+              <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">Spending and withdrawal assumptions used across all retirement projection pages.</p>
             </div>
             <NumberField
               label="Monthly expenses in retirement (today's money)"
@@ -726,17 +726,17 @@ export default function ConfigPage() {
               step={100}
             />
             <div className="border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm flex justify-between items-center">
-              <span className="text-foreground/60">Annual equivalent</span>
+              <span className="text-foreground/85 dark:text-foreground/60">Annual equivalent</span>
               <span className="font-mono text-foreground/80">
                 {fmtMoney(monthlyExpensesRetirement * 12)}/yr
               </span>
             </div>
             <div className="border border-foreground/10 bg-foreground/[0.03] px-4 py-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground/50">SRS withdrawal age</span>
+                <span className="text-sm text-foreground/75 dark:text-foreground/50">SRS withdrawal age</span>
                 <span className="font-mono font-semibold text-foreground/70">{srsWithdrawalAge}</span>
               </div>
-              <p className="text-[10px] text-foreground/30 mt-1.5">Fixed by MAS regulation</p>
+              <p className="text-[10px] text-foreground/60 dark:text-foreground/30 mt-1.5">Fixed by MAS regulation</p>
             </div>
             {/* SRS annual cap */}
             <div className="space-y-2">
@@ -745,7 +745,7 @@ export default function ConfigPage() {
                 <button
                   type="button"
                   onClick={() => setSrsCapEditMode((v) => !v)}
-                  className={`p-1 transition-colors ${srsCapEditMode ? "text-foreground" : "text-foreground/40 hover:text-foreground/70"}`}
+                  className={`p-1 transition-colors ${srsCapEditMode ? "text-foreground" : "text-foreground/65 dark:text-foreground/40 hover:text-foreground/70"}`}
                   title="Edit manually"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
@@ -803,7 +803,7 @@ export default function ConfigPage() {
         <div className="border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
           <div>
             <h2 className="font-semibold mb-0.5">CPF Starting Balances</h2>
-            <p className="text-foreground/60 text-xs">Enter your current CPF balances. Interest rates are fixed by CPF Board.</p>
+            <p className="text-foreground/85 dark:text-foreground/60 text-xs">Enter your current CPF balances. Interest rates are fixed by CPF Board.</p>
           </div>
           <NumberField
             label={`Ordinary Account (OA) — ${(CPF_RATES.OA * 100).toFixed(1)}% p.a.`}
@@ -835,7 +835,7 @@ export default function ConfigPage() {
           />
           <div className="border-t border-foreground/10 pt-5">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-semibold uppercase tracking-wider text-foreground/40">CPF related age milestones</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-foreground/65 dark:text-foreground/40">CPF related age milestones</span>
               <div className="flex-1 border-t border-foreground/10" />
             </div>
             <div className="border border-foreground/10 divide-y divide-foreground/10">
@@ -846,12 +846,12 @@ export default function ConfigPage() {
                 { label: "CPF LIFE monthly payout",      value: `${fmtMoney(cpfLifeMonthlyPayout)}/mo` },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-sm text-foreground/50">{label}</span>
+                  <span className="text-sm text-foreground/75 dark:text-foreground/50">{label}</span>
                   <span className="font-mono text-sm font-semibold text-foreground/70">{value}</span>
                 </div>
               ))}
             </div>
-            <p className="text-[10px] text-foreground/30 mt-2">Values set by CPF Board. Update when official figures change.</p>
+            <p className="text-[10px] text-foreground/60 dark:text-foreground/30 mt-2">Values set by CPF Board. Update when official figures change.</p>
           </div>
         </div>
       </div>
@@ -861,13 +861,13 @@ export default function ConfigPage() {
         <div className="flex items-start justify-between mb-5">
           <div>
             <h2 className="font-semibold">Investment Account</h2>
-            <p className="text-foreground/60 text-xs mt-0.5">
+            <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">
               Enter your current investments. The weighted average return drives all pre-retirement projections.
             </p>
           </div>
           <button
             onClick={addInvestment}
-            className="text-xs px-3 py-1.5 border border-foreground/15 hover:border-emerald-500/50 hover:text-emerald-400 text-foreground/60 transition-colors cursor-pointer shrink-0"
+            className="text-xs px-3 py-1.5 border border-foreground/15 hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 text-foreground/85 dark:text-foreground/60 transition-colors cursor-pointer shrink-0"
           >
             + Add row
           </button>
@@ -893,7 +893,7 @@ export default function ConfigPage() {
         <div className="border border-foreground/10 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-foreground/[0.06]">
-              <tr className="text-left text-foreground/60 border-b border-foreground/10">
+              <tr className="text-left text-foreground/85 dark:text-foreground/60 border-b border-foreground/10">
                 <Th>Investment Type</Th>
                 <Th>Current Value</Th>
                 <Th>Rate of Return</Th>
@@ -915,7 +915,7 @@ export default function ConfigPage() {
                   {/* Value */}
                   <td className="py-2 px-2">
                     <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500 w-40">
-                      <span className="pl-2 text-foreground/50 font-mono text-xs">$</span>
+                      <span className="pl-2 text-foreground/75 dark:text-foreground/50 font-mono text-xs">$</span>
                       <input
                         type="number"
                         value={inv.value}
@@ -951,7 +951,7 @@ export default function ConfigPage() {
                   <td className="py-2 px-2">
                     <button
                       onClick={() => removeInvestment(inv.id)}
-                      className="text-foreground/30 hover:text-red-400 transition-colors cursor-pointer"
+                      className="text-foreground/60 dark:text-foreground/30 hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer"
                       title="Remove"
                     >
                       ×
@@ -967,19 +967,19 @@ export default function ConfigPage() {
                 <td className="py-3 px-2 font-mono text-sm">{fmtMoney(totalInvestments)}</td>
                 <td className="py-3 px-2" colSpan={2}>
                   <div className="flex items-center gap-4 min-w-[200px]">
-                    <div className="text-xs text-foreground/50 shrink-0">Weighted avg return</div>
+                    <div className="text-xs text-foreground/75 dark:text-foreground/50 shrink-0">Weighted avg return</div>
                     <div className="flex flex-col items-end ml-auto">
                       <span
                         className={`font-mono font-semibold text-xl leading-tight ${
                           totalInvestments > 0 && weightedRate < targetReturn
-                            ? "text-red-400"
-                            : "text-emerald-400"
+                            ? "text-red-600 dark:text-red-400"
+                            : "text-emerald-600 dark:text-emerald-400"
                         }`}
                       >
                         {totalInvestments > 0 ? `${(weightedRate * 100).toFixed(1)}%` : "—"}
                       </span>
                       {totalInvestments > 0 && weightedRate < targetReturn && (
-                        <span className="text-[11px] text-red-400/80 mt-0.5">
+                        <span className="text-[11px] text-red-600 dark:text-red-400/80 mt-0.5">
                           {((targetReturn - weightedRate) * 100).toFixed(1)}% below target
                         </span>
                       )}
@@ -1001,7 +1001,7 @@ export default function ConfigPage() {
         >
           <span>Advanced</span>
           <svg
-            className={`w-4 h-4 text-foreground/60 transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`}
+            className={`w-4 h-4 text-foreground/85 dark:text-foreground/60 transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -1009,7 +1009,7 @@ export default function ConfigPage() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
-          <span className="text-xs text-foreground/40">BTO &amp; lumpsums — also editable on their own pages</span>
+          <span className="text-xs text-foreground/65 dark:text-foreground/40">BTO &amp; lumpsums — also editable on their own pages</span>
         </button>
 
         {showAdvanced && (
@@ -1018,7 +1018,7 @@ export default function ConfigPage() {
             <div className="border border-foreground/10 bg-foreground/[0.03] p-6">
               <div className="mb-5">
                 <h2 className="font-semibold">BTO / Housing</h2>
-                <p className="text-foreground/60 text-xs mt-0.5">
+                <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">
                   Flat purchase, downpayment scheme, grants, and loan terms. Mirrored on the BTO page.
                 </p>
               </div>

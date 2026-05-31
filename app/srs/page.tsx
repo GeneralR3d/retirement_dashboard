@@ -76,8 +76,8 @@ function BrokerageTooltip({ active, payload, label }: { active?: boolean; payloa
       }}
     >
       <p className="font-semibold mb-1">Age {label}</p>
-      <p className="text-sky-400">Brokerage balance: {fmtMoney(balance)}</p>
-      {contribution !== null && <p className="text-foreground/60">Annual contribution: {fmtMoney(contribution)}</p>}
+      <p className="text-sky-700 dark:text-sky-400">Brokerage balance: {fmtMoney(balance)}</p>
+      {contribution !== null && <p className="text-foreground/85 dark:text-foreground/60">Annual contribution: {fmtMoney(contribution)}</p>}
     </div>
   );
 }
@@ -91,7 +91,7 @@ function InfoTooltip({ text }: { text: string }) {
         onMouseLeave={() => setVisible(false)}
         onFocus={() => setVisible(true)}
         onBlur={() => setVisible(false)}
-        className="w-4 h-4 rounded-full border border-foreground/30 text-foreground/50 hover:text-foreground/80 hover:border-foreground/60 transition-colors flex items-center justify-center text-[10px] font-semibold leading-none ml-1.5"
+        className="w-4 h-4 rounded-full border border-foreground/30 text-foreground/75 dark:text-foreground/50 hover:text-foreground/80 hover:border-foreground/60 transition-colors flex items-center justify-center text-[10px] font-semibold leading-none ml-1.5"
         aria-label="More information"
       >
         i
@@ -202,30 +202,30 @@ export default function SrsPage() {
   return (
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
       <header className="mb-8">
-        <p className="text-xs uppercase tracking-widest text-foreground/40 mb-1">
+        <p className="text-xs uppercase tracking-widest text-foreground/65 dark:text-foreground/40 mb-1">
           SRS contribution capped at {fmtMoney(SRS_ANNUAL_CAP)}/yr (Singapore
           Citizen) · Tax on chargeable income only, no other reliefs modeled
         </p>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
           Supplementary Retirement Scheme Demo
         </h1>
-        <p className="text-foreground/60 text-sm mt-1">
+        <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
           SRS vs no-SRS investment growth from age {currentAge} to {srsWithdrawalAge} ({years} years).
         </p>
       </header>
 
-      <div className="mb-6 border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-400/80 space-y-1.5">
+      <div className="mb-6 border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-700 dark:text-amber-400/80 space-y-1.5">
         <p>
-          <span className="font-semibold text-amber-400">Projection only</span> — All figures on this page are illustrative comparisons between using SRS and not using SRS. A key assumption is that <span className="font-medium">no withdrawals are made from the brokerage pot before age {srsWithdrawalAge}</span>, which is almost certainly not true in practice.
+          <span className="font-semibold text-amber-700 dark:text-amber-400">Projection only</span> — All figures on this page are illustrative comparisons between using SRS and not using SRS. A key assumption is that <span className="font-medium">no withdrawals are made from the brokerage pot before age {srsWithdrawalAge}</span>, which is almost certainly not true in practice.
         </p>
         <p>
-          <span className="font-semibold text-amber-400">Disconnected from your profile</span> — The inputs below are local to this page and do not read from or write to your Config. Changes here have no effect on the Overview, Accumulation, Retirement, or CPF pages, and vice versa. This page is a standalone educational tool.
+          <span className="font-semibold text-amber-700 dark:text-amber-400">Disconnected from your profile</span> — The inputs below are local to this page and do not read from or write to your Config. Changes here have no effect on the Overview, Accumulation, Retirement, or CPF pages, and vice versa. This page is a standalone educational tool.
         </p>
         <p>
-          <span className="font-semibold text-amber-400">Simplified expense model</span> — Living expenses are modeled as a fixed percentage of take-home salary each year. The per-age monthly expense series and lumpsum events configured in Config are not used here.
+          <span className="font-semibold text-amber-700 dark:text-amber-400">Simplified expense model</span> — Living expenses are modeled as a fixed percentage of take-home salary each year. The per-age monthly expense series and lumpsum events configured in Config are not used here.
         </p>
         <p>
-          <span className="font-semibold text-amber-400">No salary series override</span> — Salary grows at a constant rate from the starting salary. The per-age salary table from Config is not applied.
+          <span className="font-semibold text-amber-700 dark:text-amber-400">No salary series override</span> — Salary grows at a constant rate from the starting salary. The per-age salary table from Config is not applied.
         </p>
       </div>
 
@@ -236,7 +236,7 @@ export default function SrsPage() {
 
           {/* Age milestones */}
           <div className="space-y-4">
-            <p className="text-xs uppercase tracking-widest text-foreground/40">Age milestones</p>
+            <p className="text-xs uppercase tracking-widest text-foreground/65 dark:text-foreground/40">Age milestones</p>
             <Slider
               label="Current age"
               value={currentAge}
@@ -275,7 +275,7 @@ export default function SrsPage() {
 
           {/* Salary */}
           <div className="space-y-4">
-            <p className="text-xs uppercase tracking-widest text-foreground/40">Salary</p>
+            <p className="text-xs uppercase tracking-widest text-foreground/65 dark:text-foreground/40">Salary</p>
             <NumberField
               label="Starting gross salary"
               value={startingSalary}
@@ -305,7 +305,7 @@ export default function SrsPage() {
 
           {/* Growth rates */}
           <div className="space-y-4">
-            <p className="text-xs uppercase tracking-widest text-foreground/40">Investment growth</p>
+            <p className="text-xs uppercase tracking-widest text-foreground/65 dark:text-foreground/40">Investment growth</p>
             <Slider
               label="Pre-retirement rate"
               value={investmentGrowthRate}
@@ -357,7 +357,7 @@ export default function SrsPage() {
             Pot growth
             <InfoTooltip text={`Investment grows at ${(investmentGrowthRate * 100).toFixed(1)}% p.a. during working years (age ${currentAge}–${stopWorkingAge}), then switches to ${(investmentGrowthRateRetirement * 100).toFixed(1)}% p.a. after retirement to reflect lower risk tolerance.`} />
           </h2>
-          <span className="text-xs text-foreground/60">
+          <span className="text-xs text-foreground/85 dark:text-foreground/60">
             Total tax saved (age {currentAge}–{srsWithdrawalAge}): {fmtMoney(totalTaxSavings)}
           </span>
         </div>
@@ -387,14 +387,14 @@ export default function SrsPage() {
               <Line
                 type="monotone"
                 dataKey="With SRS"
-                stroke="#10b981"
+                stroke="var(--chart-srs)"
                 strokeWidth={2.5}
                 dot={false}
               />
               <Line
                 type="monotone"
                 dataKey="Without SRS"
-                stroke="#60a5fa"
+                stroke="var(--chart-no-srs)"
                 strokeWidth={2.5}
                 dot={false}
               />
@@ -409,7 +409,7 @@ export default function SrsPage() {
             Brokerage pot — accumulation
             <InfoTooltip text={`Contributions from age ${currentAge}–${stopWorkingAge} growing at ${(investmentGrowthRate * 100).toFixed(1)}% p.a. After retirement the pot continues to grow at ${(investmentGrowthRateRetirement * 100).toFixed(1)}% p.a. with no withdrawals assumed until age ${srsWithdrawalAge}.`} />
           </h2>
-          <span className="text-xs text-foreground/60">
+          <span className="text-xs text-foreground/85 dark:text-foreground/60">
             Hover for annual contribution
           </span>
         </div>
@@ -421,8 +421,8 @@ export default function SrsPage() {
             >
               <defs>
                 <linearGradient id="brokerageGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.02} />
+                  <stop offset="5%" stopColor="var(--chart-inv)" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="var(--chart-inv)" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke={gridColor} strokeDasharray="3 3" />
@@ -437,7 +437,7 @@ export default function SrsPage() {
                 type="monotone"
                 dataKey="balance"
                 name="Brokerage balance"
-                stroke="#38bdf8"
+                stroke="var(--chart-inv)"
                 strokeWidth={2.5}
                 fill="url(#brokerageGrad)"
                 dot={false}
@@ -453,7 +453,7 @@ export default function SrsPage() {
           {hiddenCount > 0 && (
             <button
               onClick={() => setShowHidden((v) => !v)}
-              className="text-xs px-3 py-1.5 border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors"
+              className="text-xs px-3 py-1.5 border border-foreground/15 hover:border-foreground/30 text-foreground/85 dark:text-foreground/60 hover:text-foreground transition-colors"
             >
               {showHidden
                 ? "Hide hidden columns"
@@ -464,7 +464,7 @@ export default function SrsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-foreground/60 border-b border-foreground/10">
+              <tr className="text-left text-foreground/85 dark:text-foreground/60 border-b border-foreground/10">
                 <Th>Age</Th>
                 <Th>Take-home</Th>
                 {COLS.map((col) =>
@@ -483,7 +483,7 @@ export default function SrsPage() {
                           )
                         }
                         className={`flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors ${
-                          hiddenCols.has(col.id) ? "text-amber-400/70" : ""
+                          hiddenCols.has(col.id) ? "text-amber-600 dark:text-amber-400/70" : ""
                         }`}
                       >
                         {col.label}
@@ -552,7 +552,7 @@ export default function SrsPage() {
 
       <section className="border border-foreground/10 bg-foreground/[0.03] p-5">
         <h2 className="font-semibold mb-1">SRS withdrawal</h2>
-        <p className="text-xs text-foreground/60 mb-5">
+        <p className="text-xs text-foreground/85 dark:text-foreground/60 mb-5">
           Pot drawn down over {SRS_WITHDRAWAL_YEARS} years after the
           accumulation period ends. {SRS_TAXABLE_FRACTION * 100}% of each
           withdrawal is taxable as personal income (assumes no other income

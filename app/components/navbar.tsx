@@ -20,13 +20,13 @@ const NAV_LINKS_TOOLS = [
 ];
 
 function useTheme() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
   useEffect(() => {
     const stored =
       (typeof window !== "undefined" &&
         (localStorage.getItem("theme") as "dark" | "light" | null)) ||
-      "dark";
+      "light";
     setTheme(stored);
   }, []);
 
@@ -49,10 +49,10 @@ function NavLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className={`block px-4 py-3 text-lg font-black uppercase tracking-widest transition-colors rounded-sm ${
+      className={`block px-4 py-3 text-lg font-black transition-colors rounded-sm text-foreground dark:text-foreground ${
         active
-          ? "bg-foreground/10 text-foreground"
-          : "text-foreground/50 hover:text-foreground hover:bg-foreground/5"
+          ? "bg-foreground/10"
+          : "hover:bg-foreground/5"
       }`}
     >
       {label}
@@ -64,9 +64,9 @@ export default function Navbar() {
   const { theme, toggle } = useTheme();
 
   return (
-    <nav className="w-56 h-screen sticky top-0 shrink-0 flex flex-col border-r border-foreground/10 bg-background">
+    <nav className="w-fit min-w-48 h-screen sticky top-0 shrink-0 flex flex-col border-r border-foreground/10 bg-background">
       <div className="px-5 py-7">
-        <span className="text-sm font-black uppercase tracking-widest text-foreground/40">
+        <span className="text-2xl font-black uppercase tracking-widest text-foreground dark:text-foreground">
           Retirement.sg
         </span>
       </div>

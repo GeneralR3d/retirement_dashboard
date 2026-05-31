@@ -32,7 +32,7 @@ function CpfTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
   const total = payload.reduce((sum, p) => sum + (p.value ?? 0), 0);
   return (
     <div style={{ background: "var(--tooltip-bg, #0f172a)", border: "1px solid var(--grid-color, #1e293b)", borderRadius: 8, fontSize: 12, padding: "8px 12px" }}>
-      <p className="mb-1 text-foreground/60 font-sans">Age {label}</p>
+      <p className="mb-1 text-foreground/85 dark:text-foreground/60 font-sans">Age {label}</p>
       {payload.map((p) => (
         <p key={p.name} style={{ color: p.color }}>{p.name}: {fmtMoney(p.value)}</p>
       ))}
@@ -70,7 +70,7 @@ function cellContent(id: ColId, r: CpfYearRow): React.ReactNode {
   switch (id) {
     case "salary":       return fmtMoney(r.salary);
     case "totalContrib": return fmtMoney(r.totalContribution);
-    case "hdbDeductions": return r.oaDeducted > 0 ? fmtMoney(r.oaDeducted) : <span className="text-foreground/30">—</span>;
+    case "hdbDeductions": return r.oaDeducted > 0 ? fmtMoney(r.oaDeducted) : <span className="text-foreground/60 dark:text-foreground/30">—</span>;
     case "oaContrib":    return fmtMoney(r.oaContribution);
     case "saContrib":    return fmtMoney(r.saContribution);
     case "maContrib":    return fmtMoney(r.maContribution);
@@ -82,11 +82,11 @@ function cellContent(id: ColId, r: CpfYearRow): React.ReactNode {
 }
 
 function cellClassName(id: ColId): string {
-  if (id === "hdbDeductions") return "text-rose-400";
-  if (id === "oaBalance") return "text-blue-400";
-  if (id === "saBalance") return "text-emerald-400";
-  if (id === "maBalance") return "text-amber-400";
-  if (id === "raBalance") return "text-yellow-400";
+  if (id === "hdbDeductions") return "text-rose-700 dark:text-rose-400";
+  if (id === "oaBalance") return "text-blue-700 dark:text-blue-400";
+  if (id === "saBalance") return "text-emerald-600 dark:text-emerald-400";
+  if (id === "maBalance") return "text-amber-700 dark:text-amber-400";
+  if (id === "raBalance") return "text-yellow-700 dark:text-yellow-400";
   return "";
 }
 
@@ -194,9 +194,9 @@ export default function CpfPage() {
 
   const axisColor = "var(--axis-color, #94a3b8)";
   const gridColor = "var(--grid-color, #1e293b)";
-  const refLineColor = "#a78bfa";
-  const cpfLifeLineColor = "#f97316";
-  const btoLineColor = "#f43f5e";
+  const refLineColor = "var(--chart-cpf-ret)";
+  const cpfLifeLineColor = "var(--chart-srs-wit)";
+  const btoLineColor = "var(--chart-bto-line)";
 
   const btoMortgageEndAge = btoCollectionAge + btoLoanTenureYears - 1;
   const hasBto = btoFlatPrice > 0 && btoApplicationAge >= currentAge;
@@ -250,13 +250,13 @@ export default function CpfPage() {
   return (
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
       <header className="mb-8">
-        <p className="text-xs uppercase tracking-widest text-foreground/40 mb-1">
+        <p className="text-xs uppercase tracking-widest text-foreground/65 dark:text-foreground/40 mb-1">
           OA {CPF_OA_RATE * 100}% · SA {CPF_SA_RATE * 100}% · MA {CPF_MA_RATE * 100}% · RA {CPF_RA_RATE * 100}%
         </p>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
           Central Provident Fund
         </h1>
-        <p className="text-foreground/60 text-sm mt-1">
+        <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
           CPF account growth from age {currentAge} to {deathAge} ({years} years).
           Contributions stop at age {stopWorkingAge}. SA converts to RA at age {cpfRetirementAge}.
         </p>
@@ -290,7 +290,7 @@ export default function CpfPage() {
       <section className="border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="font-semibold">Account composition over time</h2>
-          <span className="text-xs text-foreground/60">
+          <span className="text-xs text-foreground/85 dark:text-foreground/60">
             Age {currentAge}–{deathAge}
           </span>
         </div>
@@ -372,8 +372,8 @@ export default function CpfPage() {
                 type="monotone"
                 dataKey="MA"
                 stackId="a"
-                stroke="#f59e0b"
-                fill="#f59e0b"
+                stroke="var(--chart-cpf-oa)"
+                fill="var(--chart-cpf-oa)"
                 fillOpacity={0.55}
                 strokeWidth={1.5}
               />
@@ -381,8 +381,8 @@ export default function CpfPage() {
                 type="monotone"
                 dataKey="SA"
                 stackId="a"
-                stroke="#10b981"
-                fill="#10b981"
+                stroke="var(--chart-cpf-sa)"
+                fill="var(--chart-cpf-sa)"
                 fillOpacity={0.55}
                 strokeWidth={1.5}
               />
@@ -390,8 +390,8 @@ export default function CpfPage() {
                 type="monotone"
                 dataKey="OA"
                 stackId="a"
-                stroke="#60a5fa"
-                fill="#60a5fa"
+                stroke="var(--chart-cpf-ma)"
+                fill="var(--chart-cpf-ma)"
                 fillOpacity={0.55}
                 strokeWidth={1.5}
               />
@@ -399,8 +399,8 @@ export default function CpfPage() {
                 type="monotone"
                 dataKey="RA"
                 stackId="a"
-                stroke="#eab308"
-                fill="#eab308"
+                stroke="var(--chart-cpf-ra)"
+                fill="var(--chart-cpf-ra)"
                 fillOpacity={0.55}
                 strokeWidth={1.5}
               />
@@ -415,7 +415,7 @@ export default function CpfPage() {
           <h2 className="font-semibold mb-1">
             SA → RA conversion at age {cpfRetirementAge}
           </h2>
-          <p className="text-xs text-foreground/60 mb-4">
+          <p className="text-xs text-foreground/85 dark:text-foreground/60 mb-4">
             Special Account is transferred to Retirement Account to meet the
             FRS target (current {fmtMoney(cpfLifeFrs)} inflated at {CPF_FRS_INFLATION_RATE * 100}%/yr).
             Any surplus returns to OA; any deficit is drawn from OA.
@@ -447,7 +447,7 @@ export default function CpfPage() {
                 href="https://www.cpf.gov.sg/content/dam/web/employer/employer-obligations/documents/CPFAllocationRatesfromJanuary2026.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sky-400 underline hover:text-sky-300"
+                className="text-sky-700 dark:text-sky-400 underline hover:text-sky-800 dark:hover:text-sky-300"
               >
                 View allocation rates (PDF)
               </a>
@@ -456,7 +456,7 @@ export default function CpfPage() {
           {hiddenCount > 0 && (
             <button
               onClick={() => setShowHidden((v) => !v)}
-              className="text-xs px-3 py-1.5 border border-foreground/15 hover:border-foreground/30 text-foreground/60 hover:text-foreground transition-colors"
+              className="text-xs px-3 py-1.5 border border-foreground/15 hover:border-foreground/30 text-foreground/85 dark:text-foreground/60 hover:text-foreground transition-colors"
             >
               {showHidden
                 ? "Hide hidden columns"
@@ -467,7 +467,7 @@ export default function CpfPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-foreground/60 border-b border-foreground/10">
+              <tr className="text-left text-foreground/85 dark:text-foreground/60 border-b border-foreground/10">
                 <Th>Age</Th>
                 {COLS.map((col) =>
                   isVisible(col.id) ? (
@@ -485,7 +485,7 @@ export default function CpfPage() {
                           )
                         }
                         className={`flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors ${
-                          hiddenCols.has(col.id) ? "text-amber-400/70" : ""
+                          hiddenCols.has(col.id) ? "text-amber-700 dark:text-amber-400/70" : ""
                         }`}
                       >
                         {col.label}
@@ -539,17 +539,17 @@ export default function CpfPage() {
                   <Td>
                     <span>{r.age}</span>
                     {r.raConversionHappened && (
-                      <span className="ml-2 text-[10px] font-sans font-semibold text-violet-400 uppercase tracking-wide">
+                      <span className="ml-2 text-[10px] font-sans font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">
                         SA→RA
                       </span>
                     )}
                     {r.age === oaTransferAge && (
-                      <span className="ml-1 text-[10px] font-sans font-semibold text-sky-400 uppercase tracking-wide">
+                      <span className="ml-1 text-[10px] font-sans font-semibold text-sky-700 dark:text-sky-400 uppercase tracking-wide">
                         OA→Brok
                       </span>
                     )}
                     {r.cpfLifeHappened && (
-                      <span className="ml-2 text-[10px] font-sans font-semibold text-orange-400 uppercase tracking-wide">
+                      <span className="ml-2 text-[10px] font-sans font-semibold text-orange-700 dark:text-orange-400 uppercase tracking-wide">
                         CPF LIFE
                       </span>
                     )}

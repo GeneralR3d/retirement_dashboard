@@ -138,12 +138,12 @@ export default function BtoPage() {
       <header className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">BTO Mortgage</h1>
-          <p className="text-foreground/60 text-sm mt-1">
+          <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
             Plan your BTO downpayments, grants, and mortgage.
           </p>
         </div>
         <div className="flex items-center gap-3 pt-1 shrink-0">
-          {isDirty && <span className="text-xs text-amber-400/80">Unsaved changes</span>}
+          {isDirty && <span className="text-xs text-amber-700 dark:text-amber-400/80">Unsaved changes</span>}
           <button
             onClick={handleRecalculate}
             disabled={!isDirty}
@@ -167,120 +167,241 @@ export default function BtoPage() {
             className="w-full h-full absolute inset-0"
             preserveAspectRatio="xMidYMid meet"
           >
-            {/* Sky gradient */}
             <defs>
+              {/* Night sky — deep navy, works as opaque backdrop in both light and dark modes */}
               <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#0f172a" stopOpacity="0" />
-                <stop offset="100%" stopColor="#064e3b" stopOpacity="0.18" />
+                <stop offset="0%" stopColor="#04090f" />
+                <stop offset="60%" stopColor="#071524" />
+                <stop offset="100%" stopColor="#091d2e" />
               </linearGradient>
-              <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1e293b" />
-                <stop offset="100%" stopColor="#0f172a" />
+              {/* Main facade — slightly lighter on top (ambient sky bounce) */}
+              <linearGradient id="facadeGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1e2d3e" />
+                <stop offset="100%" stopColor="#192538" />
               </linearGradient>
-              <linearGradient id="roofGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#065f46" />
-                <stop offset="100%" stopColor="#047857" />
+              {/* Lift-shaft — darker recessed panel */}
+              <linearGradient id="liftGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#0c1825" />
+                <stop offset="100%" stopColor="#111e2d" />
               </linearGradient>
-              <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.6" />
+              {/* Void deck — open, darker interior */}
+              <linearGradient id="voidGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#0d1928" />
+                <stop offset="100%" stopColor="#07111c" />
+              </linearGradient>
+              {/* Ground plane */}
+              <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#0a1622" />
+                <stop offset="100%" stopColor="#050d16" />
               </linearGradient>
             </defs>
 
-            {/* Background fill */}
+            {/* ── Sky ── */}
             <rect width="340" height="420" fill="url(#skyGrad)" />
 
-            {/* Ground line */}
-            <rect x="0" y="340" width="340" height="80" fill="#0f172a" opacity="0.4" rx="0" />
-
-            {/* Ground grass accent */}
-            <rect x="0" y="338" width="340" height="4" fill="#10b981" opacity="0.25" rx="2" />
-
-            {/* HDB-style block — main tower */}
-            <rect x="80" y="130" width="180" height="210" fill="url(#wallGrad)" rx="4" />
-
-            {/* Roof / top accent bar */}
-            <rect x="72" y="122" width="196" height="14" fill="url(#roofGrad)" rx="3" />
-
-            {/* Roof triangle peak */}
-            <polygon points="170,72 72,122 268,122" fill="url(#roofGrad)" opacity="0.9" />
-
-            {/* Roof ridge line */}
-            <line x1="170" y1="72" x2="170" y2="122" stroke="#34d399" strokeWidth="1.5" strokeOpacity="0.5" />
-
-            {/* Chimney */}
-            <rect x="200" y="58" width="14" height="28" fill="#1e293b" rx="2" />
-            <rect x="197" y="54" width="20" height="6" fill="#047857" rx="1" />
-
-            {/* Floor separators */}
-            {[178, 226, 274].map((y, i) => (
-              <rect key={i} x="80" y={y} width="180" height="2" fill="#ffffff" opacity="0.05" />
+            {/* Stars */}
+            {([
+              [22,14],[48,28],[12,62],[308,18],[318,52],[288,14],[38,88],
+              [272,72],[322,88],[58,10],[160,8],[240,32],[100,40],
+            ] as [number,number][]).map(([cx,cy],i) => (
+              <circle key={i} cx={cx} cy={cy} r={i%3===0?1.1:0.7} fill="#fff"
+                opacity={0.08 + (i % 4) * 0.06} />
             ))}
 
-            {/* Windows — row 1 */}
-            {[104, 148, 192, 224].map((x, i) => (
-              <g key={`w1-${i}`}>
-                <rect x={x} y="145" width="20" height="22" fill="#1e3a5f" rx="2" opacity="0.9" />
-                <rect x={x} y="145" width="20" height="22" fill="#3b82f6" rx="2" opacity="0.12" />
-                <line x1={x + 10} y1="145" x2={x + 10} y2="167" stroke="#3b82f6" strokeWidth="0.8" strokeOpacity="0.3" />
-                <line x1={x} y1="156" x2={x + 20} y2="156" stroke="#3b82f6" strokeWidth="0.8" strokeOpacity="0.3" />
-                {/* window glow */}
-                <rect x={x + 1} y="146" width="8" height="10" fill="#fef08a" rx="1" opacity={i === 1 || i === 3 ? "0.25" : "0.08"} />
+            {/* Moon with soft halo */}
+            <circle cx="292" cy="36" r="28" fill="#c7d8f0" opacity="0.03" />
+            <circle cx="292" cy="36" r="18" fill="#ddeeff" opacity="0.05" />
+            <circle cx="295" cy="33" r="12" fill="#eef6ff" opacity="0.08" />
+
+            {/* Distant low-rise blocks in bg for depth */}
+            <rect x="0"   y="290" width="60"  height="65" fill="#0d1a28" opacity="0.6" />
+            <rect x="10"  y="270" width="35"  height="85" fill="#0f1e2e" opacity="0.5" />
+            <rect x="280" y="285" width="60"  height="70" fill="#0d1a28" opacity="0.6" />
+            <rect x="295" y="265" width="35"  height="90" fill="#0f1e2e" opacity="0.5" />
+            {/* Tiny lit windows on bg blocks */}
+            {([
+              [14,278],[22,278],[14,292],[22,292],
+              [300,272],[308,272],[300,286],[308,286],
+            ] as [number,number][]).map(([wx,wy],i) => (
+              <rect key={i} x={wx} y={wy} width="5" height="4"
+                fill="#fef08a" opacity={i%3===0?0.18:0.07} />
+            ))}
+
+            {/* ══════════════════════════════════════
+                HDB BLOCK
+                x=70 → x=270  (200 px wide)
+                13 residential floors × 20 px = 260 px
+                y=28 → y=288
+                Void deck: y=288 → y=345 (57 px)
+                Parapet: y=18 → y=28
+            ══════════════════════════════════════ */}
+
+            {/* Drop shadow */}
+            <rect x="74" y="32" width="200" height="315" fill="#000" opacity="0.35" rx="1" />
+
+            {/* ── Main facade ── */}
+            <rect x="70" y="28" width="200" height="260" fill="url(#facadeGrad)" />
+
+            {/* ── Lift shaft (left strip, x=70–94) ── */}
+            <rect x="70" y="28" width="24" height="260" fill="url(#liftGrad)" />
+            {/* Inset darker panel */}
+            <rect x="73" y="28" width="18" height="260" fill="#09141f" opacity="0.55" />
+            {/* Lift-shaft top cap */}
+            <rect x="70" y="28" width="24" height="4" fill="#0a1520" />
+
+            {/* ── Corridor strip (right, x=247–270) ── */}
+            <rect x="247" y="28" width="23" height="260" fill="#13202f" />
+            {/* Corridor outer edge — open-air grille hint */}
+            <rect x="265" y="28" width="5" height="260" fill="#0c1825" />
+            {([28,48,68,88,108,128,148,168,188,208,228,248,268] as number[]).map((sy,i) => (
+              <rect key={i} x="265" y={sy} width="5" height="4" fill="#1e3a5f" opacity="0.35" />
+            ))}
+
+            {/* ── Roof parapet ── */}
+            <rect x="64" y="18" width="212" height="13" fill="#18273a" rx="1" />
+            {/* Parapet top accent stripe — signature HDB emerald band */}
+            <rect x="64" y="15" width="212" height="5" fill="#10b981" opacity="0.55" rx="1" />
+            {/* Parapet crenellations */}
+            {([76,106,136,166,196,226,252] as number[]).map((px,i) => (
+              <rect key={i} x={px} y="15" width="14" height="8" fill="#18273a" rx="0" />
+            ))}
+            {/* Glow line */}
+            <rect x="64" y="15" width="212" height="1" fill="#34d399" opacity="0.8" />
+
+            {/* ── Rooftop mechanical / water tank ── */}
+            <rect x="178" y="4"  width="58" height="14" fill="#0e1c2c" rx="2" />
+            <rect x="178" y="2"  width="58" height="5"  fill="#18273a" rx="1" />
+            <rect x="188" y="4"  width="4"  height="7"  fill="#081220" />
+            <rect x="222" y="4"  width="4"  height="7"  fill="#081220" />
+            <rect x="189" y="5"  width="2"  height="4"  fill="#10b981" opacity="0.35" />
+            {/* Antenna / lightning rod */}
+            <rect x="96"  y="7"  width="3"  height="12" fill="#1e2d3e" />
+            <rect x="89"  y="7"  width="17" height="2"  fill="#1e2d3e" />
+            <rect x="105" y="7"  width="1"  height="6"  fill="#10b981" opacity="0.4" />
+
+            {/* ── Floor slab lines (13 slabs, one per floor bottom) ── */}
+            {Array.from({length: 13}, (_, i) => (
+              <rect key={i} x="70" y={28 + (i+1)*20} width="200" height="2"
+                fill="#09121d" opacity="0.95" />
+            ))}
+
+            {/* ── Accent colour bands (HDB signature horizontal stripes) ──
+                Band A: floors 3-4 (y=88–128)
+                Band B: floors 8-9 (y=188–228)
+            ── */}
+            {/* Band A */}
+            <rect x="70" y="88" width="200" height="40" fill="#065f46" opacity="0.28" />
+            <rect x="70" y="88"  width="200" height="2" fill="#10b981" opacity="0.5" />
+            <rect x="70" y="128" width="200" height="2" fill="#10b981" opacity="0.5" />
+            {/* Band B */}
+            <rect x="70" y="188" width="200" height="40" fill="#065f46" opacity="0.22" />
+            <rect x="70" y="188" width="200" height="2" fill="#10b981" opacity="0.4" />
+            <rect x="70" y="228" width="200" height="2" fill="#10b981" opacity="0.4" />
+
+            {/* ── Windows  (6 per floor × 13 floors)
+                x starts: 100 122 144 166 188 210  (pitch=22, width=16)
+                wy = 28 + floor*20 + 4
+            ── */}
+            {Array.from({length: 13}, (_, floor) => {
+              const slabY = 28 + floor * 20;
+              const wy = slabY + 4;
+              return (
+                <g key={`fl${floor}`}>
+                  {([100,122,144,166,188,210] as number[]).map((wx, wi) => {
+                    const lit = (floor * 3 + wi * 2) % 5 === 0 || (floor + wi) % 4 === 0;
+                    return (
+                      <g key={wi}>
+                        {/* Recess shadow */}
+                        <rect x={wx-1} y={wy-1} width="18" height="14" fill="#040c16" rx="1" />
+                        {/* Glass pane */}
+                        <rect x={wx} y={wy} width="16" height="12" fill="#0b1f38" rx="1" />
+                        <rect x={wx} y={wy} width="16" height="12"
+                          fill="#3b82f6" opacity={lit ? 0.16 : 0.05} rx="1" />
+                        {/* Pane dividers */}
+                        <line x1={wx+8} y1={wy}    x2={wx+8} y2={wy+12}
+                          stroke="#3b82f6" strokeWidth="0.6" strokeOpacity="0.2" />
+                        <line x1={wx}   y1={wy+6}  x2={wx+16} y2={wy+6}
+                          stroke="#3b82f6" strokeWidth="0.6" strokeOpacity="0.2" />
+                        {/* Interior warm light */}
+                        {lit && (
+                          <rect x={wx+1} y={wy+1} width="7" height="5"
+                            fill="#fef08a" opacity="0.22" rx="0.5" />
+                        )}
+                      </g>
+                    );
+                  })}
+
+                  {/* Lift door per floor */}
+                  <rect x="76" y={wy} width="12" height="12" fill="#08131e" rx="1" />
+                  <line x1="82" y1={wy} x2="82" y2={wy+12}
+                    stroke="#1e3a5f" strokeWidth="0.8" strokeOpacity="0.55" />
+                  {/* Lift button indicator */}
+                  <circle cx="90" cy={wy+6} r="1.5" fill="#10b981"
+                    opacity={floor % 4 === 1 ? 0.7 : 0.15} />
+                </g>
+              );
+            })}
+
+            {/* ── Void deck (y=288–345) ── */}
+            <rect x="70" y="288" width="200" height="57" fill="url(#voidGrad)" />
+            {/* Deck soffit */}
+            <rect x="70" y="288" width="200" height="3" fill="#09121d" />
+
+            {/* Pillars — 6 columns */}
+            {([83,114,145,176,207,238] as number[]).map((px,i) => (
+              <g key={i}>
+                <rect x={px} y="288" width="10" height="57" fill="#0d1928" />
+                {/* Pillar highlight edge */}
+                <rect x={px} y="288" width="1.5" height="57" fill="#182535" />
               </g>
             ))}
 
-            {/* Windows — row 2 */}
-            {[104, 148, 192, 224].map((x, i) => (
-              <g key={`w2-${i}`}>
-                <rect x={x} y="193" width="20" height="22" fill="#1e3a5f" rx="2" opacity="0.9" />
-                <rect x={x} y="193" width="20" height="22" fill="#3b82f6" rx="2" opacity="0.12" />
-                <line x1={x + 10} y1="193" x2={x + 10} y2="215" stroke="#3b82f6" strokeWidth="0.8" strokeOpacity="0.3" />
-                <line x1={x} y1="204" x2={x + 20} y2="204" stroke="#3b82f6" strokeWidth="0.8" strokeOpacity="0.3" />
-                <rect x={x + 1} y="194" width="8" height="10" fill="#fef08a" rx="1" opacity={i === 0 || i === 2 ? "0.25" : "0.08"} />
-              </g>
+            {/* Void deck floor */}
+            <rect x="70" y="342" width="200" height="3" fill="#0c1825" />
+
+            {/* Letter boxes (HDB void deck fixture) */}
+            <rect x="90" y="304" width="42" height="28" fill="#0c1825" rx="1" opacity="0.9" />
+            {([0,1,2,3,4,5,6,7] as number[]).map(i => (
+              <rect key={i} x={93+(i%4)*9} y={307+Math.floor(i/4)*12}
+                width="7" height="9" fill="#131e2e" rx="0.5" />
             ))}
+            {/* Bench */}
+            <rect x="158" y="334" width="44" height="4" fill="#111e2e" rx="1" />
+            <rect x="162" y="338" width="3"  height="5" fill="#111e2e" />
+            <rect x="197" y="338" width="3"  height="5" fill="#111e2e" />
 
-            {/* Windows — row 3 */}
-            {[104, 148, 192, 224].map((x, i) => (
-              <g key={`w3-${i}`}>
-                <rect x={x} y="241" width="20" height="22" fill="#1e3a5f" rx="2" opacity="0.9" />
-                <rect x={x} y="241" width="20" height="22" fill="#3b82f6" rx="2" opacity="0.12" />
-                <line x1={x + 10} y1="241" x2={x + 10} y2="263" stroke="#3b82f6" strokeWidth="0.8" strokeOpacity="0.3" />
-                <line x1={x} y1="252" x2={x + 20} y2="252" stroke="#3b82f6" strokeWidth="0.8" strokeOpacity="0.3" />
-                <rect x={x + 1} y="242" width="8" height="10" fill="#fef08a" rx="1" opacity={i === 1 || i === 3 ? "0.2" : "0.06"} />
-              </g>
-            ))}
+            {/* Block number sign */}
+            <rect x="128" y="296" width="84" height="20" fill="#0c1825" rx="1" opacity="0.92" />
+            <rect x="130" y="298" width="80" height="16" fill="#10b981" rx="1" opacity="0.08" />
+            <rect x="138" y="303" width="54" height="3" fill="#10b981" opacity="0.48" rx="1" />
+            <rect x="146" y="308" width="36" height="2" fill="#10b981" opacity="0.28" rx="1" />
 
-            {/* Door */}
-            <rect x="152" y="292" width="36" height="48" fill="#0f172a" rx="3" />
-            <rect x="152" y="292" width="36" height="48" fill="#10b981" rx="3" opacity="0.12" />
-            <circle cx="182" cy="316" r="2.5" fill="#10b981" opacity="0.6" />
-            {/* Door arch */}
-            <path d="M152 292 Q170 278 188 292" fill="#10b981" opacity="0.15" />
+            {/* ── Ground plane ── */}
+            <rect x="0" y="345" width="340" height="75" fill="url(#groundGrad)" />
+            {/* Sidewalk slab */}
+            <rect x="0" y="345" width="340" height="13" fill="#0b1a28" opacity="0.7" />
+            {/* Ground accent line */}
+            <rect x="0" y="343" width="340" height="3" fill="#10b981" opacity="0.13" />
 
-            {/* Front steps */}
-            <rect x="144" y="338" width="52" height="6" fill="#1e293b" rx="1" opacity="0.7" />
-            <rect x="148" y="332" width="44" height="7" fill="#1e293b" rx="1" opacity="0.5" />
+            {/* Landscaping — trees flanking the block */}
+            <rect x="23"  y="344" width="5"  height="14" fill="#041a0e" opacity="0.85" />
+            <ellipse cx="25"  cy="338" rx="20" ry="12" fill="#064e3b" opacity="0.8" />
+            <ellipse cx="18"  cy="333" rx="13" ry="9"  fill="#065f46" opacity="0.65" />
 
-            {/* Side shrubs */}
-            <ellipse cx="95" cy="336" rx="18" ry="10" fill="#065f46" opacity="0.6" />
-            <ellipse cx="108" cy="330" rx="14" ry="9" fill="#047857" opacity="0.5" />
-            <ellipse cx="245" cy="336" rx="18" ry="10" fill="#065f46" opacity="0.6" />
-            <ellipse cx="232" cy="330" rx="14" ry="9" fill="#047857" opacity="0.5" />
+            <rect x="312" y="344" width="5"  height="14" fill="#041a0e" opacity="0.85" />
+            <ellipse cx="315" cy="338" rx="20" ry="12" fill="#064e3b" opacity="0.8" />
+            <ellipse cx="322" cy="333" rx="13" ry="9"  fill="#065f46" opacity="0.65" />
 
-            {/* Stars / decorative dots */}
-            {[
-              [30, 30], [50, 60], [20, 100], [300, 40], [310, 80], [280, 25], [60, 15],
-            ].map(([cx, cy], i) => (
-              <circle key={`star-${i}`} cx={cx} cy={cy} r="1" fill="#ffffff" opacity="0.2" />
-            ))}
+            {/* Smaller shrubs */}
+            <ellipse cx="50"  cy="349" rx="11" ry="6" fill="#065f46" opacity="0.5" />
+            <ellipse cx="290" cy="349" rx="11" ry="6" fill="#065f46" opacity="0.5" />
 
-            {/* Moon */}
-            <circle cx="290" cy="50" r="16" fill="#1e293b" opacity="0" />
-            <circle cx="295" cy="44" r="12" fill="#fef9c3" opacity="0.08" />
+            {/* ── Building outline ── */}
+            <rect x="70" y="28" width="200" height="317" fill="none"
+              stroke="#10b981" strokeWidth="0.5" strokeOpacity="0.12" />
 
-            {/* Accent glow under roof */}
-            <rect x="72" y="132" width="196" height="2" fill="url(#accentGrad)" opacity="0.5" rx="1" />
+            {/* Roof glow */}
+            <rect x="64" y="15" width="212" height="1" fill="#34d399" opacity="0.65" />
 
           </svg>
         </div>
@@ -314,13 +435,13 @@ export default function BtoPage() {
 
           {/* Downpayment 1 */}
           <div className="border border-foreground/10 bg-foreground/[0.03] p-5">
-            <div className="text-xs uppercase tracking-wide text-foreground/60">
+            <div className="text-xs uppercase tracking-wide text-foreground/85 dark:text-foreground/60">
               Downpayment 1
             </div>
             <div className="mt-2 text-2xl font-semibold">
               {fmtMoney(breakdown.dp1.proposed)}
             </div>
-            <div className="text-xs text-foreground/60 mt-1">
+            <div className="text-xs text-foreground/85 dark:text-foreground/60 mt-1">
               {ratiosPct.dp1}% of flat price · age {inputs.btoApplicationAge}
             </div>
             <div className="grid grid-cols-3 gap-2 mt-4">
@@ -331,7 +452,7 @@ export default function BtoPage() {
               />
               <Stat label="From cash" value={fmtMoney(breakdown.dp1.fromCash)} />
             </div>
-            <div className="text-[11px] text-foreground/50 mt-2 font-mono">
+            <div className="text-[11px] text-foreground/75 dark:text-foreground/50 mt-2 font-mono">
               OA available @ age {inputs.btoApplicationAge}: {fmtMoney(breakdown.dp1.oaAvailable)}
             </div>
           </div>
@@ -348,13 +469,13 @@ export default function BtoPage() {
 
           {/* Downpayment 2 */}
           <div className="border border-foreground/10 bg-foreground/[0.03] p-5">
-            <div className="text-xs uppercase tracking-wide text-foreground/60">
+            <div className="text-xs uppercase tracking-wide text-foreground/85 dark:text-foreground/60">
               Downpayment 2
             </div>
             <div className="mt-2 text-2xl font-semibold">
               {fmtMoney(breakdown.dp2.actualPaid)}
             </div>
-            <div className="text-xs text-foreground/60 mt-1">
+            <div className="text-xs text-foreground/85 dark:text-foreground/60 mt-1">
               {breakdown.dp2.actualPaid > breakdown.dp2.proposed
                 ? `Grant exceeds ${ratiosPct.dp2}% scheme amount (${fmtMoney(breakdown.dp2.proposed)}) · age ${inputs.btoCollectionAge}`
                 : `${ratiosPct.dp2}% of flat price · age ${inputs.btoCollectionAge}`}
@@ -364,7 +485,7 @@ export default function BtoPage() {
               <Stat label="From CPF OA" value={fmtMoney(breakdown.dp2.fromOA)} />
               <Stat label="From cash" value={fmtMoney(breakdown.dp2.fromCash)} />
             </div>
-            <div className="text-[11px] text-foreground/50 mt-2 font-mono">
+            <div className="text-[11px] text-foreground/75 dark:text-foreground/50 mt-2 font-mono">
               OA available @ age {inputs.btoCollectionAge}: {fmtMoney(breakdown.dp2.oaAvailable)}
             </div>
           </div>
@@ -397,7 +518,7 @@ export default function BtoPage() {
         <section className="mt-10 border border-foreground/10 bg-foreground/[0.03] p-5">
           <div className="mb-4">
             <h2 className="font-semibold">Annual mortgage repayment</h2>
-            <p className="text-foreground/60 text-xs mt-0.5">
+            <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">
               Shows how much of each year&apos;s mortgage is covered by CPF OA and how much requires cash.
               When the OA balance hits zero, the full annual payment shifts to cash.
             </p>
@@ -405,7 +526,7 @@ export default function BtoPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-foreground/60 border-b border-foreground/10">
+                <tr className="text-left text-foreground/85 dark:text-foreground/60 border-b border-foreground/10">
                   <Th>Age</Th>
                   <Th>Annual mortgage</Th>
                   <Th>From CPF OA</Th>
@@ -425,20 +546,20 @@ export default function BtoPage() {
                         <div className="flex items-center gap-2">
                           <span>{r.age}</span>
                           {cpfDepleted && r.fromCPF === 0 && (
-                            <span className="text-[10px] font-sans font-semibold text-rose-400 whitespace-nowrap">
+                            <span className="text-[10px] font-sans font-semibold text-rose-700 dark:text-rose-400 whitespace-nowrap">
                               OA depleted
                             </span>
                           )}
                         </div>
                       </Td>
                       <Td>{fmtMoney(r.annualMortgage)}</Td>
-                      <Td className={r.fromCPF === 0 ? "text-foreground/30" : "text-blue-400"}>
+                      <Td className={r.fromCPF === 0 ? "text-foreground/60 dark:text-foreground/30" : "text-blue-700 dark:text-blue-400"}>
                         {r.fromCPF === 0 ? "—" : fmtMoney(r.fromCPF)}
                       </Td>
-                      <Td className={cpfDepleted ? "text-rose-400 font-semibold" : "text-foreground/30"}>
+                      <Td className={cpfDepleted ? "text-rose-700 dark:text-rose-400 font-semibold" : "text-foreground/60 dark:text-foreground/30"}>
                         {cpfDepleted ? fmtMoney(r.fromCash) : "—"}
                       </Td>
-                      <Td className={r.oaBalance <= 0 ? "text-foreground/30" : "text-blue-400/70"}>
+                      <Td className={r.oaBalance <= 0 ? "text-foreground/60 dark:text-foreground/30" : "text-blue-700 dark:text-blue-400/70"}>
                         {r.oaBalance <= 0 ? "—" : fmtMoney(r.oaBalance)}
                       </Td>
                     </tr>
@@ -447,13 +568,13 @@ export default function BtoPage() {
               </tbody>
               <tfoot>
                 <tr className="border-t border-foreground/15 bg-foreground/[0.04] font-medium">
-                  <td className="py-3 px-2 text-sm text-foreground/70" colSpan={2}>
+                  <td className="py-3 px-2 text-sm text-foreground/85 dark:text-foreground/70" colSpan={2}>
                     Total ({inputs.btoLoanTenureYears} yrs)
                   </td>
-                  <td className="py-3 px-2 font-mono text-sm text-blue-400">
+                  <td className="py-3 px-2 font-mono text-sm text-blue-700 dark:text-blue-400">
                     {fmtMoney(mortgageRows.reduce((s, r) => s + r.fromCPF, 0))}
                   </td>
-                  <td className="py-3 px-2 font-mono text-sm text-rose-400">
+                  <td className="py-3 px-2 font-mono text-sm text-rose-700 dark:text-rose-400">
                     {fmtMoney(mortgageRows.reduce((s, r) => s + r.fromCash, 0))}
                   </td>
                   <td />

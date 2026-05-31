@@ -257,7 +257,7 @@ export default function RetirementPage() {
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
           Retirement Phase
         </h1>
-        <p className="text-foreground/60 text-sm mt-1">
+        <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
           Inflation-adjusted living expenses from retirement (age{" "}
           {stopWorkingAge}) to end of plan (age {deathAge}) — {retirementYears}{" "}
           years.
@@ -268,13 +268,13 @@ export default function RetirementPage() {
       <section className="flex flex-col md:flex-row mb-8 border border-foreground/10 overflow-hidden">
         {/* Left half: total retirement spend */}
         <div className="flex-1 flex flex-col justify-center px-8 py-10 border-b md:border-b-0 md:border-r border-foreground/10">
-          <p className="text-xs uppercase tracking-widest text-foreground/40 mb-3">
+          <p className="text-xs uppercase tracking-widest text-foreground/65 dark:text-foreground/40 mb-3">
             Total retirement sum requirement
           </p>
-          <div className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-emerald-400 leading-none">
+          <div className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 leading-none">
             {fmtMoney(totalNeeded)}
           </div>
-          <p className="text-foreground/50 text-sm mt-4">
+          <p className="text-foreground/75 dark:text-foreground/50 text-sm mt-4">
             age {stopWorkingAge}–{deathAge} · {retirementYears} years
           </p>
         </div>
@@ -282,7 +282,7 @@ export default function RetirementPage() {
         {/* Right half: SRS withdrawal */}
         <div className="md:w-1/2 shrink-0 p-6 bg-emerald-500/[0.03]">
           <h2 className="font-semibold mb-0.5">SRS Withdrawal</h2>
-          <p className="text-foreground/60 text-xs mb-4">
+          <p className="text-foreground/85 dark:text-foreground/60 text-xs mb-4">
             Drawn down over 10 years from age {srsWithdrawalAge}. Only 50% of each withdrawal is taxable.
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -318,7 +318,7 @@ export default function RetirementPage() {
       <section className="border border-foreground/10 bg-foreground/[0.03] p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Annual expenses</h2>
-          <span className="text-xs text-foreground/60">
+          <span className="text-xs text-foreground/85 dark:text-foreground/60">
             S${monthlyExpensesRetirement.toLocaleString("en-SG")}/mo today &rarr; inflated at{" "}
             {EXPENSES_INFLATION_RATE * 100}% p.a. for {Math.max(0, stopWorkingAge - currentAge)}+ years
           </span>
@@ -326,7 +326,7 @@ export default function RetirementPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-foreground/60 border-b border-foreground/10">
+              <tr className="text-left text-foreground/85 dark:text-foreground/60 border-b border-foreground/10">
                 <Th>Age</Th>
                 <Th>Years from now</Th>
                 <Th>Monthly expenses</Th>
@@ -352,28 +352,28 @@ export default function RetirementPage() {
                     className={`border-b border-foreground/5 ${mortgageCash > 0 ? "bg-rose-500/[0.04]" : "hover:bg-foreground/[0.04]"}`}
                   >
                     <Td>{r.age}</Td>
-                    <Td className="text-foreground/60">+{r.yearsFromNow}</Td>
+                    <Td className="text-foreground/85 dark:text-foreground/60">+{r.yearsFromNow}</Td>
                     <Td>{fmtMoney(r.monthlyExpenses)}</Td>
                     <td className="py-2 px-2 whitespace-nowrap">
                       <div className="flex flex-col items-start leading-tight gap-0.5">
                         <span>{fmtMoney(r.annualExpenses)}</span>
                         {mortgageCash > 0 && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-rose-500/25 text-rose-300 font-sans whitespace-nowrap">
+                          <span className="text-[10px] px-1.5 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-500/25 dark:text-rose-300 font-sans whitespace-nowrap">
                             BTO Mortgage +{fmtMoney(mortgageCash)}
                           </span>
                         )}
                       </div>
                     </td>
-                    <Td className={r.cpfLifeIncome > 0 ? "text-orange-400" : "text-foreground/30"}>
+                    <Td className={r.cpfLifeIncome > 0 ? "text-orange-700 dark:text-orange-400" : "text-foreground/60 dark:text-foreground/30"}>
                       {r.cpfLifeIncome > 0 ? fmtMoney(r.cpfLifeIncome) : "—"}
                     </Td>
-                    <Td className={r.srsIncome > 0 ? "text-emerald-400" : "text-foreground/30"}>
+                    <Td className={r.srsIncome > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-foreground/60 dark:text-foreground/30"}>
                       {r.srsIncome > 0 ? fmtMoney(r.srsIncome) : "—"}
                     </Td>
                     <Td className={
-                      brokerageIncome > 0 ? "text-sky-400"
-                      : srsReinvestment > 0 ? "text-violet-400"
-                      : "text-foreground/30"
+                      brokerageIncome > 0 ? "text-sky-700 dark:text-sky-400"
+                      : srsReinvestment > 0 ? "text-violet-700 dark:text-violet-400"
+                      : "text-foreground/60 dark:text-foreground/30"
                     }>
                       {brokerageIncome > 0
                         ? fmtMoney(brokerageIncome)
@@ -381,10 +381,10 @@ export default function RetirementPage() {
                         ? `+${fmtMoney(srsReinvestment)}`
                         : "—"}
                     </Td>
-                    <Td className={brokerageBalance > 0 ? "text-foreground/80" : "text-foreground/30"}>
+                    <Td className={brokerageBalance > 0 ? "text-foreground/80" : "text-foreground/60 dark:text-foreground/30"}>
                       {brokerageBalance > 0 ? fmtMoney(brokerageBalance) : "—"}
                     </Td>
-                    <Td className={residual <= 0 ? "text-emerald-400" : "text-red-400"}>
+                    <Td className={residual <= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
                       {residual <= 0 ? `+${fmtMoney(-residual)}` : `-${fmtMoney(residual)}`}
                     </Td>
                   </tr>

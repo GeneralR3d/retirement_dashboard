@@ -56,7 +56,7 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
               className={`flex-1 border px-3 py-2 text-sm capitalize transition-colors ${
                 draft.btoApplicantType === opt
                   ? "border-foreground/40 bg-foreground/10 font-medium"
-                  : "border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.07]"
+                  : "border-foreground/10 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/70 hover:bg-foreground/[0.07]"
               }`}
             >
               {opt}
@@ -106,11 +106,11 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
               className={`border px-3 py-2 text-sm transition-colors ${
                 draft.btoDownpaymentScheme === id
                   ? "border-foreground/40 bg-foreground/10 font-medium"
-                  : "border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.07]"
+                  : "border-foreground/10 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/70 hover:bg-foreground/[0.07]"
               }`}
             >
               <div>{label}</div>
-              <div className="text-xs mt-0.5 font-mono text-foreground/60">{sub}</div>
+              <div className="text-xs mt-0.5 font-mono text-foreground/85 dark:text-foreground/60">{sub}</div>
             </button>
           ))}
         </div>
@@ -131,26 +131,26 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
                   <p className="font-semibold text-foreground mb-2">Housing Grant Guide</p>
 
                   <p className="font-medium text-foreground/90 mb-0.5">CPF Housing Grant (Family)</p>
-                  <p className="mb-2 text-foreground/70">Up to $80,000 for first-timer couples/families buying direct from HDB. Amount varies by flat type and income.</p>
+                  <p className="mb-2 text-foreground/85 dark:text-foreground/70">Up to $80,000 for first-timer couples/families buying direct from HDB. Amount varies by flat type and income.</p>
 
                   <p className="font-medium text-foreground/90 mb-0.5">Enhanced Housing Grant (EHG)</p>
-                  <p className="mb-2 text-foreground/70">Up to $120,000 based on average monthly household income. Eligible if income ≤ $9,000/month. Amount decreases in $5,000 steps per $500 income band.</p>
+                  <p className="mb-2 text-foreground/85 dark:text-foreground/70">Up to $120,000 based on average monthly household income. Eligible if income ≤ $9,000/month. Amount decreases in $5,000 steps per $500 income band.</p>
 
                   <p className="font-medium text-foreground/90 mb-0.5">Proximity Housing Grant (PHG)</p>
-                  <p className="mb-2 text-foreground/70">$30,000 to live with parents; $20,000 to live near parents (within 4 km).</p>
+                  <p className="mb-2 text-foreground/85 dark:text-foreground/70">$30,000 to live with parents; $20,000 to live near parents (within 4 km).</p>
 
                   <a
                     href="https://www.hdb.gov.sg/-/media/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant/EHG-amount-Couples-and-Families-Aug-2024.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sky-400 underline hover:text-sky-300"
+                    className="text-sky-700 dark:text-sky-400 underline hover:text-sky-800 dark:hover:text-sky-300"
                   >
                     EHG table source (HDB PDF) ↗
                   </a>
                 </InfoTooltip>
               </span>
               <svg
-                className={`w-4 h-4 text-foreground/60 transition-transform duration-200 ${showGrants ? "rotate-180" : ""}`}
+                className={`w-4 h-4 text-foreground/85 dark:text-foreground/60 transition-transform duration-200 ${showGrants ? "rotate-180" : ""}`}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -188,7 +188,7 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
               step={1000}
             />
             {draft.btoDownpaymentScheme === "deferred" && (
-              <p className="text-xs text-amber-400/80">
+              <p className="text-xs text-amber-700 dark:text-amber-400/80">
                 Deferred income scheme: grants are not applied at downpayment 1; full amount carries to downpayment 2.
               </p>
             )}
@@ -211,11 +211,11 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
               className={`flex-1 border px-3 py-2 text-sm transition-colors ${
                 draft.btoLoanType === id
                   ? "border-foreground/40 bg-foreground/10 font-medium"
-                  : "border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.07]"
+                  : "border-foreground/10 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/70 hover:bg-foreground/[0.07]"
               }`}
             >
               <div>{label}</div>
-              <div className="text-xs mt-0.5 font-mono text-foreground/60">{sub}</div>
+              <div className="text-xs mt-0.5 font-mono text-foreground/85 dark:text-foreground/60">{sub}</div>
             </button>
           ))}
         </div>

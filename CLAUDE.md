@@ -101,7 +101,11 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 
 ### Theme
 
-`app/layout.tsx` sets `className="dark"` on `<html>` for SSR first-paint; `suppressHydrationWarning` is required because `useTheme` may flip it on mount. `app/globals.css` uses Tailwind v4's `@custom-variant dark (&:where(.dark, .dark *))` so `dark:` follows the class toggle, not `prefers-color-scheme`. Chart axis/grid/tooltip colours are CSS custom properties (`--axis-color`, `--grid-color`, `--tooltip-bg`) defined per theme in `globals.css` and referenced by string in the recharts config.
+**Light mode is the default.** `app/layout.tsx` has no `dark` class on `<html>`; `useTheme` in `navbar.tsx` defaults to `"light"` and persists the user's choice to `localStorage`. `suppressHydrationWarning` is required on `<html>` because `useTheme` may toggle the class on mount. `app/globals.css` uses Tailwind v4's `@custom-variant dark (&:where(.dark, .dark *))` so `dark:` follows the class toggle, not `prefers-color-scheme`.
+
+**Colour conventions:** foreground opacity classes use `dark:` variants to darken for dark mode (e.g. `text-foreground/85 dark:text-foreground/60`). Accent colours use `-600`/`-700` shades as the base (light mode) and `-400` shades via `dark:` (e.g. `text-emerald-600 dark:text-emerald-400`).
+
+**CSS custom properties for recharts:** All recharts `stroke`, `fill`, and `stopColor` attributes reference `var(--chart-*)` variables defined in `globals.css` under both `:root` (light) and `.dark`. This is the only way to make SVG presentation attributes theme-aware without JavaScript. The full set: `--chart-total`, `--chart-inv`, `--chart-srs`, `--chart-cpf`, `--chart-cash`, `--chart-no-srs`, `--chart-stop`, `--chart-cpf-ret`, `--chart-cpf-wit`, `--chart-srs-wit`, `--chart-cpf-oa`, `--chart-cpf-sa`, `--chart-cpf-ma`, `--chart-cpf-ra`, `--chart-bto-line`. General UI CSS custom properties (`--axis-color`, `--grid-color`, `--tooltip-bg`) are also defined per theme and referenced as strings in the recharts config.
 
 ### SRS modeling convention (main/retirement/accumulation)
 
