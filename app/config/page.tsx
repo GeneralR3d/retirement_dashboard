@@ -2,9 +2,9 @@
 
 import { useRef, useState } from "react";
 import { useProfile, CPF_RATES, ProfileInputs, Investment, LumpsumExpense } from "@/lib/profile-context";
-import { CPF_EMPLOYEE_RATE } from "@/lib/tax";
+import { CPF_EMPLOYEE_RATE, CPF_FRS_INFLATION_RATE } from "@/lib/tax";
 import { LumpsumTablesPanel } from "@/app/components/lumpsum-tables";
-import { NumberField, Slider, Th, Td } from "@/app/components/ui";
+import { NumberField, Slider, Th, Td, InfoTooltip } from "@/app/components/ui";
 import { BtoInputsPanel } from "@/app/components/bto-inputs";
 import { fmtMoney } from "@/lib/format";
 
@@ -842,7 +842,6 @@ export default function ConfigPage() {
               {[
                 { label: "Retirement Account (RA) age", value: String(cpfRetirementAge) },
                 { label: "CPF withdrawal age",           value: String(cpfWithdrawalAge) },
-                { label: "Full Retirement Sum (FRS)",    value: fmtMoney(cpfLifeFrs) },
                 { label: "CPF LIFE monthly payout",      value: `${fmtMoney(cpfLifeMonthlyPayout)}/mo` },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-center justify-between px-4 py-2.5">
@@ -850,6 +849,25 @@ export default function ConfigPage() {
                   <span className="font-mono text-sm font-semibold text-foreground/70">{value}</span>
                 </div>
               ))}
+              {/* FRS row — special-cased for the disclaimer tooltip */}
+              <div className="flex items-center justify-between px-4 py-2.5">
+                <span className="flex items-center gap-1.5 text-sm text-foreground/75 dark:text-foreground/50">
+                  Full Retirement Sum (FRS)
+                  <InfoTooltip>
+                    <p className="font-semibold mb-1">How the FRS is projected</p>
+                    <p className="mb-2">
+                      The FRS values change every year.
+                      Based on recent figures we apply a <span className="font-semibold text-emerald-400">{CPF_FRS_INFLATION_RATE * 100}%/yr</span> growth
+                      rate to estimate the FRS target at your retirement age.
+                    </p>
+                    <p className="text-foreground/60 dark:text-foreground/40">
+                      This rate may change. Always refer to the CPF website
+                      for the latest figures.
+                    </p>
+                  </InfoTooltip>
+                </span>
+                <span className="font-mono text-sm font-semibold text-foreground/70">{fmtMoney(cpfLifeFrs)}</span>
+              </div>
             </div>
             <p className="text-[10px] text-foreground/60 dark:text-foreground/30 mt-2">Values set by CPF Board. Update when official figures change.</p>
           </div>

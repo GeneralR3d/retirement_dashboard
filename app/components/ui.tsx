@@ -88,16 +88,21 @@ export function StatCard({
   value,
   sub,
   accent,
+  tooltip,
+  tooltipPosition = "top",
 }: {
   label: string;
   value: string;
   sub?: string;
   accent?: "emerald";
+  tooltip?: React.ReactNode;
+  tooltipPosition?: "top" | "right";
 }) {
   return (
     <div className="border border-foreground/10 bg-foreground/[0.03] p-5">
-      <div className="text-xs uppercase tracking-wide text-foreground/85 dark:text-foreground/60">
+      <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-foreground/85 dark:text-foreground/60">
         {label}
+        {tooltip && <InfoTooltip position={tooltipPosition}>{tooltip}</InfoTooltip>}
       </div>
       <div
         className={`mt-2 text-2xl font-semibold ${accent === "emerald" ? "text-emerald-600 dark:text-emerald-500" : ""}`}
@@ -130,7 +135,7 @@ export function Stat({
   );
 }
 
-export function InfoTooltip({ children, className }: { children: React.ReactNode; className?: string }) {
+export function InfoTooltip({ children, className, position = "top" }: { children: React.ReactNode; className?: string; position?: "top" | "right" }) {
   const iconRef = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
@@ -140,10 +145,11 @@ export function InfoTooltip({ children, className }: { children: React.ReactNode
     if (hideTimer.current) clearTimeout(hideTimer.current);
     const rect = iconRef.current?.getBoundingClientRect();
     if (rect) {
-      setCoords({
-        top: rect.top + window.scrollY - 8,
-        left: rect.left + rect.width / 2 + window.scrollX,
-      });
+      setCoords(
+        position === "right"
+          ? { top: rect.top + rect.height / 2 + window.scrollY, left: rect.right + window.scrollX + 8 }
+          : { top: rect.top + window.scrollY - 8, left: rect.left + rect.width / 2 + window.scrollX }
+      );
     }
     setVisible(true);
   }
@@ -153,6 +159,8 @@ export function InfoTooltip({ children, className }: { children: React.ReactNode
   }
 
   useEffect(() => () => { if (hideTimer.current) clearTimeout(hideTimer.current); }, []);
+
+  const transform = position === "right" ? "translate(0, -50%)" : "translate(-50%, -100%)";
 
   return (
     <span className="relative inline-flex">
@@ -172,7 +180,7 @@ export function InfoTooltip({ children, className }: { children: React.ReactNode
             position: "absolute",
             top: coords.top,
             left: coords.left,
-            transform: "translate(-50%, -100%)",
+            transform,
             zIndex: 9999,
           }}
           className={`pointer-events-auto w-64 border border-foreground/10 bg-[var(--tooltip-bg,#0f172a)] p-3 text-xs font-normal text-foreground/90 dark:text-foreground/80 shadow-xl${className ? ` ${className}` : ""}`}

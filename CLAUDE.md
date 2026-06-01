@@ -28,11 +28,12 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 - Age milestones: `currentAge` (25), `stopWorkingAge` (55), `cpfWithdrawalAge` (65), `cpfRetirementAge` (55), `srsWithdrawalAge` (63), `deathAge` (83)
 - Financial inputs: `startingSalary`, `salaryGrowthRate`, `investmentGrowthRate` (0.07), `investmentGrowthRateRetirement` (0.025), `livingExpensePct` (used only by the standalone `/srs` demo page via `buildProjection`; all other pages use `monthlyExpenseSeries` instead).
 - CPF starting balances: `cpfOA`, `cpfSA`, `cpfMA`, `cpfRA`
-- CPF LIFE: `cpfLifeFrs` (200000), `cpfLifeMonthlyPayout` (1610)
+- CPF LIFE: `cpfLifeFrs` (220400 — 2026 figure), `cpfLifeMonthlyPayout` (1610)
 - Salary override series: `salarySeries: number[]` — per-year gross salary array, length = `stopWorkingAge - currentAge`. Empty `[]` means "use formula". The config page always keeps it in sync; when `startingSalary`, `salaryGrowthRate`, `currentAge`, or `stopWorkingAge` change, the series is regenerated.
 - `startingCash` (5000) — brokerage seed balance. **Derived** from `investments` in the config page; do not edit directly.
 - `investmentGrowthRate` (0.07) — pre-retirement investment growth rate. **Derived** as the weighted average of `investments` in the config page; do not edit directly.
-- `monthlyExpensesToday` (4000) — base monthly expenses in today's money. Used by the retirement page directly (`* 12 * inflation^k`) and as the seed value for `monthlyExpenseSeries`.
+- `monthlyExpensesToday` (3000) — base monthly expenses in today's money during working years. Used as the seed value for `monthlyExpenseSeries`.
+- `monthlyExpensesRetirement` (3000) — base monthly expenses in today's money during retirement. Used by the retirement page directly (`* 12 * inflation^k`). Separate from `monthlyExpensesToday` so users can model a different spending level post-retirement.
 - `monthlyExpenseSeries: number[]` — per-year monthly spend during working years (today's money). Empty `[]` means "use `monthlyExpensesToday` flat". Inflation is applied at consumption time (`* (1+EXPENSES_INFLATION_RATE)^i`), not stored in the series. The config page's `expenseDisplaySeries` gracefully handles length mismatches — shorter series are padded with the last value, longer are truncated — so the series is never eagerly cleared by field changes. `handleSave` normalises to the correct length before writing to context. `buildAccumulation` uses `monthlyExpenseSeries[i] ?? monthlyExpensesToday` so a short series degrades gracefully.
 - `investments: Investment[]` — breakdown of real networth by asset class. Each entry: `{ id, name, value, returnRate }`. The config page recomputes `startingCash` (sum) and `investmentGrowthRate` (value-weighted average return) whenever this changes.
 - `cash` (10000) — zero-interest cash account balance. Tracked separately from `startingCash`; sized via the emergency-fund rule. Held flat post-`stopWorkingAge`.
@@ -73,7 +74,7 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
   - `allocateCpfContribution(age, contribution)` — splits CPF contribution into `{ oa, sa, ma }`. Currently covers ages ≤55; a `TODO` marks where above-55 bands should be added.
   - Expense constants: `EXPENSES_INFLATION_RATE` (0.02), `MONTHLY_EXPENSES_TODAY` / `ANNUAL_EXPENSES_TODAY` — dollar constants superseded by `monthlyExpensesToday` from context, but `EXPENSES_INFLATION_RATE` is still imported by pages.
   - SRS constants: `SRS_ANNUAL_CAP` (15300), `CPF_EMPLOYEE_RATE` (0.2), `SRS_WITHDRAWAL_YEARS` (10), `SRS_TAXABLE_FRACTION` (0.5)
-  - CPF constants: `CPF_OA_RATE` (0.025), `CPF_SA_RATE` (0.04), `CPF_MA_RATE` (0.04), `CPF_RA_RATE` (0.04), `CPF_TOTAL_CONTRIBUTION_RATE` (0.37), `CPF_FRS_INFLATION_RATE` (0.02)
+  - CPF constants: `CPF_OA_RATE` (0.025), `CPF_SA_RATE` (0.04), `CPF_MA_RATE` (0.04), `CPF_RA_RATE` (0.04), `CPF_TOTAL_CONTRIBUTION_RATE` (0.37), `CPF_FRS_INFLATION_RATE` (0.035 — derived from 2024–2027 CPF Board figures)
 - **`lib/cash-flow.ts`** — `buildAccumulation(inputs)` returns one `AccumulationRow` per working year (`age = currentAge + i`). The optional `srsTopUps: number[]` parameter drives per-year SRS deductions; when omitted, no SRS top-up is applied. Used by `/accumulation`, `/main`, and `/retirement`. See "Cash + accumulation modeling convention" below.
 - **`lib/bto.ts`** — pure BTO compute. Imports `buildCpfProjection` from `lib/tax.ts`. Constants: `HDB_LOAN_RATE` (0.026), `GRANT_CAPS` (`{family: 80000, ehg: 120000, phg: 30000}`), `MAX_TENURE_HDB` (25), `MAX_TENURE_BANK` (30). Exports:
   - `computeBtoBreakdown(inputs, oaAtDp1Age, oaAtDp2Age)` — see "BTO modeling convention" below.

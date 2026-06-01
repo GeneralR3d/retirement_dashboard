@@ -102,7 +102,7 @@ const DEFAULTS: ProfileInputs = {
   cpfSA: 2000.74,
   cpfMA: 5236,
   cpfRA: 0,
-  cpfLifeFrs: 200000,
+  cpfLifeFrs: 220400,
   cpfLifeMonthlyPayout: 1610,
   salarySeries: [],
   startingCash: 5000,

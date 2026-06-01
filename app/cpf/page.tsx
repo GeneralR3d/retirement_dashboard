@@ -274,6 +274,21 @@ export default function CpfPage() {
               ? `Met · surplus ${fmtMoney(conversionSurplus)} → OA`
               : `Deficit ${fmtMoney(-conversionSurplus)} ← OA`
             : "No conversion in range"}
+          tooltipPosition="right"
+          tooltip={
+            <>
+                    <p className="font-semibold mb-1">How the FRS is projected</p>
+                    <p className="mb-2">
+                      The FRS values change every year.
+                      Based on recent figures we apply a <span className="font-semibold text-emerald-400">{CPF_FRS_INFLATION_RATE * 100}%/yr</span> growth
+                      rate to estimate the FRS target at your retirement age.
+                    </p>
+                    <p className="text-foreground/60 dark:text-foreground/40">
+                      This rate may change. Always refer to the CPF website
+                      for the latest figures.
+                    </p>
+            </>
+          }
         />
         <StatCard
           label={`CPF LIFE premium at ${cpfWithdrawalAge}`}

@@ -186,7 +186,7 @@ export const CPF_SA_RATE = 0.04;
 export const CPF_MA_RATE = 0.04;
 export const CPF_RA_RATE = 0.04;
 export const CPF_TOTAL_CONTRIBUTION_RATE = 0.37;
-export const CPF_FRS_INFLATION_RATE = 0.02;
+export const CPF_FRS_INFLATION_RATE = 0.035;
 
 export type CpfYearRow = {
   year: number;
