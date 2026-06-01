@@ -26,6 +26,7 @@ import { computeBtoBreakdown } from "@/lib/bto";
 import { useProfile } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
 import { Stat, StatCard, Td, Th, InfoTooltip } from "@/app/components/ui";
+import Image from "next/image";
 
 function CpfTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: number }) {
   if (!active || !payload?.length) return null;
@@ -250,15 +251,16 @@ export default function CpfPage() {
   return (
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
       <header className="mb-8">
-        <p className="text-xs uppercase tracking-widest text-foreground/65 dark:text-foreground/40 mb-1">
-          OA {CPF_OA_RATE * 100}% · SA {CPF_SA_RATE * 100}% · MA {CPF_MA_RATE * 100}% · RA {CPF_RA_RATE * 100}%
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-          Central Provident Fund
-        </h1>
+        <div className="flex items-center gap-3">
+          <Image src="/cpflogo.jpeg" alt="CPF logo" width={40} height={40} className="shrink-0" />
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+            Central Provident Fund
+          </h1>
+        </div>
         <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
           CPF account growth from age {currentAge} to {deathAge} ({years} years).
           Contributions stop at age {stopWorkingAge}. SA converts to RA at age {cpfRetirementAge}.
+          OA {CPF_OA_RATE * 100}% · SA {CPF_SA_RATE * 100}% · MA {CPF_MA_RATE * 100}% · RA {CPF_RA_RATE * 100}%
         </p>
       </header>
 

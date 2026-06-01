@@ -7,6 +7,7 @@ import { StatCard, Stat, Th, Td } from "@/app/components/ui";
 import { BtoInputsPanel } from "@/app/components/bto-inputs";
 import { computeBtoBreakdown, type BtoBreakdown } from "@/lib/bto";
 import { buildCpfProjection, type CpfYearRow } from "@/lib/tax";
+import Image from "next/image";
 
 function oaBalanceAtAge(rows: CpfYearRow[], age: number, fallback: number): number {
   if (rows.length === 0) return fallback;
@@ -137,10 +138,10 @@ export default function BtoPage() {
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
       <header className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">BTO Mortgage</h1>
-          <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
-            Plan your BTO downpayments, grants, and mortgage.
-          </p>
+          <div className="flex items-center gap-3">
+            <Image src="/hdblogo.png" alt="HDB logo" width={120} height={40} className="shrink-0 object-contain" />
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">BTO Mortgage</h1>
+          </div>
         </div>
         <div className="flex items-center gap-3 pt-1 shrink-0">
           {isDirty && <span className="text-xs text-amber-700 dark:text-amber-400/80">Unsaved changes</span>}
@@ -160,44 +161,236 @@ export default function BtoPage() {
       {/* Inputs — split layout: house SVG left, config panel right */}
       <div className="border border-foreground/10 bg-foreground/[0.03] mb-10 overflow-hidden flex min-h-[420px]">
         {/* Left: house illustration */}
-        <div className="hidden md:flex flex-1 items-center justify-center bg-gradient-to-br from-emerald-950/40 via-foreground/[0.02] to-blue-950/30 relative overflow-hidden">
+        <div className="hidden md:flex flex-1 items-center justify-center bg-background relative overflow-hidden">
+          {/* ── Daylight SVG — light mode ── */}
           <svg
             viewBox="0 0 340 420"
             xmlns="http://www.w3.org/2000/svg"
-            className="w-full h-full absolute inset-0"
+            className="w-full h-full absolute inset-0 block dark:hidden"
             preserveAspectRatio="xMidYMid meet"
           >
             <defs>
-              {/* Night sky — deep navy, works as opaque backdrop in both light and dark modes */}
-              <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="d_skyGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1a6fa8" />
+                <stop offset="50%" stopColor="#4da8d8" />
+                <stop offset="100%" stopColor="#a8d4f0" />
+              </linearGradient>
+              <linearGradient id="d_facadeGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#ede9e0" />
+                <stop offset="100%" stopColor="#e4dfd6" />
+              </linearGradient>
+              <linearGradient id="d_liftGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#d4cfc6" />
+                <stop offset="100%" stopColor="#ccc8bf" />
+              </linearGradient>
+              <linearGradient id="d_voidGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#b8b4ac" />
+                <stop offset="100%" stopColor="#aca8a0" />
+              </linearGradient>
+              <linearGradient id="d_groundGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#c4c0b8" />
+                <stop offset="100%" stopColor="#b8b4ac" />
+              </linearGradient>
+            </defs>
+
+            {/* ── Sky ── */}
+            <rect width="340" height="420" fill="url(#d_skyGrad)" />
+
+            {/* Sun — glow halos then disc */}
+            <circle cx="285" cy="42" r="46" fill="#fef9c3" opacity="0.12" />
+            <circle cx="285" cy="42" r="30" fill="#fef08a" opacity="0.18" />
+            <circle cx="285" cy="42" r="15" fill="#fbbf24" opacity="0.92" />
+            <circle cx="285" cy="42" r="10" fill="#fef9c3" opacity="0.95" />
+
+            {/* Sun rays */}
+            {([0,30,60,90,120,150,180,210,240,270,300,330] as number[]).map((angle, i) => {
+              const rad = (angle * Math.PI) / 180;
+              return (
+                <line key={i}
+                  x1={285 + Math.cos(rad) * 18} y1={42 + Math.sin(rad) * 18}
+                  x2={285 + Math.cos(rad) * 28} y2={42 + Math.sin(rad) * 28}
+                  stroke="#fbbf24"
+                  strokeWidth={i % 2 === 0 ? 1.5 : 0.8}
+                  strokeOpacity="0.45" />
+              );
+            })}
+
+            {/* Clouds */}
+            <ellipse cx="65"  cy="68" rx="34" ry="11" fill="white" opacity="0.88" />
+            <ellipse cx="82"  cy="61" rx="24" ry="13" fill="white" opacity="0.92" />
+            <ellipse cx="48"  cy="65" rx="17" ry="9"  fill="white" opacity="0.82" />
+            <ellipse cx="172" cy="38" rx="26" ry="9"  fill="white" opacity="0.78" />
+            <ellipse cx="186" cy="33" rx="17" ry="11" fill="white" opacity="0.82" />
+            <ellipse cx="160" cy="35" rx="14" ry="7"  fill="white" opacity="0.72" />
+
+            {/* Distant low-rise background blocks */}
+            <rect x="0"   y="290" width="60"  height="65" fill="#b8c4d0" opacity="0.55" />
+            <rect x="10"  y="270" width="35"  height="85" fill="#c0cad6" opacity="0.5"  />
+            <rect x="280" y="285" width="60"  height="70" fill="#b8c4d0" opacity="0.55" />
+            <rect x="295" y="265" width="35"  height="90" fill="#c0cad6" opacity="0.5"  />
+            {([
+              [14,278],[22,278],[14,292],[22,292],
+              [300,272],[308,272],[300,286],[308,286],
+            ] as [number,number][]).map(([wx,wy],i) => (
+              <rect key={i} x={wx} y={wy} width="5" height="4" fill="#8cbfe8" opacity="0.55" />
+            ))}
+
+            {/* Drop shadow */}
+            <rect x="74" y="32" width="200" height="315" fill="#8c8880" opacity="0.12" rx="1" />
+
+            {/* ── Main facade ── */}
+            <rect x="70" y="28" width="200" height="260" fill="url(#d_facadeGrad)" />
+
+            {/* ── Lift shaft ── */}
+            <rect x="70" y="28" width="24" height="260" fill="url(#d_liftGrad)" />
+            <rect x="73" y="28" width="18" height="260" fill="#c8c4bc" opacity="0.3" />
+            <rect x="70" y="28" width="24" height="4"   fill="#ccc8c0" />
+
+            {/* ── Corridor strip (right) ── */}
+            <rect x="247" y="28" width="23" height="260" fill="#d8d4cc" />
+            <rect x="265" y="28" width="5"  height="260" fill="#ccc8c0" />
+            {([28,48,68,88,108,128,148,168,188,208,228,248,268] as number[]).map((sy,i) => (
+              <rect key={i} x="265" y={sy} width="5" height="4" fill="#a8c4dc" opacity="0.45" />
+            ))}
+
+            {/* ── Roof parapet ── */}
+            <rect x="64" y="18" width="212" height="13" fill="#d8d4cc" rx="1" />
+            <rect x="64" y="15" width="212" height="5"  fill="#10b981" opacity="0.75" rx="1" />
+            {([76,106,136,166,196,226,252] as number[]).map((px,i) => (
+              <rect key={i} x={px} y="15" width="14" height="8" fill="#d0ccc4" />
+            ))}
+            <rect x="64" y="15" width="212" height="1" fill="#34d399" opacity="0.85" />
+
+            {/* ── Rooftop mechanical ── */}
+            <rect x="178" y="4"  width="58" height="14" fill="#d0ccc4" rx="2" />
+            <rect x="178" y="2"  width="58" height="5"  fill="#dedad2" rx="1" />
+            <rect x="188" y="4"  width="4"  height="7"  fill="#c0bcb4" />
+            <rect x="222" y="4"  width="4"  height="7"  fill="#c0bcb4" />
+            <rect x="189" y="5"  width="2"  height="4"  fill="#10b981" opacity="0.5" />
+            <rect x="96"  y="7"  width="3"  height="12" fill="#c8c4bc" />
+            <rect x="89"  y="7"  width="17" height="2"  fill="#c8c4bc" />
+            <rect x="105" y="7"  width="1"  height="6"  fill="#10b981" opacity="0.5" />
+
+            {/* ── Floor slab lines ── */}
+            {Array.from({length: 13}, (_, i) => (
+              <rect key={i} x="70" y={28 + (i+1)*20} width="200" height="2"
+                fill="#c8c4bc" opacity="0.65" />
+            ))}
+
+            {/* ── Accent colour bands ── */}
+            <rect x="70" y="88"  width="200" height="40" fill="#065f46" opacity="0.10" />
+            <rect x="70" y="88"  width="200" height="2"  fill="#10b981" opacity="0.65" />
+            <rect x="70" y="128" width="200" height="2"  fill="#10b981" opacity="0.65" />
+            <rect x="70" y="188" width="200" height="40" fill="#065f46" opacity="0.08" />
+            <rect x="70" y="188" width="200" height="2"  fill="#10b981" opacity="0.55" />
+            <rect x="70" y="228" width="200" height="2"  fill="#10b981" opacity="0.55" />
+
+            {/* ── Windows (daytime — sky reflection in glass) ── */}
+            {Array.from({length: 13}, (_, floor) => {
+              const wy = 28 + floor * 20 + 4;
+              return (
+                <g key={`dfl${floor}`}>
+                  {([100,122,144,166,188,210] as number[]).map((wx, wi) => (
+                    <g key={wi}>
+                      <rect x={wx-1} y={wy-1} width="18" height="14" fill="#c0bdb5" rx="1" />
+                      <rect x={wx}   y={wy}   width="16" height="12" fill="#8cbfe8" rx="1" opacity="0.75" />
+                      <rect x={wx}   y={wy}   width="16" height="4"  fill="#c0e0f0" rx="1" opacity="0.55" />
+                      <line x1={wx+8} y1={wy}   x2={wx+8} y2={wy+12} stroke="white" strokeWidth="0.6" strokeOpacity="0.35" />
+                      <line x1={wx}   y1={wy+6} x2={wx+16} y2={wy+6} stroke="white" strokeWidth="0.6" strokeOpacity="0.35" />
+                    </g>
+                  ))}
+                  <rect x="76" y={wy} width="12" height="12" fill="#ccc8c0" rx="1" />
+                  <line x1="82" y1={wy} x2="82" y2={wy+12} stroke="#b8b4ac" strokeWidth="0.8" strokeOpacity="0.7" />
+                  <circle cx="90" cy={wy+6} r="1.5" fill="#10b981" opacity={floor % 4 === 1 ? 0.75 : 0.2} />
+                </g>
+              );
+            })}
+
+            {/* ── Void deck ── */}
+            <rect x="70" y="288" width="200" height="57" fill="url(#d_voidGrad)" />
+            <rect x="70" y="288" width="200" height="3"  fill="#b0aca4" />
+            {([83,114,145,176,207,238] as number[]).map((px,i) => (
+              <g key={i}>
+                <rect x={px} y="288" width="10" height="57" fill="#c8c4bc" />
+                <rect x={px} y="288" width="1.5" height="57" fill="#dedad2" />
+              </g>
+            ))}
+            <rect x="70" y="342" width="200" height="3" fill="#b8b4ac" />
+
+            {/* Letter boxes */}
+            <rect x="90" y="304" width="42" height="28" fill="#b0aca4" rx="1" opacity="0.9" />
+            {([0,1,2,3,4,5,6,7] as number[]).map(i => (
+              <rect key={i} x={93+(i%4)*9} y={307+Math.floor(i/4)*12}
+                width="7" height="9" fill="#c8c4bc" rx="0.5" />
+            ))}
+            <rect x="158" y="334" width="44" height="4" fill="#a8a4a0" rx="1" />
+            <rect x="162" y="338" width="3"  height="5" fill="#a8a4a0" />
+            <rect x="197" y="338" width="3"  height="5" fill="#a8a4a0" />
+
+            {/* Block number sign */}
+            <rect x="128" y="296" width="84" height="20" fill="#c8c4bc" rx="1" opacity="0.9" />
+            <rect x="130" y="298" width="80" height="16" fill="#10b981" rx="1" opacity="0.10" />
+            <rect x="138" y="303" width="54" height="3"  fill="#10b981" opacity="0.55" rx="1" />
+            <rect x="146" y="308" width="36" height="2"  fill="#10b981" opacity="0.35" rx="1" />
+
+            {/* ── Ground plane ── */}
+            <rect x="0" y="345" width="340" height="75" fill="url(#d_groundGrad)" />
+            <rect x="0" y="345" width="340" height="13" fill="#ccc8c0" opacity="0.65" />
+            <rect x="0" y="343" width="340" height="3"  fill="#10b981" opacity="0.18" />
+
+            {/* Trees — bright tropical greens */}
+            <rect x="23"  y="344" width="5"  height="14" fill="#7c5428" opacity="0.9" />
+            <ellipse cx="25"  cy="338" rx="20" ry="12" fill="#15803d" opacity="0.9" />
+            <ellipse cx="18"  cy="333" rx="13" ry="9"  fill="#22c55e" opacity="0.8" />
+            <ellipse cx="30"  cy="332" rx="10" ry="7"  fill="#4ade80" opacity="0.5" />
+
+            <rect x="312" y="344" width="5"  height="14" fill="#7c5428" opacity="0.9" />
+            <ellipse cx="315" cy="338" rx="20" ry="12" fill="#15803d" opacity="0.9" />
+            <ellipse cx="322" cy="333" rx="13" ry="9"  fill="#22c55e" opacity="0.8" />
+            <ellipse cx="308" cy="332" rx="10" ry="7"  fill="#4ade80" opacity="0.5" />
+
+            <ellipse cx="50"  cy="349" rx="11" ry="6" fill="#22c55e" opacity="0.6" />
+            <ellipse cx="290" cy="349" rx="11" ry="6" fill="#22c55e" opacity="0.6" />
+
+            {/* Building outline */}
+            <rect x="70" y="28" width="200" height="317" fill="none"
+              stroke="#10b981" strokeWidth="0.5" strokeOpacity="0.2" />
+
+          </svg>
+
+          {/* ── Night SVG — dark mode ── */}
+          <svg
+            viewBox="0 0 340 420"
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-full h-full absolute inset-0 hidden dark:block"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <defs>
+              <linearGradient id="n_skyGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#04090f" />
                 <stop offset="60%" stopColor="#071524" />
                 <stop offset="100%" stopColor="#091d2e" />
               </linearGradient>
-              {/* Main facade — slightly lighter on top (ambient sky bounce) */}
-              <linearGradient id="facadeGrad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="n_facadeGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#1e2d3e" />
                 <stop offset="100%" stopColor="#192538" />
               </linearGradient>
-              {/* Lift-shaft — darker recessed panel */}
-              <linearGradient id="liftGrad" x1="0" y1="0" x2="1" y2="0">
+              <linearGradient id="n_liftGrad" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#0c1825" />
                 <stop offset="100%" stopColor="#111e2d" />
               </linearGradient>
-              {/* Void deck — open, darker interior */}
-              <linearGradient id="voidGrad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="n_voidGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#0d1928" />
                 <stop offset="100%" stopColor="#07111c" />
               </linearGradient>
-              {/* Ground plane */}
-              <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="n_groundGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#0a1622" />
                 <stop offset="100%" stopColor="#050d16" />
               </linearGradient>
             </defs>
 
             {/* ── Sky ── */}
-            <rect width="340" height="420" fill="url(#skyGrad)" />
+            <rect width="340" height="420" fill="url(#n_skyGrad)" />
 
             {/* Stars */}
             {([
@@ -213,12 +406,11 @@ export default function BtoPage() {
             <circle cx="292" cy="36" r="18" fill="#ddeeff" opacity="0.05" />
             <circle cx="295" cy="33" r="12" fill="#eef6ff" opacity="0.08" />
 
-            {/* Distant low-rise blocks in bg for depth */}
+            {/* Distant low-rise blocks */}
             <rect x="0"   y="290" width="60"  height="65" fill="#0d1a28" opacity="0.6" />
             <rect x="10"  y="270" width="35"  height="85" fill="#0f1e2e" opacity="0.5" />
             <rect x="280" y="285" width="60"  height="70" fill="#0d1a28" opacity="0.6" />
             <rect x="295" y="265" width="35"  height="90" fill="#0f1e2e" opacity="0.5" />
-            {/* Tiny lit windows on bg blocks */}
             {([
               [14,278],[22,278],[14,292],[22,292],
               [300,272],[308,272],[300,286],[308,286],
@@ -227,81 +419,57 @@ export default function BtoPage() {
                 fill="#fef08a" opacity={i%3===0?0.18:0.07} />
             ))}
 
-            {/* ══════════════════════════════════════
-                HDB BLOCK
-                x=70 → x=270  (200 px wide)
-                13 residential floors × 20 px = 260 px
-                y=28 → y=288
-                Void deck: y=288 → y=345 (57 px)
-                Parapet: y=18 → y=28
-            ══════════════════════════════════════ */}
-
             {/* Drop shadow */}
             <rect x="74" y="32" width="200" height="315" fill="#000" opacity="0.35" rx="1" />
 
             {/* ── Main facade ── */}
-            <rect x="70" y="28" width="200" height="260" fill="url(#facadeGrad)" />
+            <rect x="70" y="28" width="200" height="260" fill="url(#n_facadeGrad)" />
 
-            {/* ── Lift shaft (left strip, x=70–94) ── */}
-            <rect x="70" y="28" width="24" height="260" fill="url(#liftGrad)" />
-            {/* Inset darker panel */}
+            {/* ── Lift shaft ── */}
+            <rect x="70" y="28" width="24" height="260" fill="url(#n_liftGrad)" />
             <rect x="73" y="28" width="18" height="260" fill="#09141f" opacity="0.55" />
-            {/* Lift-shaft top cap */}
-            <rect x="70" y="28" width="24" height="4" fill="#0a1520" />
+            <rect x="70" y="28" width="24" height="4"   fill="#0a1520" />
 
-            {/* ── Corridor strip (right, x=247–270) ── */}
+            {/* ── Corridor strip ── */}
             <rect x="247" y="28" width="23" height="260" fill="#13202f" />
-            {/* Corridor outer edge — open-air grille hint */}
-            <rect x="265" y="28" width="5" height="260" fill="#0c1825" />
+            <rect x="265" y="28" width="5"  height="260" fill="#0c1825" />
             {([28,48,68,88,108,128,148,168,188,208,228,248,268] as number[]).map((sy,i) => (
               <rect key={i} x="265" y={sy} width="5" height="4" fill="#1e3a5f" opacity="0.35" />
             ))}
 
             {/* ── Roof parapet ── */}
             <rect x="64" y="18" width="212" height="13" fill="#18273a" rx="1" />
-            {/* Parapet top accent stripe — signature HDB emerald band */}
-            <rect x="64" y="15" width="212" height="5" fill="#10b981" opacity="0.55" rx="1" />
-            {/* Parapet crenellations */}
+            <rect x="64" y="15" width="212" height="5"  fill="#10b981" opacity="0.55" rx="1" />
             {([76,106,136,166,196,226,252] as number[]).map((px,i) => (
               <rect key={i} x={px} y="15" width="14" height="8" fill="#18273a" rx="0" />
             ))}
-            {/* Glow line */}
             <rect x="64" y="15" width="212" height="1" fill="#34d399" opacity="0.8" />
 
-            {/* ── Rooftop mechanical / water tank ── */}
+            {/* ── Rooftop mechanical ── */}
             <rect x="178" y="4"  width="58" height="14" fill="#0e1c2c" rx="2" />
             <rect x="178" y="2"  width="58" height="5"  fill="#18273a" rx="1" />
             <rect x="188" y="4"  width="4"  height="7"  fill="#081220" />
             <rect x="222" y="4"  width="4"  height="7"  fill="#081220" />
             <rect x="189" y="5"  width="2"  height="4"  fill="#10b981" opacity="0.35" />
-            {/* Antenna / lightning rod */}
             <rect x="96"  y="7"  width="3"  height="12" fill="#1e2d3e" />
             <rect x="89"  y="7"  width="17" height="2"  fill="#1e2d3e" />
             <rect x="105" y="7"  width="1"  height="6"  fill="#10b981" opacity="0.4" />
 
-            {/* ── Floor slab lines (13 slabs, one per floor bottom) ── */}
+            {/* ── Floor slab lines ── */}
             {Array.from({length: 13}, (_, i) => (
               <rect key={i} x="70" y={28 + (i+1)*20} width="200" height="2"
                 fill="#09121d" opacity="0.95" />
             ))}
 
-            {/* ── Accent colour bands (HDB signature horizontal stripes) ──
-                Band A: floors 3-4 (y=88–128)
-                Band B: floors 8-9 (y=188–228)
-            ── */}
-            {/* Band A */}
-            <rect x="70" y="88" width="200" height="40" fill="#065f46" opacity="0.28" />
-            <rect x="70" y="88"  width="200" height="2" fill="#10b981" opacity="0.5" />
-            <rect x="70" y="128" width="200" height="2" fill="#10b981" opacity="0.5" />
-            {/* Band B */}
+            {/* ── Accent colour bands ── */}
+            <rect x="70" y="88"  width="200" height="40" fill="#065f46" opacity="0.28" />
+            <rect x="70" y="88"  width="200" height="2"  fill="#10b981" opacity="0.5" />
+            <rect x="70" y="128" width="200" height="2"  fill="#10b981" opacity="0.5" />
             <rect x="70" y="188" width="200" height="40" fill="#065f46" opacity="0.22" />
-            <rect x="70" y="188" width="200" height="2" fill="#10b981" opacity="0.4" />
-            <rect x="70" y="228" width="200" height="2" fill="#10b981" opacity="0.4" />
+            <rect x="70" y="188" width="200" height="2"  fill="#10b981" opacity="0.4" />
+            <rect x="70" y="228" width="200" height="2"  fill="#10b981" opacity="0.4" />
 
-            {/* ── Windows  (6 per floor × 13 floors)
-                x starts: 100 122 144 166 188 210  (pitch=22, width=16)
-                wy = 28 + floor*20 + 4
-            ── */}
+            {/* ── Windows ── */}
             {Array.from({length: 13}, (_, floor) => {
               const slabY = 28 + floor * 20;
               const wy = slabY + 4;
@@ -311,18 +479,14 @@ export default function BtoPage() {
                     const lit = (floor * 3 + wi * 2) % 5 === 0 || (floor + wi) % 4 === 0;
                     return (
                       <g key={wi}>
-                        {/* Recess shadow */}
                         <rect x={wx-1} y={wy-1} width="18" height="14" fill="#040c16" rx="1" />
-                        {/* Glass pane */}
                         <rect x={wx} y={wy} width="16" height="12" fill="#0b1f38" rx="1" />
                         <rect x={wx} y={wy} width="16" height="12"
                           fill="#3b82f6" opacity={lit ? 0.16 : 0.05} rx="1" />
-                        {/* Pane dividers */}
-                        <line x1={wx+8} y1={wy}    x2={wx+8} y2={wy+12}
+                        <line x1={wx+8} y1={wy}   x2={wx+8} y2={wy+12}
                           stroke="#3b82f6" strokeWidth="0.6" strokeOpacity="0.2" />
-                        <line x1={wx}   y1={wy+6}  x2={wx+16} y2={wy+6}
+                        <line x1={wx}   y1={wy+6} x2={wx+16} y2={wy+6}
                           stroke="#3b82f6" strokeWidth="0.6" strokeOpacity="0.2" />
-                        {/* Interior warm light */}
                         {lit && (
                           <rect x={wx+1} y={wy+1} width="7" height="5"
                             fill="#fef08a" opacity="0.22" rx="0.5" />
@@ -330,42 +494,32 @@ export default function BtoPage() {
                       </g>
                     );
                   })}
-
-                  {/* Lift door per floor */}
                   <rect x="76" y={wy} width="12" height="12" fill="#08131e" rx="1" />
                   <line x1="82" y1={wy} x2="82" y2={wy+12}
                     stroke="#1e3a5f" strokeWidth="0.8" strokeOpacity="0.55" />
-                  {/* Lift button indicator */}
                   <circle cx="90" cy={wy+6} r="1.5" fill="#10b981"
                     opacity={floor % 4 === 1 ? 0.7 : 0.15} />
                 </g>
               );
             })}
 
-            {/* ── Void deck (y=288–345) ── */}
-            <rect x="70" y="288" width="200" height="57" fill="url(#voidGrad)" />
-            {/* Deck soffit */}
-            <rect x="70" y="288" width="200" height="3" fill="#09121d" />
-
-            {/* Pillars — 6 columns */}
+            {/* ── Void deck ── */}
+            <rect x="70" y="288" width="200" height="57" fill="url(#n_voidGrad)" />
+            <rect x="70" y="288" width="200" height="3"  fill="#09121d" />
             {([83,114,145,176,207,238] as number[]).map((px,i) => (
               <g key={i}>
                 <rect x={px} y="288" width="10" height="57" fill="#0d1928" />
-                {/* Pillar highlight edge */}
                 <rect x={px} y="288" width="1.5" height="57" fill="#182535" />
               </g>
             ))}
-
-            {/* Void deck floor */}
             <rect x="70" y="342" width="200" height="3" fill="#0c1825" />
 
-            {/* Letter boxes (HDB void deck fixture) */}
+            {/* Letter boxes */}
             <rect x="90" y="304" width="42" height="28" fill="#0c1825" rx="1" opacity="0.9" />
             {([0,1,2,3,4,5,6,7] as number[]).map(i => (
               <rect key={i} x={93+(i%4)*9} y={307+Math.floor(i/4)*12}
                 width="7" height="9" fill="#131e2e" rx="0.5" />
             ))}
-            {/* Bench */}
             <rect x="158" y="334" width="44" height="4" fill="#111e2e" rx="1" />
             <rect x="162" y="338" width="3"  height="5" fill="#111e2e" />
             <rect x="197" y="338" width="3"  height="5" fill="#111e2e" />
@@ -373,17 +527,15 @@ export default function BtoPage() {
             {/* Block number sign */}
             <rect x="128" y="296" width="84" height="20" fill="#0c1825" rx="1" opacity="0.92" />
             <rect x="130" y="298" width="80" height="16" fill="#10b981" rx="1" opacity="0.08" />
-            <rect x="138" y="303" width="54" height="3" fill="#10b981" opacity="0.48" rx="1" />
-            <rect x="146" y="308" width="36" height="2" fill="#10b981" opacity="0.28" rx="1" />
+            <rect x="138" y="303" width="54" height="3"  fill="#10b981" opacity="0.48" rx="1" />
+            <rect x="146" y="308" width="36" height="2"  fill="#10b981" opacity="0.28" rx="1" />
 
             {/* ── Ground plane ── */}
-            <rect x="0" y="345" width="340" height="75" fill="url(#groundGrad)" />
-            {/* Sidewalk slab */}
+            <rect x="0" y="345" width="340" height="75" fill="url(#n_groundGrad)" />
             <rect x="0" y="345" width="340" height="13" fill="#0b1a28" opacity="0.7" />
-            {/* Ground accent line */}
-            <rect x="0" y="343" width="340" height="3" fill="#10b981" opacity="0.13" />
+            <rect x="0" y="343" width="340" height="3"  fill="#10b981" opacity="0.13" />
 
-            {/* Landscaping — trees flanking the block */}
+            {/* Trees */}
             <rect x="23"  y="344" width="5"  height="14" fill="#041a0e" opacity="0.85" />
             <ellipse cx="25"  cy="338" rx="20" ry="12" fill="#064e3b" opacity="0.8" />
             <ellipse cx="18"  cy="333" rx="13" ry="9"  fill="#065f46" opacity="0.65" />
@@ -392,11 +544,10 @@ export default function BtoPage() {
             <ellipse cx="315" cy="338" rx="20" ry="12" fill="#064e3b" opacity="0.8" />
             <ellipse cx="322" cy="333" rx="13" ry="9"  fill="#065f46" opacity="0.65" />
 
-            {/* Smaller shrubs */}
             <ellipse cx="50"  cy="349" rx="11" ry="6" fill="#065f46" opacity="0.5" />
             <ellipse cx="290" cy="349" rx="11" ry="6" fill="#065f46" opacity="0.5" />
 
-            {/* ── Building outline ── */}
+            {/* Building outline */}
             <rect x="70" y="28" width="200" height="317" fill="none"
               stroke="#10b981" strokeWidth="0.5" strokeOpacity="0.12" />
 
