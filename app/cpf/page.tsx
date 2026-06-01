@@ -434,7 +434,7 @@ export default function CpfPage() {
           </h2>
           <p className="text-xs text-foreground/85 dark:text-foreground/60 mb-4">
             Special Account is transferred to Retirement Account to meet the
-            FRS target (current {fmtMoney(cpfLifeFrs)} inflated at {CPF_FRS_INFLATION_RATE * 100}%/yr).
+            FRS target (current {fmtMoney(cpfLifeFrs)} inflated at {(CPF_FRS_INFLATION_RATE * 100).toFixed(2)}%/yr).
             Any surplus returns to OA; any deficit is drawn from OA.
             The remaining OA balance is then transferred in full to your investment account.
           </p>
