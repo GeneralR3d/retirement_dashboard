@@ -27,7 +27,9 @@ export function allocateCpfContribution(age: number, contribution: number): CpfA
   };
 }
 
-const TAX_BRACKETS: { limit: number; base: number; rate: number }[] = [
+export const TAX_RELIEF_CAP = 80_000;
+
+export const TAX_BRACKETS: { limit: number; base: number; rate: number }[] = [
   { limit: 20000, base: 0, rate: 0 },
   { limit: 30000, base: 0, rate: 0.02 },
   { limit: 40000, base: 200, rate: 0.035 },
@@ -42,6 +44,28 @@ const TAX_BRACKETS: { limit: number; base: number; rate: number }[] = [
   { limit: 1000000, base: 84150, rate: 0.23 },
   { limit: Infinity, base: 199150, rate: 0.24 },
 ];
+
+export type TaxBreakdown = {
+  bracketFrom: number;
+  bracketTo: number;
+  rate: number;
+  baseTax: number;
+  marginalTax: number;
+  totalTax: number;
+};
+
+export function getTaxBreakdown(income: number): TaxBreakdown {
+  if (income <= 0) return { bracketFrom: 0, bracketTo: TAX_BRACKETS[0].limit, rate: 0, baseTax: 0, marginalTax: 0, totalTax: 0 };
+  for (let i = 0; i < TAX_BRACKETS.length; i++) {
+    const b = TAX_BRACKETS[i];
+    const prevLimit = i === 0 ? 0 : TAX_BRACKETS[i - 1].limit;
+    if (income <= b.limit) {
+      const marginalTax = (income - prevLimit) * b.rate;
+      return { bracketFrom: prevLimit, bracketTo: b.limit, rate: b.rate, baseTax: b.base, marginalTax, totalTax: b.base + marginalTax };
+    }
+  }
+  return { bracketFrom: 0, bracketTo: 0, rate: 0, baseTax: 0, marginalTax: 0, totalTax: 0 };
+}
 
 export function calculateTax(income: number): number {
   if (income <= 0) return 0;

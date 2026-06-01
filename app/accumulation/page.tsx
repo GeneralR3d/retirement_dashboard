@@ -9,6 +9,7 @@ import { Td, Th, InfoTooltip } from "@/app/components/ui";
 import { LumpsumTablesPanel, useBtoEffectiveExpenses } from "@/app/components/lumpsum-tables";
 import { recommendedSrsTopUp, SRS_ANNUAL_CAP, CPF_EMPLOYEE_RATE } from "@/lib/tax";
 import { computeMortgageCashPayments } from "@/lib/bto";
+import { TaxReliefPane } from "@/app/components/tax-relief-pane";
 
 type LumpsumItem = { name: string; amount: number };
 
@@ -129,6 +130,7 @@ export default function AccumulationPage() {
 
   const [draftExpenses, setDraftExpenses] = useState<LumpsumExpense[]>(inputs.lumpsumExpenses);
   const [draftInflows, setDraftInflows] = useState<LumpsumExpense[]>(inputs.lumpsumInflows);
+  const [taxPaneRowIndex, setTaxPaneRowIndex] = useState<number | null>(null);
 
   const {
     currentAge,
@@ -181,6 +183,15 @@ export default function AccumulationPage() {
       lumpsumExpenses: effectiveDraftExpenses,
       lumpsumInflows: draftInflows,
     });
+  }
+
+  function handleTaxReliefSave(reliefs: Record<string, number>) {
+    if (taxPaneRowIndex === null) return;
+    const updated = [...(inputs.taxReliefsPerYear ?? [])];
+    while (updated.length <= taxPaneRowIndex) updated.push({});
+    updated[taxPaneRowIndex] = reliefs;
+    setInputs({ ...inputs, taxReliefsPerYear: updated });
+    setTaxPaneRowIndex(null);
   }
 
   // srsAccepted lives in profile context so it persists across navigation.
@@ -254,6 +265,7 @@ export default function AccumulationPage() {
         brokerageStart: startingCash,
         investmentGrowthRate,
         srsTopUps,
+        taxReliefsPerYear: inputs.taxReliefsPerYear,
       }),
     [
       currentAge,
@@ -271,6 +283,7 @@ export default function AccumulationPage() {
       investmentGrowthRate,
       workingYears,
       srsTopUps,
+      inputs.taxReliefsPerYear,
     ]
   );
 
@@ -336,7 +349,7 @@ export default function AccumulationPage() {
                   <span className="flex items-center gap-1">
                     Tax
                     <InfoTooltip>
-                      Tax rates follow Singapore IRAS resident tax brackets.{" "}
+                      Singapore IRAS resident tax brackets. Click any cell to add tax reliefs for that year.{" "}
                       <a
                         href="https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-residency-and-tax-rates/individual-income-tax-rates"
                         target="_blank"
@@ -437,15 +450,39 @@ export default function AccumulationPage() {
                       )}
                     </td>
 
-                    <Td className="text-red-600 dark:text-red-400">{fmtMoney(r.tax)}</Td>
+                    <td
+                      className="py-2 px-2 whitespace-nowrap cursor-pointer group"
+                      onClick={() => setTaxPaneRowIndex(i)}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <div>
+                          <span className="text-red-600 dark:text-red-400">
+                            {fmtMoney(r.tax)}
+                          </span>
+                          {r.totalTaxRelief > 0 && (
+                            <span className="block text-[10px] font-sans text-sky-600 dark:text-sky-400">
+                              −{fmtMoney(r.totalTaxRelief)} relief
+                            </span>
+                          )}
+                        </div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 16 16"
+                          fill="currentColor"
+                          className="w-3 h-3 shrink-0 text-foreground/25 group-hover:text-foreground/55 transition-colors"
+                        >
+                          <path d="M11.013 2.513a1.75 1.75 0 0 1 2.475 2.474L6.226 12.25a2.751 2.751 0 0 1-.892.596l-2.047.848a.75.75 0 0 1-.98-.98l.848-2.047a2.75 2.75 0 0 1 .596-.892l7.262-7.262Z" />
+                        </svg>
+                      </div>
+                    </td>
                     <LivingExpensesCell
                       row={r}
                       lumpsums={lumpsumBreakdownByAge.get(r.age) ?? []}
                     />
                     <td className="py-2 px-2 whitespace-nowrap">
                       <div className="flex flex-col leading-tight">
-                        <span className={r.cashBalance < r.cashTarget ? "text-amber-700 dark:text-amber-400" : ""}>
-                          {fmtMoney(r.cashBalance)}
+                        <span className={r.cashBalanceBefore < r.cashTarget ? "text-amber-700 dark:text-amber-400" : ""}>
+                          {fmtMoney(r.cashBalanceBefore)}
                         </span>
                         <span className="text-[11px] text-foreground/75 dark:text-foreground/50">
                           target: {fmtMoney(r.cashTarget)}
@@ -465,6 +502,17 @@ export default function AccumulationPage() {
           </table>
         </div>
       </section>
+
+      <TaxReliefPane
+        open={taxPaneRowIndex !== null}
+        rowIndex={taxPaneRowIndex}
+        age={taxPaneRowIndex !== null ? rows[taxPaneRowIndex]?.age ?? 0 : 0}
+        takeHome={taxPaneRowIndex !== null ? rows[taxPaneRowIndex]?.takeHome ?? 0 : 0}
+        srsTopUp={taxPaneRowIndex !== null ? rows[taxPaneRowIndex]?.srsTopUp ?? 0 : 0}
+        initialReliefs={taxPaneRowIndex !== null ? (inputs.taxReliefsPerYear?.[taxPaneRowIndex] ?? {}) : {}}
+        onClose={() => setTaxPaneRowIndex(null)}
+        onSave={handleTaxReliefSave}
+      />
     </main>
   );
 }

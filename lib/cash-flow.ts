@@ -1,4 +1,4 @@
-import { calculateTax, CPF_EMPLOYEE_RATE, EXPENSES_INFLATION_RATE } from "./tax";
+import { calculateTax, CPF_EMPLOYEE_RATE, EXPENSES_INFLATION_RATE, TAX_RELIEF_CAP } from "./tax";
 
 export type AccumulationRow = {
   age: number;
@@ -6,6 +6,7 @@ export type AccumulationRow = {
   salary: number;
   takeHome: number;
   tax: number;
+  totalTaxRelief: number;
   srsTopUp: number;
   srsTaxSavings: number;
   livingExpenses: number;
@@ -16,6 +17,7 @@ export type AccumulationRow = {
   lumpsumInflowName: string;
   cashTarget: number;
   cashTopup: number;
+  cashBalanceBefore: number;
   cashBalance: number;
   invested: number;
   brokerageBalance: number;
@@ -39,6 +41,7 @@ export type AccumulationInputs = {
   investmentGrowthRate: number;
   expensesInflationRate?: number;
   srsTopUps?: number[];
+  taxReliefsPerYear?: Record<string, number>[];
 };
 
 export function buildAccumulation(inputs: AccumulationInputs): AccumulationRow[] {
@@ -58,6 +61,7 @@ export function buildAccumulation(inputs: AccumulationInputs): AccumulationRow[]
     investmentGrowthRate,
     expensesInflationRate = EXPENSES_INFLATION_RATE,
     srsTopUps,
+    taxReliefsPerYear,
   } = inputs;
 
   const workingYears = Math.max(0, stopWorkingAge - currentAge);
@@ -71,9 +75,16 @@ export function buildAccumulation(inputs: AccumulationInputs): AccumulationRow[]
     const cpf = salary * CPF_EMPLOYEE_RATE;
     const takeHome = salary - cpf;
     const srsTopUp = Math.min(srsTopUps?.[i] ?? 0, Math.max(0, takeHome));
-    const taxBase = Math.max(0, takeHome - srsTopUp);
+    const rawReliefs = taxReliefsPerYear?.[i] ?? {};
+    const donationAmount = rawReliefs["donation_amount"] ?? 0;
+    const donationDeduction = donationAmount * 2.5;
+    const reliefSum = Object.entries(rawReliefs)
+      .filter(([k]) => k !== "donation_amount")
+      .reduce((s, [, v]) => s + v, 0);
+    const totalTaxRelief = Math.min(TAX_RELIEF_CAP, reliefSum) + donationDeduction;
+    const taxBase = Math.max(0, takeHome - srsTopUp - totalTaxRelief);
     const tax = calculateTax(taxBase);
-    const srsTaxSavings = srsTopUp > 0 ? calculateTax(takeHome) - tax : 0;
+    const srsTaxSavings = srsTopUp > 0 ? calculateTax(Math.max(0, takeHome - totalTaxRelief)) - tax : 0;
 
     const monthly = monthlyExpenseSeries?.[i] ?? monthlyExpensesToday;
     const inflationFactor = Math.pow(1 + expensesInflationRate, i);
@@ -110,6 +121,7 @@ export function buildAccumulation(inputs: AccumulationInputs): AccumulationRow[]
     }
     const invested = available - cashTopup;
 
+    const cashBalanceBefore = cashBalance;
     cashBalance = cashBalance + cashTopup;
     brokerageBalance = (brokerageBalance + invested) * (1 + investmentGrowthRate);
 
@@ -119,6 +131,7 @@ export function buildAccumulation(inputs: AccumulationInputs): AccumulationRow[]
       salary,
       takeHome,
       tax,
+      totalTaxRelief,
       srsTopUp,
       srsTaxSavings,
       livingExpenses,
@@ -129,6 +142,7 @@ export function buildAccumulation(inputs: AccumulationInputs): AccumulationRow[]
       lumpsumInflowName,
       cashTarget,
       cashTopup,
+      cashBalanceBefore,
       cashBalance,
       invested,
       brokerageBalance,

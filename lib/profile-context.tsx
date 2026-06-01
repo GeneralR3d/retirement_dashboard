@@ -66,6 +66,7 @@ export type ProfileInputs = {
   monthlyExpensesRetirement: number;
   srsAnnualCap: number;
   srsAccepted: boolean[]; // per working-year accept/reject; [] = all accepted (default)
+  taxReliefsPerYear: Record<string, number>[]; // per working-year reliefs; [] = no reliefs
   btoApplicantType: "single" | "couple";
   btoFlatPrice: number;
   btoApplicationAge: number;
@@ -116,6 +117,7 @@ const DEFAULTS: ProfileInputs = {
   monthlyExpensesRetirement: 3000,
   srsAnnualCap: 15300,
   srsAccepted: [],
+  taxReliefsPerYear: [],
   btoApplicantType: "couple",
   btoFlatPrice: 500000,
   btoApplicationAge: 28,
