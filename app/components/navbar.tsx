@@ -16,6 +16,7 @@ const NAV_LINKS_SECONDARY = [
 ];
 
 const NAV_LINKS_TOOLS = [
+  { href: "/config", label: "Config" },
   { href: "/srs", label: "SRS Demo" },
 ];
 
@@ -41,7 +42,7 @@ function useTheme() {
   };
 }
 
-function NavLink({ href, label }: { href: string; label: string }) {
+function NavLink({ href, label, small }: { href: string; label: string; small?: boolean }) {
   const pathname = usePathname();
   const active =
     pathname === href || (pathname === "/" && href === "/main");
@@ -49,11 +50,9 @@ function NavLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className={`block px-4 py-3 text-lg font-black transition-colors rounded-sm text-foreground dark:text-foreground ${
-        active
-          ? "bg-foreground/10"
-          : "hover:bg-foreground/5"
-      }`}
+      className={`block px-4 transition-colors rounded-sm text-foreground dark:text-foreground ${
+        small ? "py-2 text-lg font-medium" : "py-3 text-lg font-black"
+      } ${active ? "bg-emerald-600 text-white dark:text-white" : "hover:bg-foreground/5"}`}
     >
       {label}
     </Link>
@@ -96,7 +95,7 @@ export default function Navbar() {
       </div>
 
       <div className="px-3 py-4 border-t border-foreground/10 flex flex-col gap-2">
-        <NavLink href="/config" label="Settings" />
+        <NavLink href="/about#support" label="Support Us" small />
         <button
           onClick={toggle}
           className="w-full border border-foreground/15 px-4 py-2.5 text-sm font-bold uppercase tracking-wider hover:bg-foreground/5 transition"
