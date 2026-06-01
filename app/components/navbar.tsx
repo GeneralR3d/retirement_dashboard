@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 
 const NAV_LINKS_MAIN = [
   { href: "/main", label: "Networth" },
-  { href: "/accumulation", label: "Accumulation" },
-  { href: "/retirement", label: "Retirement" },
+  { href: "/accumulation", label: "Accumulation CF" },
+  { href: "/retirement", label: "Retirement CF" },
 ];
 
 const NAV_LINKS_SECONDARY = [

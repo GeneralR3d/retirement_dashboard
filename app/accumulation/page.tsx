@@ -292,7 +292,7 @@ export default function AccumulationPage() {
       <header className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            Accumulation Phase
+            Accumulation Phase Cashflow
           </h1>
           <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
             Annual income, spending, and cash/investment allocation — age{" "}

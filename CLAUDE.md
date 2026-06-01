@@ -43,9 +43,9 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 - `srsAccepted: boolean[]` — per-working-year SRS accept/reject decisions. Length = `workingYears`; missing indices default to `true`. Persisted to localStorage and shared across all pages so the accumulation table, networth SRS chart, and retirement page all reflect the same choices. Empty `[]` means all years accepted.
 - `taxReliefsPerYear: Record<string, number>[]` — per-working-year tax relief and donation deduction selections. Each element maps a relief ID (e.g. `"earned_income"`, `"cpf_employee"`) to the claimed amount. The special key `"donation_amount"` stores the raw donation made to approved IPCs; the effective deduction is `donation_amount × 2.5` and is applied **outside** the $80,000 relief cap. Missing indices default to `{}` (no reliefs). Saved to localStorage and applied immediately (no Recalculate needed — handled by the `TaxReliefPane` save action).
 - BTO fields — wired into CPF projections on `/cpf`, `/main`, `/bto`, `/accumulation`, and `/retirement`:
-  - `btoApplicantType: "single" | "couple"` — currently cosmetic.
+  - `btoApplicantType: "single" | "couple"` — currently cosmetic. The "single" option is disabled in the UI (coming soon); value is always "couple".
   - `btoFlatPrice` (500000), `btoApplicationAge` (28), `btoCollectionAge` (32) — `applicationAge` is DP1 age, `collectionAge` is DP2 age and mortgage start age.
-  - `btoDownpaymentScheme: "normal" | "staggered" | "deferred"` — drives DP1/DP2 ratios (10/15, 5/20, 2.5/22.5).
+  - `btoDownpaymentScheme: "normal" | "staggered" | "deferred"` — drives DP1/DP2 ratios. HDB: normal (10%/15%), staggered (5%/20%), deferred (2.5%/22.5%). Bank (assumes 75% LTV): normal (20%/5%), staggered (10%/15%), deferred (2.5%/22.5%).
   - `btoGrantFamily`, `btoGrantEhg`, `btoGrantPhg` — three housing grants summed and capped per-grant; each defaults to 0.
   - `btoLoanType: "hdb" | "bank"`, `btoBankInterestRate` (0.035 — only used when bank), `btoLoanTenureYears` (25, max 25 for HDB / 30 for bank).
 
@@ -83,7 +83,9 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 - **`lib/bto.ts`** — pure BTO compute. Imports `buildCpfProjection` from `lib/tax.ts`. Constants: `HDB_LOAN_RATE` (0.026), `GRANT_CAPS` (`{family: 80000, ehg: 120000, phg: 30000}`), `MAX_TENURE_HDB` (25), `MAX_TENURE_BANK` (30). Exports:
   - `computeBtoBreakdown(inputs, oaAtDp1Age, oaAtDp2Age)` — see "BTO modeling convention" below.
   - `computeMortgageCashPayments(inputs)` — runs the full 3-pass CPF projection internally and returns `{ age, amount }[]` for every mortgage year where the OA balance cannot cover the full annual payment. Only entries with `amount > 0` are returned. Used by `/accumulation` (filters to working years) and `/retirement` (filters to retirement years). At `btoCollectionAge`, DP2 is deducted from OA before the mortgage payment, so available OA = `oa2 - dp2.fromOA`.
-  - `getDownpaymentRatios`, `rawGrantSum`, `totalGrantAmount`, `effectiveInterestRate`, `maxTenureFor`.
+  - `getDownpaymentRatios(scheme, loanType)` — returns `{ dp1, dp2 }` ratios; `loanType` overrides scheme ratios for bank loans.
+  - `rawGrantSum`, `totalGrantAmount` — `totalGrantAmount` is loan-type aware: bank loans always return `rawGrantSum` (grants always apply regardless of scheme); HDB deferred returns 0 (grants carry to DP2).
+  - `effectiveInterestRate`, `maxTenureFor`.
 - **`lib/format.ts`** — `fmt` and `fmtMoney` helpers (en-SG locale).
 - **`lib/utils.ts`** — `cn()` helper (clsx + tailwind-merge). Used by `components/ui/button.tsx` and any component that needs conditional class merging.
 - **`lib/srs-toggle-context.tsx`** — `SrsToggleProvider` + `useSrsToggle` hook. Provides a global `srsEnabled: boolean` toggle distinct from the per-row `srsAccepted[]` array in `ProfileInputs`. Currently wired but not yet surfaced in the main nav pages; check usages before assuming it drives page-level SRS on/off logic.
@@ -218,16 +220,24 @@ Multiple `lumpsumExpenses` entries for the same age are all summed. The `lumpsum
 
 `computeBtoBreakdown(inputs, oaAtDp1Age, oaAtDp2Age)` produces every value the `/bto` page displays. Logic:
 
-- Ratios from `getDownpaymentRatios(scheme)`. `dp1Amount = flatPrice * dp1Ratio`, `dp2Amount = flatPrice * dp2Ratio`.
-- `totalGrant`: for `normal`/`staggered` it's `rawGrantSum(inputs)` (each grant capped at its limit). For `deferred` it's `0` — but `rawGrantSum` still flows forward as `leftoverGrantAfterDp1`.
-- **DP1 allocation** (grant → OA → cash):
-  - `dp1FromGrant = isDeferred ? 0 : min(totalGrant, dp1Amount)` — grant is capped at the proposed DP1 amount.
-  - `dp1FromOA = min(dp1Amount − dp1FromGrant, oaAtDp1Age)`; rest is `dp1FromCash`.
-  - `dp1.actualPaid` always equals `dp1.proposed`.
-- **Leftover grant**: `isDeferred ? rawGrantSum : (totalGrant − dp1FromGrant)`.
-- **DP2 allocation**: leftover grant is **fully applied** (not capped at DP2 proposed). If `leftoverGrant >= dp2Amount`, then `dp2FromGrantLeftover = leftoverGrant`, OA/cash both 0, and `actualPaid = leftoverGrant > proposed`. Otherwise, leftover grant covers what it can and the remainder draws OA → cash, with `actualPaid = dp2Amount`.
-- `totalDownpayment = dp1Amount + dp2.actualPaid` (uses actual, so grant overflow inflates totals).
-- `loanAmount = max(0, flatPrice − totalDownpayment)` — grant overflow shrinks the loan and feeds into LTV / monthly mortgage.
+- Ratios from `getDownpaymentRatios(scheme, loanType)`. `dp1Amount = flatPrice * dp1Ratio`, `dp2Amount = flatPrice * dp2Ratio`.
+- `totalGrant = totalGrantAmount(inputs)` — bank loans always use `rawGrantSum`; HDB deferred returns 0.
+
+**DP1 allocation** — three branches:
+- **Bank loan**: `dp1CashFloor = flatPrice * 0.05` for normal/staggered (full `dp1Amount` for deferred, which is all-cash). Flex portion = `dp1Amount − dp1CashFloor`. Grant → OA → cash fills the flex portion; `dp1FromCash = dp1CashFloor + flex shortfall`.
+- **HDB deferred**: `dp1FromGrant = 0`, `dp1FromOA = 0`, `dp1FromCash = dp1Amount`. All grants carry forward.
+- **HDB normal/staggered**: grant (capped at `dp1Amount`) → OA → cash.
+
+`leftoverGrantAfterDp1 = totalGrant − dp1FromGrant` in all branches.
+
+**DP2 allocation** — unified with optional cash floor:
+- `dp2CashFloor = flatPrice * 0.025` for bank deferred; `0` for all other schemes.
+- `dp2FlexAmount = dp2Amount − dp2CashFloor`. Grant applied to flex portion only.
+- If `leftoverGrant >= dp2FlexAmount`: grant covers all of flex (may overflow); `dp2ActualPaid = dp2CashFloor + leftoverGrant`. Overflow shrinks the loan.
+- Otherwise: grant covers partial flex; remainder draws OA → cash; `dp2ActualPaid = dp2Amount`.
+
+- `totalDownpayment = dp1Amount + dp2ActualPaid` (grant overflow inflates totals).
+- `loanAmount = max(0, flatPrice − totalDownpayment)`.
 - `monthlyMortgage`: standard amortization `P*r(1+r)^n / ((1+r)^n − 1)` with `r = annualRate/12`, `n = tenureYears*12`. Edge case: `r === 0` ⇒ `P/n`. Rate is `HDB_LOAN_RATE` for HDB, `btoBankInterestRate` for bank.
 - Mortgage runs from `btoCollectionAge` to `btoCollectionAge + tenureYears − 1`.
 - OA balances are looked up from `buildCpfProjection` rows by exact age match; falls back to `cpfOA` when the requested age precedes `currentAge`.

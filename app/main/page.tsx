@@ -603,7 +603,7 @@ export default function MainPage() {
         <span>
           For an accurate projection, enter your financial details in{" "}
           <a href="/config" className="underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-200 transition-colors">
-            Settings
+            Config
           </a>
           . Your financial goals are unique to you!
         </span>

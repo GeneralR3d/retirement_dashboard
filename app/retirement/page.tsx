@@ -255,7 +255,7 @@ export default function RetirementPage() {
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
       <header className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-          Retirement Phase
+          Retirement Phase Cashflow
         </h1>
         <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
           Inflation-adjusted living expenses from retirement (age{" "}

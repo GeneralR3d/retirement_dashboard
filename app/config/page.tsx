@@ -630,7 +630,7 @@ export default function ConfigPage() {
               >
                 <div className="flex justify-between items-center text-sm">
                   <span className="flex items-center gap-2 text-foreground/80">
-                    Monthly living expenses (today&apos;s $)
+                    Monthly living expenses excluding housing (today&apos;s $)
                     <svg
                       className={`w-4 h-4 text-foreground/85 dark:text-foreground/60 transition-transform duration-200 ${showExpenseTable ? "rotate-180" : ""}`}
                       viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
