@@ -13,7 +13,12 @@ export const GRANT_CAPS = {
 
 export type DownpaymentScheme = "normal" | "staggered" | "deferred";
 
-export function getDownpaymentRatios(scheme: DownpaymentScheme): { dp1: number; dp2: number } {
+export function getDownpaymentRatios(scheme: DownpaymentScheme, loanType: "hdb" | "bank" = "hdb"): { dp1: number; dp2: number } {
+  if (loanType === "bank") {
+    if (scheme === "staggered") return { dp1: 0.10, dp2: 0.15 };
+    if (scheme === "deferred") return { dp1: 0.025, dp2: 0.225 };
+    return { dp1: 0.20, dp2: 0.05 }; // normal
+  }
   if (scheme === "staggered") return { dp1: 0.05, dp2: 0.20 };
   if (scheme === "deferred") return { dp1: 0.025, dp2: 0.225 };
   return { dp1: 0.10, dp2: 0.15 };
@@ -35,6 +40,8 @@ export function rawGrantSum(inputs: ProfileInputs): number {
 }
 
 export function totalGrantAmount(inputs: ProfileInputs): number {
+  // Bank loans: grants always apply regardless of scheme.
+  if (inputs.btoLoanType === "bank") return rawGrantSum(inputs);
   if (inputs.btoDownpaymentScheme === "deferred") return 0;
   return rawGrantSum(inputs);
 }
@@ -86,33 +93,63 @@ export function computeBtoBreakdown(
 ): BtoBreakdown {
   const flatPrice = inputs.btoFlatPrice;
   const scheme = inputs.btoDownpaymentScheme;
-  const ratios = getDownpaymentRatios(scheme);
+  const loanType = inputs.btoLoanType;
+  const ratios = getDownpaymentRatios(scheme, loanType);
   const dp1Amount = flatPrice * ratios.dp1;
   const dp2Amount = flatPrice * ratios.dp2;
 
   const totalGrant = totalGrantAmount(inputs);
   const isDeferred = scheme === "deferred";
+  const isBankLoan = loanType === "bank";
 
-  // DP1 allocation: grant -> OA -> cash. Grant capped at dp1Amount.
-  // Deferred scheme: no grant applied at DP1 (grant carries forward to DP2).
-  const dp1FromGrant = isDeferred ? 0 : Math.min(totalGrant, dp1Amount);
-  const dp1Remaining = dp1Amount - dp1FromGrant;
-  const dp1FromOA = Math.min(dp1Remaining, Math.max(0, oaAtDp1Age));
-  const dp1FromCash = Math.max(0, dp1Remaining - dp1FromOA);
+  // DP1 allocation differs by loan type:
+  //   Bank loan: 5% of flat price is mandatory cash; remaining 15% from grant → OA → cash.
+  //   HDB deferred: no grant or OA at DP1, all carries forward to DP2.
+  //   HDB normal/staggered: grant → OA → cash for the full DP1 amount.
+  let dp1FromGrant: number;
+  let dp1FromOA: number;
+  let dp1FromCash: number;
+  let leftoverGrantAfterDp1: number;
 
-  const leftoverGrantAfterDp1 = isDeferred
-    ? rawGrantSum(inputs)
-    : Math.max(0, totalGrant - dp1FromGrant);
+  if (isBankLoan) {
+    // Deferred: full DP1 is mandatory cash (no flex). Normal/staggered: 5% cash floor, rest is flex.
+    const isBankDeferred = scheme === "deferred";
+    const dp1CashFloor = isBankDeferred ? dp1Amount : flatPrice * 0.05;
+    const dp1FlexAmount = dp1Amount - dp1CashFloor;
+    dp1FromGrant = Math.min(totalGrant, dp1FlexAmount);
+    const dp1FlexAfterGrant = dp1FlexAmount - dp1FromGrant;
+    dp1FromOA = Math.min(dp1FlexAfterGrant, Math.max(0, oaAtDp1Age));
+    dp1FromCash = dp1CashFloor + Math.max(0, dp1FlexAfterGrant - dp1FromOA);
+    leftoverGrantAfterDp1 = Math.max(0, totalGrant - dp1FromGrant);
+  } else if (isDeferred) {
+    dp1FromGrant = 0;
+    dp1FromOA = 0;
+    dp1FromCash = dp1Amount;
+    leftoverGrantAfterDp1 = rawGrantSum(inputs);
+  } else {
+    dp1FromGrant = Math.min(totalGrant, dp1Amount);
+    const dp1Remaining = dp1Amount - dp1FromGrant;
+    dp1FromOA = Math.min(dp1Remaining, Math.max(0, oaAtDp1Age));
+    dp1FromCash = Math.max(0, dp1Remaining - dp1FromOA);
+    leftoverGrantAfterDp1 = Math.max(0, totalGrant - dp1FromGrant);
+  }
 
-  // DP2 allocation: leftover grant fully applied (not capped). If exceeds proposed, actualPaid = leftoverGrant.
+  // DP2 allocation. Bank deferred has a 2.5% mandatory cash floor; all other schemes have no cash floor.
+  // Grant is applied to the flex portion (dp2Amount - dp2CashFloor). If grant exceeds the flex amount,
+  // the overflow reduces the loan (actualPaid > dp2Amount).
+  const dp2CashFloor = (isBankLoan && scheme === "deferred") ? flatPrice * 0.025 : 0;
+  const dp2FlexAmount = dp2Amount - dp2CashFloor;
   const dp2FromGrantLeftover = leftoverGrantAfterDp1;
   let dp2FromOA = 0;
-  let dp2FromCash = 0;
-  let dp2ActualPaid = dp2FromGrantLeftover;
-  if (dp2FromGrantLeftover < dp2Amount) {
-    const dp2Remaining = dp2Amount - dp2FromGrantLeftover;
-    dp2FromOA = Math.min(dp2Remaining, Math.max(0, oaAtDp2Age));
-    dp2FromCash = Math.max(0, dp2Remaining - dp2FromOA);
+  let dp2FromCash = dp2CashFloor;
+  let dp2ActualPaid: number;
+  if (dp2FromGrantLeftover >= dp2FlexAmount) {
+    // Grant covers the entire flex portion; excess reduces the loan.
+    dp2ActualPaid = dp2CashFloor + dp2FromGrantLeftover;
+  } else {
+    const dp2FlexAfterGrant = dp2FlexAmount - dp2FromGrantLeftover;
+    dp2FromOA = Math.min(dp2FlexAfterGrant, Math.max(0, oaAtDp2Age));
+    dp2FromCash = dp2CashFloor + Math.max(0, dp2FlexAfterGrant - dp2FromOA);
     dp2ActualPaid = dp2Amount;
   }
 
