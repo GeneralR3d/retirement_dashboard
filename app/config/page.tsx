@@ -857,7 +857,7 @@ export default function ConfigPage() {
                     <p className="font-semibold mb-1">How the FRS is projected</p>
                     <p className="mb-2">
                       The FRS values change every year.
-                      Based on recent figures we apply a <span className="font-semibold text-emerald-400">{CPF_FRS_INFLATION_RATE * 100}%/yr</span> growth
+                      Based on recent figures we apply a <span className="font-semibold text-emerald-400">{(CPF_FRS_INFLATION_RATE * 100).toFixed(2)}%/yr</span> growth
                       rate to estimate the FRS target at your retirement age.
                     </p>
                     <p className="text-foreground/60 dark:text-foreground/40">

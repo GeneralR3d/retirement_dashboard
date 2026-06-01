@@ -288,11 +288,6 @@ export default function MainPage() {
   const seriesOverride =
     salarySeries.length === workingYears ? salarySeries : undefined;
 
-  const cpfLifeAnnualPayout =
-    cpfLifeMonthlyPayout *
-    12 *
-    Math.pow(1 + CPF_FRS_INFLATION_RATE, cpfWithdrawalAge - currentAge);
-
   const { brokerageRows, oaAtRetirement, oaTransferAge, srsPotData, cashData, srsPotAtWithdrawal, srsWithdrawal, netWorthData, brokerageContributions } =
     useMemo(() => {
       // Compute recommended SRS top-ups per year, honouring per-year accept/reject from context.
@@ -408,6 +403,10 @@ export default function MainPage() {
       }
 
       const convRow = cpfRows.find((r) => r.raConversionHappened);
+      const cpfLifePayoutRatio = convRow?.cpfLifePayoutRatio ?? 1;
+      const cpfLifeAnnualPayout =
+        cpfLifeMonthlyPayout * 12 * Math.pow(1 + CPF_FRS_INFLATION_RATE, cpfWithdrawalAge - currentAge) * cpfLifePayoutRatio;
+
       // Delay OA transfer until after mortgage is fully paid if that happens after cpfRetirementAge
       const oaTransferAge = btoFlatPrice > 0
         ? Math.max(cpfRetirementAge, btoCollectionAge + btoLoanTenureYears)
@@ -536,7 +535,7 @@ export default function MainPage() {
       cpfLifeFrs,
       workingYears,
       seriesOverride,
-      cpfLifeAnnualPayout,
+      cpfLifeMonthlyPayout,
       annualExpensesToday, monthlyExpensesRetirement,
       monthlyExpensesToday,
       monthlyExpenseSeries,

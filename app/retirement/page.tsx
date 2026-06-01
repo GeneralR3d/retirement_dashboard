@@ -16,7 +16,7 @@ import {
   SRS_ANNUAL_CAP,
 } from "@/lib/tax";
 import { buildAccumulation } from "@/lib/cash-flow";
-import { computeMortgageCashPayments } from "@/lib/bto";
+import { computeBtoBreakdown, computeMortgageCashPayments } from "@/lib/bto";
 
 type WithdrawalRow = {
   age: number;
@@ -91,6 +91,7 @@ export default function RetirementPage() {
     srsAnnualCap,
     srsAccepted,
     btoFlatPrice,
+    btoApplicationAge,
     btoCollectionAge,
     btoLoanTenureYears,
   } = inputs;
@@ -99,9 +100,6 @@ export default function RetirementPage() {
 
   const workingYears = Math.max(0, stopWorkingAge - currentAge);
   const seriesOverride = salarySeries.length === workingYears ? salarySeries : undefined;
-
-  const cpfLifeAnnualPayout =
-    cpfLifeMonthlyPayout * 12 * Math.pow(1 + CPF_FRS_INFLATION_RATE, cpfWithdrawalAge - currentAge);
 
   const mortgageCashPayments = useMemo(
     () => computeMortgageCashPayments(inputs),
@@ -117,7 +115,7 @@ export default function RetirementPage() {
     return map;
   }, [mortgageCashPayments, stopWorkingAge, deathAge]);
 
-  const { srsAnnualIncome, srsPotAtWithdrawal, srsWithdrawalInfo, brokerageByAge } = useMemo(() => {
+  const { srsAnnualIncome, srsPotAtWithdrawal, srsWithdrawalInfo, brokerageByAge, cpfLifeAnnualPayout } = useMemo(() => {
     // Compute recommended SRS top-ups per year, honouring per-year accept/reject from context.
     const srsTopUps = Array.from({ length: workingYears }, (_, i) => {
       const accepted = i < srsAccepted.length ? srsAccepted[i] : true;
@@ -163,7 +161,7 @@ export default function RetirementPage() {
     const w = calculateSrsWithdrawal(finalSrsPot);
     const annualSrs = w.netFromSrs / SRS_WITHDRAWAL_YEARS;
 
-    const cpfRows = buildCpfProjection({
+    const cpfBaseInputs = {
       currentAge,
       stopWorkingAge,
       cpfWithdrawalAge,
@@ -177,12 +175,60 @@ export default function RetirementPage() {
       cpfLifeFrs,
       endAge: deathAge,
       salarySeries: seriesOverride,
-    });
+    };
+
+    let cpfRows;
+    if (btoFlatPrice <= 0) {
+      cpfRows = buildCpfProjection(cpfBaseInputs);
+    } else {
+      // Pass 1: no deductions — get OA at DP1 age
+      const pass1 = buildCpfProjection(cpfBaseInputs);
+      const oaAtDp1Age = pass1.find((r) => r.age === btoApplicationAge)?.oaBalance ?? 0;
+
+      // DP1 allocation only depends on oaAtDp1Age
+      const btoPass1 = computeBtoBreakdown(inputs, oaAtDp1Age, 0);
+      const dp1Deductions: { age: number; amount: number }[] = [];
+      if (btoPass1.dp1.fromOA > 0 && btoApplicationAge >= currentAge && btoApplicationAge <= deathAge) {
+        dp1Deductions.push({ age: btoApplicationAge, amount: btoPass1.dp1.fromOA });
+      }
+
+      // Pass 2: DP1 deduction only — get corrected OA at DP2 age
+      const pass2 = buildCpfProjection({ ...cpfBaseInputs, oaDeductions: dp1Deductions });
+      const oaAtDp2Age = pass2.find((r) => r.age === btoCollectionAge)?.oaBalance ?? 0;
+
+      // Full BTO breakdown with correct OA at both DP ages
+      const bto = computeBtoBreakdown(inputs, oaAtDp1Age, oaAtDp2Age);
+
+      // Build complete deductions list: DP1, DP2, annual mortgage
+      const cpfOaDeductions: { age: number; amount: number }[] = [];
+      if (bto.dp1.fromOA > 0 && btoApplicationAge >= currentAge && btoApplicationAge <= deathAge) {
+        cpfOaDeductions.push({ age: btoApplicationAge, amount: bto.dp1.fromOA });
+      }
+      if (bto.dp2.fromOA > 0 && btoCollectionAge >= currentAge && btoCollectionAge <= deathAge) {
+        cpfOaDeductions.push({ age: btoCollectionAge, amount: bto.dp2.fromOA });
+      }
+      const annualMortgage = bto.monthlyMortgage * 12;
+      if (annualMortgage > 0) {
+        for (let age = btoCollectionAge; age <= bto.mortgageEndAge; age++) {
+          if (age >= currentAge && age <= deathAge) {
+            cpfOaDeductions.push({ age, amount: annualMortgage });
+          }
+        }
+      }
+
+      // Pass 3: all deductions applied — final rows
+      cpfRows = buildCpfProjection({ ...cpfBaseInputs, oaDeductions: cpfOaDeductions });
+    }
+
     const oaTransferAge = btoFlatPrice > 0
       ? Math.max(cpfRetirementAge, btoCollectionAge + btoLoanTenureYears)
       : cpfRetirementAge;
     const convRow = cpfRows.find((r) => r.raConversionHappened);
     const oaAtRetirement = cpfRows.find((r) => r.age === oaTransferAge)?.oaBalance ?? convRow?.oaBalance ?? 0;
+
+    const cpfLifePayoutRatio = convRow?.cpfLifePayoutRatio ?? 1;
+    const cpfLifeAnnualPayout =
+      cpfLifeMonthlyPayout * 12 * Math.pow(1 + CPF_FRS_INFLATION_RATE, cpfWithdrawalAge - currentAge) * cpfLifePayoutRatio;
 
     const contributions = accRows.map((r) => r.invested);
     const brokerageRows = buildBrokerageProjection({
@@ -220,15 +266,17 @@ export default function RetirementPage() {
       srsPotAtWithdrawal: finalSrsPot,
       srsWithdrawalInfo: w,
       brokerageByAge: map,
+      cpfLifeAnnualPayout,
     };
   }, [
     startingSalary, salaryGrowthRate, investmentGrowthRate, investmentGrowthRateRetirement,
     workingYears, seriesOverride,
     currentAge, stopWorkingAge, cpfWithdrawalAge, cpfRetirementAge, deathAge,
-    cpfOA, cpfSA, cpfMA, cpfRA, cpfLifeFrs, startingCash, srsWithdrawalAge, cpfLifeAnnualPayout,
+    cpfOA, cpfSA, cpfMA, cpfRA, cpfLifeFrs, cpfLifeMonthlyPayout, startingCash, srsWithdrawalAge,
     annualExpensesToday, monthlyExpensesRetirement,
     monthlyExpensesToday, monthlyExpenseSeries, emergencyMonths,
     lumpsumExpenses, lumpsumInflows, cash, srsAnnualCap, srsAccepted,
+    btoFlatPrice, btoApplicationAge, btoCollectionAge, btoLoanTenureYears, inputs,
     mortgageCashPayments, retirementMortgageByAge,
   ]);
 

@@ -115,7 +115,6 @@ export default function CpfPage() {
   } = inputs;
 
   const frsTarget = cpfLifeFrs * Math.pow(1 + CPF_FRS_INFLATION_RATE, Math.max(0, cpfRetirementAge - currentAge));
-  const annualCpfLifePayout = cpfLifeMonthlyPayout * 12 * Math.pow(1 + CPF_FRS_INFLATION_RATE, Math.max(0, cpfWithdrawalAge - currentAge));
 
   const resolvedSalarySeries = salarySeries.length === Math.max(0, stopWorkingAge - currentAge) ? salarySeries : undefined;
 
@@ -188,6 +187,11 @@ export default function CpfPage() {
   const cpfLifeRow = rows.find((r) => r.cpfLifeHappened);
   const cpfLifePremium = cpfLifeRow?.cpfLifePremium ?? 0;
   const years = Math.max(0, deathAge - currentAge);
+
+  // Scale CPF LIFE payout by the fraction of FRS actually funded (< 1 when OA was depleted)
+  const cpfLifePayoutRatio = conversionRow?.cpfLifePayoutRatio ?? 1;
+  const annualCpfLifePayout =
+    cpfLifeMonthlyPayout * 12 * Math.pow(1 + CPF_FRS_INFLATION_RATE, Math.max(0, cpfWithdrawalAge - currentAge)) * cpfLifePayoutRatio;
 
   // How much OA was moved to cover a deficit, or how much excess went to OA
   const saBeforeConversion = conversionRow?.saBalanceAtConversion ?? 0;
@@ -280,7 +284,7 @@ export default function CpfPage() {
                     <p className="font-semibold mb-1">How the FRS is projected</p>
                     <p className="mb-2">
                       The FRS values change every year.
-                      Based on recent figures we apply a <span className="font-semibold text-emerald-400">{CPF_FRS_INFLATION_RATE * 100}%/yr</span> growth
+                      Based on recent figures we apply a <span className="font-semibold text-emerald-400">{(CPF_FRS_INFLATION_RATE * 100).toFixed(2)}%/yr</span> growth
                       rate to estimate the FRS target at your retirement age.
                     </p>
                     <p className="text-foreground/60 dark:text-foreground/40">

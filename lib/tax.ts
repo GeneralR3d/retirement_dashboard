@@ -227,6 +227,9 @@ export type CpfYearRow = {
   totalBalance: number;
   saBalanceAtConversion: number; // SA balance just before zeroing on raConversionHappened row, 0 otherwise
   raConversionHappened: boolean;
+  // Ratio of actual RA funded vs raTarget (1.0 if fully funded, <1 if OA was depleted).
+  // Non-zero only on the raConversionHappened row; 0 on all other rows.
+  cpfLifePayoutRatio: number;
   cpfLifeHappened: boolean;
   cpfLifePremium: number; // RA balance used to buy CPF LIFE annuity (non-zero only on cpfLifeHappened row)
   oaDeducted: number; // Total OA withdrawn for BTO downpayments and mortgage this year
@@ -311,6 +314,7 @@ export function buildCpfProjection(inputs: CpfProjectionInputs): CpfYearRow[] {
 
     let raConversionHappened = false;
     let saBalanceAtConversion = 0;
+    let cpfLifePayoutRatio = 0;
 
     // SA→RA conversion at cpfRetirementAge: done once, after year-end balances are computed
     if (!converted && age === cpfRetirementAge) {
@@ -320,10 +324,13 @@ export function buildCpfProjection(inputs: CpfProjectionInputs): CpfYearRow[] {
       if (saBalance >= raTarget) {
         oaBalance += saBalance - raTarget;
         raBalance += raTarget;
+        cpfLifePayoutRatio = 1;
       } else {
         const deficit = raTarget - saBalance;
+        const oaContrib = Math.min(deficit, Math.max(0, oaBalance));
         oaBalance = Math.max(0, oaBalance - deficit);
-        raBalance += raTarget;
+        raBalance += saBalance + oaContrib;
+        cpfLifePayoutRatio = (saBalance + oaContrib) / raTarget;
       }
       saBalance = 0;
     }
@@ -353,6 +360,7 @@ export function buildCpfProjection(inputs: CpfProjectionInputs): CpfYearRow[] {
       totalBalance: oaBalance + saBalance + maBalance + raBalance,
       saBalanceAtConversion,
       raConversionHappened,
+      cpfLifePayoutRatio,
       cpfLifeHappened,
       cpfLifePremium,
       oaDeducted: actualDeducted,
