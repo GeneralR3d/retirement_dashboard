@@ -299,9 +299,15 @@ export default function MainPage() {
         return recommendedSrsTopUp(takeHome, srsAnnualCap ?? SRS_ANNUAL_CAP).topUp;
       });
 
-      const workingMortgageLumpsums = computeMortgageCashPayments(inputs)
+      const allMortgagePayments = computeMortgageCashPayments(inputs);
+      const workingMortgageLumpsums = allMortgagePayments
         .filter((p) => p.age >= currentAge && p.age < stopWorkingAge)
         .map((p) => ({ id: `bto-mtg-${p.age}`, age: p.age, name: "BTO Mortgage", amount: p.amount }));
+
+      const retirementMortgageByAge = new Map<number, number>();
+      for (const p of allMortgagePayments) {
+        if (p.age >= stopWorkingAge && p.age <= deathAge) retirementMortgageByAge.set(p.age, p.amount);
+      }
 
       const accRows = buildAccumulation({
         currentAge,
@@ -432,6 +438,7 @@ export default function MainPage() {
         cpfLifeAnnualPayout,
         srsAnnualIncome,
         annualExpensesToday,
+        extraExpensesByAge: retirementMortgageByAge,
       });
 
       // --- SRS pot chart data (contribution = srsTopUp for that year, null outside working years) ---
