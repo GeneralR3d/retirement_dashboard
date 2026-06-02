@@ -134,15 +134,18 @@ const DEFAULTS: ProfileInputs = {
 type ProfileContextType = {
   inputs: ProfileInputs;
   setInputs: (next: ProfileInputs) => void;
+  saveCount: number;
 };
 
 const ProfileContext = createContext<ProfileContextType>({
   inputs: DEFAULTS,
   setInputs: () => {},
+  saveCount: 0,
 });
 
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [inputs, setInputsState] = useState<ProfileInputs>(DEFAULTS);
+  const [saveCount, setSaveCount] = useState(0);
 
   useEffect(() => {
     const stored = localStorage.getItem("profile");
@@ -157,11 +160,12 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   function setInputs(next: ProfileInputs) {
     setInputsState(next);
+    setSaveCount((c) => c + 1);
     localStorage.setItem("profile", JSON.stringify(next));
   }
 
   return (
-    <ProfileContext.Provider value={{ inputs, setInputs }}>
+    <ProfileContext.Provider value={{ inputs, setInputs, saveCount }}>
       {children}
     </ProfileContext.Provider>
   );

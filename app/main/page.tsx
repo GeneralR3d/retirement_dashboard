@@ -249,7 +249,7 @@ function SrsTooltip({
 }
 
 export default function MainPage() {
-  const { inputs } = useProfile();
+  const { inputs, saveCount } = useProfile();
   const {
     currentAge,
     stopWorkingAge,
@@ -585,6 +585,8 @@ export default function MainPage() {
     brokerageRows[0],
   );
 
+  const retirementBrokerageBalance = brokerageRows.find((r) => r.age === stopWorkingAge)?.balance ?? 0;
+
 
   const runOutRow = brokerageRows.find(
     (r) => r.age > stopWorkingAge && r.balance <= 0,
@@ -750,12 +752,15 @@ export default function MainPage() {
           deathAge={deathAge}
           monthlyExpensesToday={monthlyExpensesToday}
           monthlyExpensesRetirement={monthlyExpensesRetirement}
+          monthlyExpenseSeries={monthlyExpenseSeries}
+          retirementBrokerageBalance={retirementBrokerageBalance}
           peakBrokerageBalance={peakRow?.balance ?? 0}
           peakBrokerageAge={peakRow?.age ?? stopWorkingAge}
           oaTransferAge={oaTransferAge}
           cpfWithdrawalAge={cpfWithdrawalAge}
           data={summary}
           targetWidth={summaryTargetWidth}
+          generationKey={saveCount}
         />
       </div>
 
