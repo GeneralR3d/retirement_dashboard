@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -65,9 +66,22 @@ export default function Navbar() {
   return (
     <nav className="w-fit min-w-48 h-screen sticky top-0 shrink-0 flex flex-col border-r border-foreground/10 bg-background">
       <div className="px-5 py-7">
-        <span className="text-2xl font-black uppercase tracking-widest text-foreground dark:text-foreground">
-          Retirement.sg
-        </span>
+        <Image
+          src="/logo light.png"
+          alt="Retirement.sg"
+          width={160}
+          height={40}
+          className="dark:hidden"
+          priority
+        />
+        <Image
+          src="/logo dark.png"
+          alt="Retirement.sg"
+          width={160}
+          height={40}
+          className="hidden dark:block"
+          priority
+        />
       </div>
 
       <div className="flex-1 flex flex-col px-3 overflow-y-auto">
