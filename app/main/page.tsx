@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -288,7 +289,7 @@ export default function MainPage() {
   const seriesOverride =
     salarySeries.length === workingYears ? salarySeries : undefined;
 
-  const { brokerageRows, oaAtRetirement, oaTransferAge, srsPotData, cashData, srsPotAtWithdrawal, srsWithdrawal, netWorthData, brokerageContributions } =
+  const { brokerageRows, oaAtRetirement, oaTransferAge, srsPotData, cashData, srsPotAtWithdrawal, srsWithdrawal, netWorthData, brokerageContributions, cpfRows, cpfLifeAnnualPayout, allMortgagePayments } =
     useMemo(() => {
       // Compute recommended SRS top-ups per year, honouring per-year accept/reject from context.
       const srsTopUps = Array.from({ length: workingYears }, (_, i) => {
@@ -522,6 +523,9 @@ export default function MainPage() {
         srsWithdrawal: w,
         netWorthData: nwData,
         brokerageContributions: contributions,
+        cpfRows,
+        cpfLifeAnnualPayout,
+        allMortgagePayments,
       };
     }, [
       currentAge,
@@ -591,6 +595,60 @@ export default function MainPage() {
     netWorthData[0] ?? { age: currentAge, total: 0 },
   );
 
+  // --- Smart Summary panel ---
+  const [summaryOpen, setSummaryOpen] = useState(false);
+
+  const summary = useMemo(() => {
+    // Average amount invested into the brokerage per working year (ignore withdrawal years).
+    const positiveContribs = brokerageContributions.filter((c) => c > 0);
+    const avgInvested =
+      positiveContribs.length > 0
+        ? positiveContribs.reduce((s, c) => s + c, 0) / positiveContribs.length
+        : 0;
+
+    // Brokerage balance left over at the end of life.
+    const leftoverAtDeath = brokerageRows.length > 0 ? Math.max(0, brokerageRows[brokerageRows.length - 1].balance) : 0;
+
+    // BTO mortgage facts.
+    const hasBto = btoFlatPrice > 0;
+    const mortgagePayoffAge = btoCollectionAge + btoLoanTenureYears;
+    const mortgageCashTotal = allMortgagePayments.reduce((s, p) => s + p.amount, 0);
+    const mortgageNeedsWithdrawal = mortgageCashTotal > 0;
+
+    // CPF OA: does it run dry during the BTO years, or is there a balance left at transfer?
+    const oaRunOutRow = hasBto
+      ? cpfRows.find((r) => r.age >= btoCollectionAge && r.age <= oaTransferAge && r.oaBalance < 1)
+      : undefined;
+    const oaRunOutAge = oaRunOutRow?.age;
+
+    // CPF LIFE annuity premium (RA balance converted at withdrawal age).
+    const cpfLifePremium = cpfRows.find((r) => r.cpfLifeHappened)?.cpfLifePremium ?? 0;
+    const cpfLifeMonthly = cpfLifeAnnualPayout / 12;
+
+    return {
+      avgInvested,
+      leftoverAtDeath,
+      hasBto,
+      mortgagePayoffAge,
+      mortgageCashTotal,
+      mortgageNeedsWithdrawal,
+      oaRunOutAge,
+      oaLeftAtTransfer: oaAtRetirement,
+      cpfLifePremium,
+      cpfLifeMonthly,
+    };
+  }, [
+    brokerageContributions,
+    brokerageRows,
+    btoFlatPrice,
+    btoCollectionAge,
+    btoLoanTenureYears,
+    allMortgagePayments,
+    cpfRows,
+    oaTransferAge,
+    oaAtRetirement,
+    cpfLifeAnnualPayout,
+  ]);
 
   const gridColor = "var(--grid-color)";
   const axisColor = "var(--axis-color)";
@@ -637,39 +695,150 @@ export default function MainPage() {
         </span>
       </div>
 
-      {/* Retirement verdict banner */}
-      <div className="mb-8 text-center">
-        {canRetire ? (
-          <h2 className="text-2xl font-semibold text-emerald-600 dark:text-emerald-400">
-            You can retire at age{" "}
-            <span className="text-4xl font-black italic">{stopWorkingAge}</span>
-          </h2>
-        ) : (
-          <>
-            <h2 className="text-2xl font-semibold text-red-600 dark:text-red-400">
-              You cannot retire at age{" "}
-              <span className="text-4xl font-black italic">{stopWorkingAge}</span>
-            </h2>
-            <p className="text-sm text-red-600 dark:text-red-400/70 mt-1">
-              You will run out of money at age {runOutRow!.age}
-            </p>
-          </>
-        )}
-      </div>
+      {/* Top section: verdict + KPIs, with a slide-over Smart Summary panel */}
+      <div className="relative mb-8">
+        <div className="flex items-stretch">
+          {/* Left column — the original verdict banner + KPI cards */}
+          <div
+            className="transition-[width] duration-300 ease-in-out min-w-0"
+            style={{ width: summaryOpen ? "50%" : "100%" }}
+          >
+            {/* Retirement verdict banner */}
+            <div className="mb-8 text-center">
+              {canRetire ? (
+                <h2 className="text-2xl font-semibold text-emerald-600 dark:text-emerald-400">
+                  You can retire at age{" "}
+                  <span className="text-4xl font-black italic">{stopWorkingAge}</span>
+                </h2>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-semibold text-red-600 dark:text-red-400">
+                    You cannot retire at age{" "}
+                    <span className="text-4xl font-black italic">{stopWorkingAge}</span>
+                  </h2>
+                  <p className="text-sm text-red-600 dark:text-red-400/70 mt-1">
+                    You will run out of money at age {runOutRow!.age}
+                  </p>
+                </>
+              )}
+            </div>
 
-      {/* Net worth KPI cards */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <StatCard
-          label="Net worth today"
-          value={fmtMoney(netWorthData[0]?.total ?? 0)}
-          sub={`at age ${currentAge}`}
-        />
-        <StatCard
-          label="Peak net worth"
-          value={fmtMoney(peakNwRow.total)}
-          sub={`at age ${peakNwRow.age}`}
-          accent="emerald"
-        />
+            {/* Net worth KPI cards */}
+            <div className="grid grid-cols-2 gap-4">
+              <StatCard
+                label="Net worth today"
+                value={fmtMoney(netWorthData[0]?.total ?? 0)}
+                sub={`at age ${currentAge}`}
+              />
+              <StatCard
+                label="Peak net worth"
+                value={fmtMoney(peakNwRow.total)}
+                sub={`at age ${peakNwRow.age}`}
+                accent="emerald"
+              />
+            </div>
+          </div>
+
+          {/* Right column — Smart Summary panel (slides in) */}
+          <div
+            className="transition-[width] duration-300 ease-in-out overflow-hidden"
+            style={{ width: summaryOpen ? "50%" : "0%" }}
+            aria-hidden={!summaryOpen}
+          >
+            <div className="pl-6 h-full">
+              <div className="h-full border border-emerald-500/30 bg-emerald-500/[0.06] p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <h3 className="font-semibold tracking-tight">Smart Summary</h3>
+                </div>
+
+                {!canRetire ? (
+                  <p className="text-sm text-foreground/85 dark:text-foreground/70 leading-relaxed">
+                    Based on your current plan, retirement at age {stopWorkingAge} is{" "}
+                    <strong className="text-red-600 dark:text-red-400">not successful</strong> — your
+                    investments run out at age {runOutRow!.age}.
+                  </p>
+                ) : (
+                  <div className="space-y-4 text-sm text-foreground/85 dark:text-foreground/70 leading-relaxed">
+                    <p className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
+                      Way to go! 🎉
+                    </p>
+
+                    <p>
+                      By keeping your monthly expenses at{" "}
+                      <strong>{fmtMoney(monthlyExpensesToday)}</strong> from ages {currentAge} to{" "}
+                      {stopWorkingAge}, and <strong>{fmtMoney(monthlyExpensesRetirement)}</strong>{" "}
+                      from ages {stopWorkingAge} to {deathAge}, you&apos;ll be able to invest{" "}
+                      <strong>{fmtMoney(summary.avgInvested)}</strong> on average each year into the
+                      stock market, yielding an impressive{" "}
+                      <strong className="text-emerald-600 dark:text-emerald-400">
+                        {fmtMoney(peakRow?.balance ?? 0)}
+                      </strong>{" "}
+                      peak investment net worth (at age {peakRow?.age ?? stopWorkingAge}). You&apos;ll
+                      then draw this down over ages {stopWorkingAge} to {deathAge}, leaving{" "}
+                      <strong>{fmtMoney(summary.leftoverAtDeath)}</strong> at the end.
+                    </p>
+
+                    {summary.hasBto ? (
+                      <p>
+                        {summary.mortgageNeedsWithdrawal ? (
+                          <>
+                            Your CPF Ordinary Account can&apos;t fully cover the BTO mortgage —
+                            you&apos;ll need to top up{" "}
+                            <strong>{fmtMoney(summary.mortgageCashTotal)}</strong> from cash and
+                            investments over the loan.
+                          </>
+                        ) : (
+                          <>
+                            You&apos;ll pay off your BTO mortgage entirely from your CPF Ordinary
+                            Account — no need to dip into cash or investments.
+                          </>
+                        )}{" "}
+                        {summary.oaRunOutAge !== undefined ? (
+                          <>Your CPF OA runs dry at age {summary.oaRunOutAge}.</>
+                        ) : (
+                          <>
+                            Your CPF OA still has{" "}
+                            <strong>{fmtMoney(summary.oaLeftAtTransfer)}</strong> left, which
+                            transfers to your investments at age {oaTransferAge}.
+                          </>
+                        )}{" "}
+                        The mortgage is fully paid off by age {summary.mortgagePayoffAge}.
+                      </p>
+                    ) : (
+                      <p>
+                        No BTO mortgage is modelled. Your CPF Ordinary Account has{" "}
+                        <strong>{fmtMoney(summary.oaLeftAtTransfer)}</strong> left, which transfers to
+                        your investments at age {oaTransferAge}.
+                      </p>
+                    )}
+
+                    <p>
+                      At age {cpfWithdrawalAge}, an estimated{" "}
+                      <strong>{fmtMoney(summary.cpfLifePremium)}</strong> from your Retirement Account
+                      goes into your CPF LIFE annuity, giving you about{" "}
+                      <strong className="text-emerald-600 dark:text-emerald-400">
+                        {fmtMoney(summary.cpfLifeMonthly)}
+                      </strong>
+                      /month for life.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Chevron toggle — sits on the divider and slides with the panel */}
+        <button
+          onClick={() => setSummaryOpen((o) => !o)}
+          style={{ left: summaryOpen ? "50%" : "100%" }}
+          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 transition-[left] duration-300 ease-in-out flex items-center gap-1 rounded-md border border-emerald-500/40 bg-background px-1.5 py-3 shadow-sm hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          aria-label={summaryOpen ? "Hide smart summary" : "Show smart summary"}
+          title={summaryOpen ? "Hide smart summary" : "Show smart summary"}
+        >
+          {summaryOpen ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
       </div>
 
       {/* Net Worth Chart */}
