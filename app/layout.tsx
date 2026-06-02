@@ -6,6 +6,7 @@ import { ProfileProvider } from "@/lib/profile-context";
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
 import OnboardingOverlay from "./components/onboarding-overlay";
+import MobileBlocker from "./components/mobile-blocker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,6 +57,7 @@ export default function RootLayout({
       </Script>
       <body className="min-h-full flex">
         <ProfileProvider>
+          <MobileBlocker />
           <OnboardingOverlay />
           <Navbar />
           <div className="flex-1 min-w-0 flex flex-col">
