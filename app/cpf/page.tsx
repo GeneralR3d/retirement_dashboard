@@ -25,8 +25,9 @@ import {
 import { computeBtoBreakdown } from "@/lib/bto";
 import { useProfile } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
-import { Stat, StatCard, Td, Th, InfoTooltip } from "@/app/components/ui";
+import { Stat, StatCard, Td, Th, InfoTooltip, StaggeredLabel } from "@/app/components/ui";
 import Image from "next/image";
+
 
 function CpfTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: number }) {
   if (!active || !payload?.length) return null;
@@ -209,6 +210,32 @@ export default function CpfPage() {
     ? Math.max(cpfRetirementAge, btoMortgageEndAge + 1)
     : cpfRetirementAge;
 
+  // Assign stagger levels so labels on nearby reference lines don't overlap.
+  // Greedy: each milestone gets the lowest level not already used by a milestone within PROX_YEARS.
+  type MilestoneId = "ret" | "oa" | "life" | "dp1" | "dp2" | "end";
+  const PROX_YEARS = 5;
+  const activeMilestones = ([
+    { id: "ret" as MilestoneId, age: cpfRetirementAge },
+    ...(oaTransferAge !== cpfRetirementAge ? [{ id: "oa" as MilestoneId, age: oaTransferAge }] : []),
+    { id: "life" as MilestoneId, age: cpfWithdrawalAge },
+    ...(hasBto ? [{ id: "dp1" as MilestoneId, age: btoApplicationAge }] : []),
+    ...(hasBto && btoCollectionAge >= currentAge ? [{ id: "dp2" as MilestoneId, age: btoCollectionAge }] : []),
+    ...(hasBto && btoMortgageEndAge > btoCollectionAge && btoMortgageEndAge <= deathAge
+      ? [{ id: "end" as MilestoneId, age: btoMortgageEndAge }] : []),
+  ] as { id: MilestoneId; age: number }[]).sort((a, b) => a.age - b.age);
+  const assignedLevels: number[] = [];
+  const staggerLevel: Record<MilestoneId, number> = { ret: 0, oa: 0, life: 0, dp1: 0, dp2: 0, end: 0 };
+  for (let i = 0; i < activeMilestones.length; i++) {
+    const used = new Set<number>();
+    for (let j = 0; j < i; j++) {
+      if (activeMilestones[i].age - activeMilestones[j].age < PROX_YEARS) used.add(assignedLevels[j]);
+    }
+    let lvl = 0;
+    while (used.has(lvl)) lvl++;
+    assignedLevels[i] = lvl;
+    staggerLevel[activeMilestones[i].id] = lvl;
+  }
+
   // OA is transferred to brokerage at oaTransferAge — zero it out from that point
   const chartData = rows.map((r) => ({
     age: r.age,
@@ -341,7 +368,7 @@ export default function CpfPage() {
                 stroke={refLineColor}
                 strokeDasharray="5 4"
                 strokeWidth={1.5}
-                label={{ value: oaTransferAge === cpfRetirementAge ? `SA→RA + OA→Brok (${cpfRetirementAge})` : `SA→RA (${cpfRetirementAge})`, position: "insideTopRight", fill: refLineColor, fontSize: 10 }}
+                label={<StaggeredLabel value={oaTransferAge === cpfRetirementAge ? `SA→RA + OA→Brok (${cpfRetirementAge})` : `SA→RA (${cpfRetirementAge})`} fill={refLineColor} level={staggerLevel["ret"]} />}
               />
               {/* OA→Brok line only when delayed past cpfRetirementAge by BTO mortgage */}
               {oaTransferAge !== cpfRetirementAge && (
@@ -350,7 +377,7 @@ export default function CpfPage() {
                   stroke={refLineColor}
                   strokeDasharray="5 4"
                   strokeWidth={1.5}
-                  label={{ value: `OA→Brok (${oaTransferAge})`, position: "insideTopRight", fill: refLineColor, fontSize: 10 }}
+                  label={<StaggeredLabel value={`OA→Brok (${oaTransferAge})`} fill={refLineColor} level={staggerLevel["oa"]} />}
                 />
               )}
               {/* Dotted reference line at CPF LIFE annuity purchase age */}
@@ -359,7 +386,7 @@ export default function CpfPage() {
                 stroke={cpfLifeLineColor}
                 strokeDasharray="5 4"
                 strokeWidth={1.5}
-                label={{ value: `CPF LIFE (${cpfWithdrawalAge})`, position: "insideTopLeft", fill: cpfLifeLineColor, fontSize: 10 }}
+                label={<StaggeredLabel value={`CPF LIFE (${cpfWithdrawalAge})`} fill={cpfLifeLineColor} level={staggerLevel["life"]} />}
               />
               {/* BTO reference lines */}
               {hasBto && (
@@ -368,7 +395,7 @@ export default function CpfPage() {
                   stroke={btoLineColor}
                   strokeDasharray="3 3"
                   strokeWidth={1}
-                  label={{ value: `DP1 (${btoApplicationAge})`, position: "insideBottomRight", fill: btoLineColor, fontSize: 9 }}
+                  label={<StaggeredLabel value={`DP1 (${btoApplicationAge})`} fill={btoLineColor} level={staggerLevel["dp1"]} />}
                 />
               )}
               {hasBto && btoCollectionAge >= currentAge && (
@@ -377,7 +404,7 @@ export default function CpfPage() {
                   stroke={btoLineColor}
                   strokeDasharray="3 3"
                   strokeWidth={1}
-                  label={{ value: `DP2+Mortgage (${btoCollectionAge})`, position: "insideBottomLeft", fill: btoLineColor, fontSize: 9 }}
+                  label={<StaggeredLabel value={`DP2+Mortgage (${btoCollectionAge})`} fill={btoLineColor} level={staggerLevel["dp2"]} />}
                 />
               )}
               {hasBto && btoMortgageEndAge > btoCollectionAge && btoMortgageEndAge <= deathAge && (
@@ -386,7 +413,7 @@ export default function CpfPage() {
                   stroke={btoLineColor}
                   strokeDasharray="3 3"
                   strokeWidth={1}
-                  label={{ value: `Mortgage end (${btoMortgageEndAge})`, position: "insideBottomRight", fill: btoLineColor, fontSize: 9 }}
+                  label={<StaggeredLabel value={`Mortgage end (${btoMortgageEndAge})`} fill={btoLineColor} level={staggerLevel["end"]} />}
                 />
               )}
               <Area

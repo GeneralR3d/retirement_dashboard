@@ -193,6 +193,24 @@ export function InfoTooltip({ children, className, position = "top" }: { childre
   );
 }
 
+export function StaggeredLabel({ viewBox, value, fill, level = 0 }: {
+  viewBox?: { x: number; y: number; width: number; height: number };
+  value?: string;
+  fill?: string;
+  level?: number;
+}) {
+  if (!viewBox) return null;
+  const { x, y } = viewBox;
+  const labelY = y + 12 + level * 14;
+  const approxWidth = (value?.length ?? 0) * 6 + 4;
+  return (
+    <g>
+      <rect x={x + 3} y={labelY - 10} width={approxWidth} height={13} fill="var(--tooltip-bg, #0f172a)" fillOpacity={0.65} rx={2} />
+      <text x={x + 5} y={labelY} fill={fill} fontSize={10} fontFamily="sans-serif">{value}</text>
+    </g>
+  );
+}
+
 export function Th({ children }: { children: React.ReactNode }) {
   return (
     <th className="py-2 px-2 font-medium whitespace-nowrap">{children}</th>

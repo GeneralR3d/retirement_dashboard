@@ -73,7 +73,7 @@ export default function AboutPage() {
                 <section id="support" className="space-y-4 scroll-mt-8">
           <h2 className="text-xl font-bold text-foreground">Buy Me a Kopi-O Kosong</h2>
           <p className="leading-relaxed">
-            If you found Retirement.SG useful, buy me a kopi-o-kosong! It helps cover the server costs of keeping this site running and free for everyone.
+            If you found Retirement.SG useful, buy me a kopi-o-kosong! It helps cover the server and domain costs of keeping this site running and free for everyone.
           </p>
           <div className="flex items-center gap-4">
             <PayNowQr />
