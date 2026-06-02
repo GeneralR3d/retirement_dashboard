@@ -75,21 +75,21 @@ export default function OnboardingOverlay() {
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent
-        className="gap-0 p-0 [&>button:last-child]:hidden border-foreground/15 dark:border-foreground/20"
+        className="gap-0 p-0 [&>button:last-child]:hidden border-foreground/15 dark:border-foreground/20 rounded-none sm:rounded-none sm:max-w-[480px]"
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
-        <div className="p-2">
+        <div className="p-4">
           <img
-            className="w-full rounded-lg object-cover"
+            className="w-full object-cover"
             src={STEP_IMAGES[step - 1]}
-            width={382}
-            height={216}
+            width={448}
+            height={240}
             alt="onboarding illustration"
-            style={{ height: 216 }}
+            style={{ height: 240 }}
           />
         </div>
-        <div className="space-y-6 px-6 pb-6 pt-3">
+        <div className="space-y-6 px-8 pb-8 pt-4">
           {/* Progress bar */}
           <div className="h-1 w-full rounded-full overflow-hidden bg-foreground/10">
             <div

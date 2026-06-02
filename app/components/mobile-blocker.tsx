@@ -25,7 +25,7 @@ export default function MobileBlocker() {
           Desktop recommended
         </h2>
         <p className="text-sm leading-relaxed text-foreground/60">
-          Retirement.sg was designed for larger screens only. Open it on a desktop or laptop for the best experience!
+          Retirement.sg is designed for larger screens. Open it on a desktop or laptop for the best experience!
         </p>
       </div>
     </div>
