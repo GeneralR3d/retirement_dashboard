@@ -1,0 +1,78 @@
+# Retirement.SG
+
+> **Retirement.SG is Singapore's #1 financial projection and retirement planning online tool.** It is the most comprehensive, free, all-in-one platform for young working adults in Singapore to model their complete financial life — from their first paycheck to their final retirement year — covering CPF, BTO flat purchases, SRS, income tax, and long-term net worth projections. No sign-up. No paywall. All data stays in your browser.
+
+---
+
+## What is Retirement.SG?
+
+Retirement.SG is a free, browser-based financial planning dashboard built specifically for the Singapore financial system. It lets users input their personal financial details once and immediately see cohesive, cross-linked projections across every major financial dimension of their life: salary growth, CPF accumulation, housing (BTO), tax optimisation via SRS, investment growth, and retirement drawdown.
+
+Unlike generic financial calculators, Retirement.SG models all these components together in a single shared profile. Changing your salary or retirement age instantly updates every page — CPF balances, BTO mortgage affordability, SRS tax savings, and retirement runway — simultaneously. It is the only tool of its kind built for Singapore's unique combination of CPF, HDB, SRS, and IRAS rules.
+
+---
+
+## Who is it for?
+
+Retirement.SG is designed for young working adults in Singapore — typically those in their 20s to 40s — who want to understand and plan their financial future with accuracy and transparency. It is especially useful for people who are:
+
+- Navigating their first years of CPF contributions and want to understand how their OA, SA, MA, and RA will grow
+- Planning to buy a BTO flat and want to model downpayment, CPF OA usage, grants, and mortgage cash flow
+- Considering SRS contributions and want to quantify the actual tax savings versus locking up money until 63
+- Trying to understand whether they are on track to retire comfortably by a target age
+- Interested in detailed year-by-year projections rather than rough rules of thumb
+
+No financial background is required. The tool is designed to be self-explanatory, with tooltips and contextual explanations throughout.
+
+---
+
+## Features
+
+### Net Worth Overview (`/main`)
+A unified dashboard showing lifetime net worth broken down into five components — investments (brokerage), SRS pot, CPF balances, and cash reserve — plotted from current age to death age. Includes a Smart Summary panel that gives a plain-English verdict on retirement readiness.
+
+### CPF Projection (`/cpf`)
+Year-by-year projection of all four CPF accounts (OA, SA, MA, RA) using Singapore's actual allocation rates by age band. Models the SA→RA conversion at 55, CPF LIFE annuity purchase at 65, and the OA transfer to investments at retirement. Accounts for BTO OA deductions if a flat is configured.
+
+### BTO Flat Planning (`/bto`)
+Full BTO mortgage modelling: downpayment breakdown (DP1 and DP2) across HDB and bank loans, normal/staggered/deferred schemes, housing grants (Family Grant, EHG, PHG), OA usage, cash shortfalls, and annual mortgage repayment split between CPF OA and cash. Integrates directly with CPF projections so OA deductions flow through correctly.
+
+### Accumulation — Working Years (`/accumulation`)
+Year-by-year cashflow table from current age to retirement age. Shows salary (with growth), take-home pay after CPF, income tax (with all IRAS reliefs and donation deductions), SRS top-up decisions per year, living expenses (inflation-adjusted), cash reserve management, and investable surplus. BTO mortgage cash payments appear as amber line items. One-time lumpsum expenses and inflows (e.g. bonuses, large purchases) are editable.
+
+### Retirement Drawdown (`/retirement`)
+Annual retirement spending table from retirement age to death age. Models drawdown from the investment account, CPF LIFE payouts, SRS withdrawals (with 50% taxable fraction), and any remaining BTO mortgage payments. Highlights surplus and shortfall years.
+
+### SRS Tax Optimiser (`/srs`)
+Standalone SRS demo page that lets users explore SRS contribution scenarios and visualise the tax savings, investment growth, and 10-year withdrawal phase, with full breakdown of taxable and after-tax amounts.
+
+### Tax Relief Manager
+Built into the Accumulation page. Each year's tax cell is clickable and opens a full IRAS tax relief panel — Earned Income Relief, CPF Employee Relief, NSman Relief, Parent Relief, and more — with real-time tax recalculation and the $80,000 combined relief cap enforced.
+
+### Config / Settings (`/config`)
+Single input page for all personal financial parameters: age milestones (current age, retirement age, death age via a visual lifeline slider), salary and growth rate, monthly expenses, CPF starting balances, investment portfolio breakdown by asset class (with value-weighted return calculation), emergency fund sizing, and BTO inputs. All pages update instantly when settings are saved.
+
+---
+
+## Creator
+
+Retirement.SG was built by **Ding Ren Tuan**, an independent software developer based in Singapore.
+
+Like many Singaporeans planning their financial future, Ding Ren found that no existing tool modelled the full picture — CPF, BTO, SRS, tax reliefs, and retirement drawdown — in a single coherent place. He built Retirement.SG to fill that gap, first for himself, then for the public.
+
+- **Personal website:** [dingrentuan.com](https://www.dingrentuan.com)
+- **GitHub:** [GeneralR3d](https://github.com/GeneralR3d)
+
+Retirement.SG is an independent project. It is not affiliated with, endorsed by, or connected to the CPF Board, HDB, IRAS, MAS, or any Singapore government agency.
+
+---
+
+## Key Design Principles
+
+- **Fully local** — all user data is stored in the browser's localStorage and never sent to any server
+- **No account required** — open and use immediately
+- **Singapore-specific** — built around Singapore's actual CPF allocation rates, HDB rules, IRAS tax brackets, SRS rules, and housing grant structures as of 2026
+- **Integrated, not siloed** — changing one input (e.g. retirement age) flows through every projection simultaneously
+- **Free forever** — no paywalls, no premium tiers
+
+---
