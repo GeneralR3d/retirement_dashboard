@@ -9,6 +9,7 @@ import {
   HDB_LOAN_RATE,
   maxTenureFor,
   totalGrantAmount,
+  ehgCapFor,
 } from "@/lib/bto";
 
 type DownpaymentScheme = "normal" | "staggered" | "deferred";
@@ -170,10 +171,17 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
   function update<K extends keyof ProfileInputs>(key: K, value: ProfileInputs[K]) {
     let next: ProfileInputs = { ...draft, [key]: value };
     if (key === "btoLoanType") {
-      // clamp tenure to new max
       const max = maxTenureFor(value as LoanType);
       if (next.btoLoanTenureYears > max) {
         next = { ...next, btoLoanTenureYears: max };
+      }
+    }
+    if (key === "btoApplicantType" && value === "single") {
+      if (next.btoDownpaymentScheme !== "normal") {
+        next = { ...next, btoDownpaymentScheme: "normal" };
+      }
+      if (next.btoGrantEhg > GRANT_CAPS.ehgSingle) {
+        next = { ...next, btoGrantEhg: GRANT_CAPS.ehgSingle };
       }
     }
     setDraft(next);
@@ -192,20 +200,20 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
       <div>
         <span className="block text-sm text-foreground/80 mb-1">Applying as</span>
         <div className="flex gap-2">
-          <button
-            type="button"
-            disabled
-            className="flex-1 border px-3 py-2 text-sm capitalize border-foreground/10 bg-foreground/[0.03] text-foreground/40 dark:text-foreground/30 cursor-not-allowed"
-          >
-            single
-            <div className="text-[10px] mt-0.5 text-foreground/40">coming soon</div>
-          </button>
-          <button
-            type="button"
-            className="flex-1 border px-3 py-2 text-sm capitalize border-foreground/40 bg-foreground/10 font-medium cursor-default"
-          >
-            couple
-          </button>
+          {(["single", "couple"] as ApplicantType[]).map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => update("btoApplicantType", type)}
+              className={`flex-1 border px-3 py-2 text-sm capitalize transition-colors ${
+                draft.btoApplicantType === type
+                  ? "border-foreground/40 bg-foreground/10 font-medium"
+                  : "border-foreground/10 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/70 hover:bg-foreground/[0.07]"
+              }`}
+            >
+              {type}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -302,21 +310,28 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
                 { id: "staggered" as DownpaymentScheme, label: "Staggered", sub: "10% / 15%" },
                 { id: "deferred" as DownpaymentScheme, label: "Deferred", sub: "2.5% / 22.5%" },
               ]
-          ).map(({ id, label, sub }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => update("btoDownpaymentScheme", id)}
-              className={`border px-3 py-2 text-sm transition-colors ${
-                draft.btoDownpaymentScheme === id
-                  ? "border-foreground/40 bg-foreground/10 font-medium"
-                  : "border-foreground/10 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/70 hover:bg-foreground/[0.07]"
-              }`}
-            >
-              <div>{label}</div>
-              <div className="text-xs mt-0.5 font-mono text-foreground/85 dark:text-foreground/60">{sub}</div>
-            </button>
-          ))}
+          ).map(({ id, label, sub }) => {
+            const disabledBySingle = draft.btoApplicantType === "single" && id !== "normal";
+            return (
+              <button
+                key={id}
+                type="button"
+                disabled={disabledBySingle}
+                onClick={() => !disabledBySingle && update("btoDownpaymentScheme", id)}
+                className={`border px-3 py-2 text-sm transition-colors ${
+                  disabledBySingle
+                    ? "border-foreground/10 bg-foreground/[0.03] text-foreground/30 dark:text-foreground/20 cursor-not-allowed"
+                    : draft.btoDownpaymentScheme === id
+                    ? "border-foreground/40 bg-foreground/10 font-medium"
+                    : "border-foreground/10 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/70 hover:bg-foreground/[0.07]"
+                }`}
+              >
+                <div>{label}</div>
+                <div className={`text-xs mt-0.5 font-mono ${disabledBySingle ? "text-foreground/25 dark:text-foreground/15" : "text-foreground/85 dark:text-foreground/60"}`}>{sub}</div>
+                {disabledBySingle && <div className="text-[10px] mt-0.5 text-foreground/30">unavailable</div>}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -378,7 +393,7 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
               step={1000}
             />
             <NumberField
-              label={`Enhanced Housing Grant (EHG) — up to ${fmtMoney(GRANT_CAPS.ehg)}`}
+              label={`Enhanced Housing Grant (EHG) — up to ${fmtMoney(ehgCapFor(draft))}`}
               value={draft.btoGrantEhg}
               onChange={(v) => update("btoGrantEhg", v)}
               prefix="$"

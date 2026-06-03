@@ -8,6 +8,7 @@ export const MAX_TENURE_BANK = 30;
 export const GRANT_CAPS = {
   family: 80000,
   ehg: 120000,
+  ehgSingle: 60000,
   phg: 30000,
 } as const;
 
@@ -32,9 +33,13 @@ export function effectiveInterestRate(inputs: ProfileInputs): number {
   return inputs.btoLoanType === "hdb" ? HDB_LOAN_RATE : inputs.btoBankInterestRate;
 }
 
+export function ehgCapFor(inputs: ProfileInputs): number {
+  return inputs.btoApplicantType === "single" ? GRANT_CAPS.ehgSingle : GRANT_CAPS.ehg;
+}
+
 export function rawGrantSum(inputs: ProfileInputs): number {
   const family = Math.min(inputs.btoGrantFamily, GRANT_CAPS.family);
-  const ehg = Math.min(inputs.btoGrantEhg, GRANT_CAPS.ehg);
+  const ehg = Math.min(inputs.btoGrantEhg, ehgCapFor(inputs));
   const phg = Math.min(inputs.btoGrantPhg, GRANT_CAPS.phg);
   return family + ehg + phg;
 }
