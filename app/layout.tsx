@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "%s | Retirement.sg",
+  title: "Retirement Planning in Singapore| Retirement.sg",
   description: "The #1 financial projection and retirement plannning tool for young adults in Singapore",
   openGraph: {
     title: "Retirement.sg",
