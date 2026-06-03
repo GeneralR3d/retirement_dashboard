@@ -140,6 +140,7 @@ function buildTokens(p: Omit<Props, "open" | "targetWidth">): Tok[] {
       tx(String(p.runOutAge ?? "unknown"), "bold-red"),
       tx("."),
       BR,
+      tx("Here are some tips: "),
       LIST([
         "Reduce your monthly expenses, especially during your younger years.",
         `Push your retirement to a later age (currently ${p.stopWorkingAge}).`,

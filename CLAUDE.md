@@ -273,6 +273,14 @@ Both `/srs` and `/cpf` use: `hiddenCols: Set<ColId>` state + `showHidden` boolea
 
 Create `app/<name>/page.tsx`, read inputs via `useProfile`, and add the route to `NAV_LINKS_MAIN` (primary pages) or `NAV_LINKS_SECONDARY` (CPF/BTO-style tools) in `app/components/navbar.tsx`. Put all financial logic in `lib/` rather than in the component. Derive any duration from the age milestone fields rather than storing a raw year count.
 
+### Root layout
+
+**`app/layout.tsx`** wraps every page. Mount order: `ProfileProvider` → `MobileBlocker` → `OnboardingOverlay` → `Navbar` (left sidebar) → `<main>{children}</main>` → `Footer`. Analytics scripts (`<Script strategy="afterInteractive">`) are injected here. Add global providers or overlays here, not in individual pages.
+
+### `"use client"` requirement
+
+App Router defaults to Server Components. Every page and component that uses React hooks (`useState`, `useEffect`, `useRef`, `useMemo`, context, etc.) or browser APIs (`localStorage`, `window`) must have `"use client"` as its first line. All current `app/*/page.tsx` files are client components. The only Server Components are `app/page.tsx` (redirect) and `app/terms/page.tsx` (file read).
+
 ## Next.js 16 note
 
 Per `AGENTS.md`, this Next.js version has breaking changes vs. older training data. Consult `node_modules/next/dist/docs/` before changing routing, config, or build setup.

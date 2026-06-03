@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useProfile, CPF_RATES, ProfileInputs, Investment, LumpsumExpense } from "@/lib/profile-context";
 import { CPF_EMPLOYEE_RATE, CPF_FRS_INFLATION_RATE } from "@/lib/tax";
 import { LumpsumTablesPanel } from "@/app/components/lumpsum-tables";
@@ -172,6 +173,7 @@ function LifelineSlider({
 
 export default function ConfigPage() {
   const { inputs, setInputs } = useProfile();
+  const router = useRouter();
 
   // Local draft — only committed to shared context on Save
   const [draft, setDraft] = useState<ProfileInputs>(inputs);
@@ -371,6 +373,7 @@ export default function ConfigPage() {
     const saved = { ...d, monthlyExpenseSeries: normalizedExpenses };
     setInputs(saved);
     setDraft(saved);
+    router.push("/main");
   }
 
   return (
