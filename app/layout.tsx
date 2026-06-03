@@ -19,8 +19,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SG Retirement Dashboard",
-  description: "The #1 retirement projection tool for young adults in Singapore",
+  title: "%s | Retirement.sg",
+  description: "The #1 financial projection and retirement plannning tool for young adults in Singapore",
+  openGraph: {
+    title: "Retirement.sg",
+    description: "The #1 financial projection and retirement planning tool for young adults in Singapore",
+    url: "https://www.retirement.sg",
+    type: "website",
+    locale: "en_SG",
+    siteName: "Retirement.sg",
+    images: [
+      {
+        url: "/opengraph-image.png",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
