@@ -214,7 +214,7 @@ export default function SrsPage() {
         </p>
       </header>
 
-      <div className="mb-6 border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-700 dark:text-amber-400/80 space-y-1.5">
+      <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3text-xs text-amber-700 dark:text-amber-400/80 space-y-1.5">
         <p>
           <span className="font-semibold text-amber-700 dark:text-amber-400">Projection only</span> — All figures on this page are illustrative comparisons between using SRS and not using SRS. A key assumption is that <span className="font-medium">no withdrawals are made from the brokerage pot before age {srsWithdrawalAge}</span>, which is almost certainly not true in practice.
         </p>
@@ -230,7 +230,7 @@ export default function SrsPage() {
       </div>
 
       {/* ── Demo parameter controls ─────────────────────────────────────────── */}
-      <section className="border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
+      <section className="glass-card p-5 mb-8">
         <h2 className="font-semibold mb-4">Demo parameters</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-5">
 
@@ -351,7 +351,7 @@ export default function SrsPage() {
         />
       </section>
 
-      <section className="border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
+      <section className="glass-card p-5 mb-8">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="font-semibold flex items-center">
             Pot growth
@@ -403,7 +403,7 @@ export default function SrsPage() {
         </div>
       </section>
 
-      <section className="border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
+      <section className="glass-card p-5 mb-8">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="font-semibold flex items-center">
             Brokerage pot — accumulation
@@ -447,7 +447,7 @@ export default function SrsPage() {
         </div>
       </section>
 
-      <section className="border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
+      <section className="glass-card p-5 mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Annual projection</h2>
           {hiddenCount > 0 && (
@@ -550,7 +550,7 @@ export default function SrsPage() {
         </div>
       </section>
 
-      <section className="border border-foreground/10 bg-foreground/[0.03] p-5">
+      <section className="glass-card p-5">
         <h2 className="font-semibold mb-1">SRS withdrawal</h2>
         <p className="text-xs text-foreground/85 dark:text-foreground/60 mb-5">
           Pot drawn down over {SRS_WITHDRAWAL_YEARS} years after the

@@ -34,6 +34,8 @@ export type Props = {
   data: SmartSummaryData;
   targetWidth: number;
   generationKey: number;
+  /** Render inline (no slide-over width animation or card chrome) — used by the At a glance panel. */
+  embedded?: boolean;
 };
 
 // --- Token types ---
@@ -459,6 +461,14 @@ export default function SmartSummary(props: Props) {
 
   const done = revealed >= total;
 
+  if (props.embedded) {
+    return (
+      <div className="space-y-3">
+        {renderStream(paragraphs, revealed, done, canRetire)}
+      </div>
+    );
+  }
+
   return (
     <div
       className="shrink-0 overflow-hidden transition-[width,margin-left] duration-300 ease-in-out"
@@ -470,7 +480,7 @@ export default function SmartSummary(props: Props) {
       aria-hidden={!open}
     >
       <div
-        className="border border-foreground/15 bg-foreground/[0.03] p-5"
+        className="glass-card p-5"
         style={{ minWidth: targetWidth > 0 ? targetWidth : undefined }}
       >
         <div className="space-y-3">

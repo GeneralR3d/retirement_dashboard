@@ -335,7 +335,7 @@ export default function CpfPage() {
       </section>
 
       {/* Chart */}
-      <section className="border border-foreground/10 bg-foreground/[0.03] p-5 mb-8">
+      <section className="glass-card p-5 mb-8">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="font-semibold">Account composition over time</h2>
           <span className="text-xs text-foreground/85 dark:text-foreground/60">
@@ -485,7 +485,7 @@ export default function CpfPage() {
       )}
 
       {/* Annual projection table */}
-      <section className="border border-foreground/10 bg-foreground/[0.03] p-5">
+      <section className="glass-card p-5">
         <div className="flex items-center justify-between mb-4">
           <span className="flex items-center gap-1.5">
             <h2 className="font-semibold">Annual projection</h2>

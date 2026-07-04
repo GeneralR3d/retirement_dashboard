@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useProfile, CPF_RATES, ProfileInputs, Investment, LumpsumExpense } from "@/lib/profile-context";
+import AtAGlance from "@/app/components/at-a-glance";
 import { CPF_EMPLOYEE_RATE, CPF_FRS_INFLATION_RATE } from "@/lib/tax";
 import { LumpsumTablesPanel } from "@/app/components/lumpsum-tables";
 import { NumberField, Slider, Th, Td, InfoTooltip } from "@/app/components/ui";
@@ -123,7 +123,7 @@ function LifelineSlider({
           className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] pointer-events-none"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(90deg, rgba(255,255,255,0.18) 0, rgba(255,255,255,0.18) 5px, transparent 5px, transparent 11px)",
+              "repeating-linear-gradient(90deg, var(--grid-color) 0, var(--grid-color) 5px, transparent 5px, transparent 11px)",
           }}
         />
 
@@ -171,9 +171,28 @@ function LifelineSlider({
   );
 }
 
+function RecalcFooter({ dirty, onSave }: { dirty: boolean; onSave: () => void }) {
+  return (
+    <div className="flex items-center justify-end gap-3 pt-4 border-t border-foreground/10">
+      {dirty && (
+        <span className="text-xs text-amber-700 dark:text-amber-400/80">Unsaved changes</span>
+      )}
+      <button
+        onClick={onSave}
+        disabled={!dirty}
+        className="px-6 py-2.5 rounded-full text-sm font-semibold transition-colors
+          disabled:cursor-not-allowed cursor-pointer
+          bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/25
+          disabled:bg-foreground/15 disabled:text-foreground/30 disabled:shadow-none"
+      >
+        Recalculate
+      </button>
+    </div>
+  );
+}
+
 export default function ConfigPage() {
   const { inputs, setInputs } = useProfile();
-  const router = useRouter();
 
   // Local draft — only committed to shared context on Save
   const [draft, setDraft] = useState<ProfileInputs>(inputs);
@@ -235,7 +254,6 @@ export default function ConfigPage() {
   const [showSalaryTable, setShowSalaryTable] = useState(false);
   const [showExpenseTable, setShowExpenseTable] = useState(true);
   const [srsCapEditMode, setSrsCapEditMode] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Target return — display only, not persisted
   const [targetReturn, setTargetReturn] = useState(0.07);
@@ -373,43 +391,25 @@ export default function ConfigPage() {
     const saved = { ...d, monthlyExpenseSeries: normalizedExpenses };
     setInputs(saved);
     setDraft(saved);
-    router.push("/main");
   }
 
   return (
-    <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
-      <header className="mb-8 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            Config
-          </h1>
-          <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
-            Your personal financial details — shared across all projection pages.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 pt-1 shrink-0">
-          {isDirty && (
-            <span className="text-xs text-amber-700 dark:text-amber-400/80">Unsaved changes</span>
-          )}
-          <button
-            onClick={handleSave}
-            disabled={!isDirty}
-            className="px-6 py-3 text-base font-semibold transition-colors
-              disabled:cursor-not-allowed cursor-pointer
-              bg-emerald-600 hover:bg-emerald-500 text-white shadow-md
-              disabled:bg-foreground/15 disabled:text-foreground/30 disabled:shadow-none"
-          >
-            Recalculate
-          </button>
-        </div>
+    <main className="px-4 sm:px-8 py-10 max-w-[90rem] mx-auto w-full">
+      <header className="mb-10">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+          Calculator
+        </h1>
+        <p className="text-foreground/85 dark:text-foreground/60 text-sm mt-1">
+          Your personal financial details — shared across all projection pages. Press Recalculate on any card to see the effect instantly.
+        </p>
       </header>
 
-      {/* Two-column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        <div className="flex flex-col gap-8">
+      {/* Left 2/3: settings cards · Right 1/3: sticky At a glance */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="lg:col-span-2 flex flex-col gap-10">
 
           {/* Personal Details */}
-          <div className="border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
+          <div className="glass-card p-7 sm:p-8 space-y-6">
             <div>
               <h2 className="font-semibold">Personal Details</h2>
               <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">Your age milestones, salary, and investment assumptions.</p>
@@ -438,7 +438,7 @@ export default function ConfigPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
+              <div className="glass-field flex items-center">
                 <span className="pl-3 text-foreground/85 dark:text-foreground/60 font-mono">$</span>
                 <input
                   type="number"
@@ -489,7 +489,7 @@ export default function ConfigPage() {
                     min={1}
                     value={emergencyMonths}
                     onChange={(e) => update("emergencyMonths")(Math.max(1, parseFloat(e.target.value) || 1))}
-                    className="w-24 bg-foreground/5 border border-foreground/15 focus:border-emerald-500 px-3 py-1.5 text-sm font-mono outline-none"
+                    className="glass-field w-24 px-3 py-1.5 text-sm font-mono outline-none"
                   />
                   <span className="text-sm text-foreground/75 dark:text-foreground/50">months</span>
                 </div>
@@ -511,7 +511,7 @@ export default function ConfigPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
+              <div className="glass-field flex items-center">
                 <span className="pl-3 text-foreground/85 dark:text-foreground/60 font-mono">$</span>
                 <input
                   type="number"
@@ -713,10 +713,11 @@ export default function ConfigPage() {
                 </div>
               )}
             </div>
+            <RecalcFooter dirty={isDirty} onSave={handleSave} />
           </div>
 
           {/* Retirement Settings */}
-          <div className="border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
+          <div className="glass-card p-7 sm:p-8 space-y-6">
             <div>
               <h2 className="font-semibold">Retirement Settings</h2>
               <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">Spending and withdrawal assumptions used across all retirement projection pages.</p>
@@ -799,11 +800,11 @@ export default function ConfigPage() {
               format={(v) => (v * 100).toFixed(1)}
               onChange={update("investmentGrowthRateRetirement")}
             />
+            <RecalcFooter dirty={isDirty} onSave={handleSave} />
           </div>
-        </div>
 
-        {/* CPF column */}
-        <div className="border border-foreground/10 bg-foreground/[0.03] p-6 space-y-5">
+          {/* CPF Starting Balances */}
+          <div className="glass-card p-7 sm:p-8 space-y-6">
           <div>
             <h2 className="font-semibold mb-0.5">CPF Starting Balances</h2>
             <p className="text-foreground/85 dark:text-foreground/60 text-xs">Enter your current CPF balances. Interest rates are fixed by CPF Board.</p>
@@ -874,11 +875,11 @@ export default function ConfigPage() {
             </div>
             <p className="text-[10px] text-foreground/60 dark:text-foreground/30 mt-2">Values set by CPF Board. Update when official figures change.</p>
           </div>
+          <RecalcFooter dirty={isDirty} onSave={handleSave} />
         </div>
-      </div>
 
-      {/* Real Networth — full width */}
-      <div className="mt-8 border border-foreground/10 bg-foreground/[0.03] p-6">
+          {/* Investment Account */}
+          <div className="glass-card p-7 sm:p-8">
         <div className="flex items-start justify-between mb-5">
           <div>
             <h2 className="font-semibold">Investment Account</h2>
@@ -935,7 +936,7 @@ export default function ConfigPage() {
                   </td>
                   {/* Value */}
                   <td className="py-2 px-2">
-                    <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500 w-40">
+                    <div className="glass-field flex items-center w-40">
                       <span className="pl-2 text-foreground/75 dark:text-foreground/50 font-mono text-xs">$</span>
                       <input
                         type="number"
@@ -1010,43 +1011,32 @@ export default function ConfigPage() {
               </tr>
             </tfoot>
           </table>
+          </div>
+          <RecalcFooter dirty={isDirty} onSave={handleSave} />
         </div>
-      </div>
 
-      {/* Advanced — BTO + Lumpsums (also editable on their own pages) */}
-      <div className="mt-8 flex flex-col items-center">
-        <button
-          type="button"
-          onClick={() => setShowAdvanced((v) => !v)}
-          className="inline-flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground transition-colors cursor-pointer"
-        >
-          <span>Advanced</span>
-          <svg
-            className={`w-4 h-4 text-foreground/85 dark:text-foreground/60 transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-          <span className="text-xs text-foreground/65 dark:text-foreground/40">BTO &amp; lumpsums — also editable on their own pages</span>
-        </button>
-
-        {showAdvanced && (
-          <div className="mt-4 space-y-8">
-            {/* BTO / Housing */}
-            <div className="border border-foreground/10 bg-foreground/[0.03] p-6">
-              <div className="mb-5">
-                <h2 className="font-semibold">BTO / Housing</h2>
-                <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">
-                  Flat purchase, downpayment scheme, grants, and loan terms. Mirrored on the BTO page.
-                </p>
-              </div>
-              <BtoInputsPanel draft={draft} setDraft={setDraft} />
+          {/* BTO / Housing */}
+          <div className="glass-card p-7 sm:p-8">
+            <div className="mb-6">
+              <h2 className="font-semibold">BTO / Housing</h2>
+              <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">
+                Flat purchase, downpayment scheme, grants, and loan terms. Mirrored on the BTO page.
+              </p>
             </div>
+            <BtoInputsPanel draft={draft} setDraft={setDraft} />
+            <div className="mt-6">
+              <RecalcFooter dirty={isDirty} onSave={handleSave} />
+            </div>
+          </div>
 
-            {/* Lumpsum Inflows + Expenses — side-by-side */}
+          {/* Lumpsum Inflows + Expenses */}
+          <div className="glass-card p-7 sm:p-8">
+            <div className="mb-6">
+              <h2 className="font-semibold">One-time Inflows &amp; Expenses</h2>
+              <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">
+                Lumpsum amounts at a specific age — also editable on the Accumulation page.
+              </p>
+            </div>
             <LumpsumTablesPanel
               profileInputs={draft}
               lumpsumExpenses={lumpsumExpenses}
@@ -1054,8 +1044,16 @@ export default function ConfigPage() {
               onExpensesChange={setLumpsumExpenses}
               onInflowsChange={setLumpsumInflows}
             />
+            <div className="mt-6">
+              <RecalcFooter dirty={isDirty} onSave={handleSave} />
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* At a glance — sticky while the settings column scrolls */}
+        <div className="lg:sticky lg:top-8">
+          <AtAGlance />
+        </div>
       </div>
 
     </main>

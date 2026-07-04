@@ -363,7 +363,7 @@ export default function RetirementPage() {
         </div>
       </section>
 
-      <section className="border border-foreground/10 bg-foreground/[0.03] p-5">
+      <section className="glass-card p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Annual expenses</h2>
           <span className="text-xs text-foreground/85 dark:text-foreground/60">

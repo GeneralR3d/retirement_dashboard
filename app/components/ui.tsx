@@ -40,7 +40,7 @@ export function Slider({
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full accent-emerald-500"
+        className="w-full"
       />
     </div>
   );
@@ -66,7 +66,7 @@ export function NumberField({
   return (
     <label className={`block ${disabled ? "opacity-40 pointer-events-none" : ""}`}>
       <span className="block text-sm text-foreground/90 dark:text-foreground/80 mb-1">{label}</span>
-      <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500">
+      <div className="glass-field flex items-center">
         {prefix && (
           <span className="pl-3 text-foreground/85 dark:text-foreground/60 font-mono">{prefix}</span>
         )}
@@ -99,7 +99,7 @@ export function StatCard({
   tooltipPosition?: "top" | "right";
 }) {
   return (
-    <div className="border border-foreground/10 bg-foreground/[0.03] p-5">
+    <div className="glass-card p-5">
       <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-foreground/85 dark:text-foreground/60">
         {label}
         {tooltip && <InfoTooltip position={tooltipPosition}>{tooltip}</InfoTooltip>}
@@ -124,7 +124,7 @@ export function Stat({
   accent?: "emerald";
 }) {
   return (
-    <div className="border border-foreground/10 bg-foreground/[0.02] p-4">
+    <div className="glass-inset p-4">
       <div className="text-xs text-foreground/85 dark:text-foreground/60">{label}</div>
       <div
         className={`mt-1 text-lg font-semibold font-mono ${accent === "emerald" ? "text-emerald-600 dark:text-emerald-500" : ""}`}
@@ -183,7 +183,7 @@ export function InfoTooltip({ children, className, position = "top" }: { childre
             transform,
             zIndex: 9999,
           }}
-          className={`pointer-events-auto w-64 border border-foreground/10 bg-[var(--tooltip-bg,#0f172a)] p-3 text-xs font-normal text-foreground/90 dark:text-foreground/80 shadow-xl${className ? ` ${className}` : ""}`}
+          className={`pointer-events-auto w-64 rounded-xl border border-foreground/10 bg-[var(--tooltip-bg,#0f172a)] backdrop-blur-xl p-3 text-xs font-normal text-foreground/90 dark:text-foreground/80 shadow-xl${className ? ` ${className}` : ""}`}
         >
           {children}
         </span>,

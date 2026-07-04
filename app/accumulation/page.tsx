@@ -329,7 +329,7 @@ export default function AccumulationPage() {
         />
       </div>
 
-      <section className="border border-foreground/10 bg-foreground/[0.03] p-5">
+      <section className="glass-card p-5">
         <h2 className="font-semibold mb-4">Annual accumulation</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

@@ -84,7 +84,7 @@ export function LumpsumTablesPanel({
   const { effectiveExpenses, btoLockedIds } = useBtoEffectiveExpenses(profileInputs, lumpsumExpenses);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <LumpsumTable
         title="Lumpsum Inflows"
         description="One-time inflows (inheritance, bonuses, etc.) added to that year's available cash."

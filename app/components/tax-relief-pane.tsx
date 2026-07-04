@@ -114,7 +114,7 @@ export function TaxReliefPane({ open, rowIndex, age, takeHome, srsTopUp, initial
       <div
         role="dialog"
         aria-modal
-        className={`fixed top-0 right-0 h-full z-50 flex flex-col bg-background border-l border-foreground/10 shadow-2xl transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed top-0 right-0 h-full z-50 flex flex-col bg-background/85 backdrop-blur-2xl border-l border-white/50 dark:border-white/10 shadow-2xl transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "translate-x-full"}`}
         style={{ width: "min(620px, 90vw)" }}
       >
         {/* Header */}
@@ -266,7 +266,7 @@ export function TaxReliefPane({ open, rowIndex, age, takeHome, srsTopUp, initial
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 px-6 py-4 border-t border-foreground/10 bg-background space-y-3">
+        <div className="shrink-0 px-6 py-4 border-t border-foreground/10 bg-background/60 backdrop-blur-xl space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-foreground/65">Total deductions applied</span>
             <span className={`font-mono font-semibold ${isCapped ? "text-amber-600 dark:text-amber-400" : (totalRelief + donationDeduction) > 0 ? "text-sky-600 dark:text-sky-400" : "text-foreground/40"}`}>

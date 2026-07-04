@@ -42,7 +42,7 @@ export function LumpsumTable({
   const totalColor = totalAccent === "red" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400";
 
   return (
-    <div className="border border-foreground/10 bg-foreground/[0.03] p-6">
+    <div className="glass-card p-6">
       <div className="flex items-start justify-between mb-5">
         <div>
           <h2 className="font-semibold">{title}</h2>
@@ -55,8 +55,8 @@ export function LumpsumTable({
           + Add row
         </button>
       </div>
-      <div className="border border-foreground/10 overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="glass-inset overflow-x-auto">
+        <table className="w-full min-w-[300px] text-sm">
           <thead className="bg-foreground/[0.06]">
             <tr className="text-left text-foreground/85 dark:text-foreground/60 border-b border-foreground/10">
               <Th>Age</Th>
@@ -102,7 +102,7 @@ export function LumpsumTable({
                     {locked ? (
                       <span className="text-foreground/70 font-mono text-sm">{fmtMoney(r.amount)}</span>
                     ) : (
-                      <div className="flex items-center rounded-xl border border-foreground/15 bg-foreground/5 focus-within:border-emerald-500 w-32">
+                      <div className="glass-field flex items-center w-32">
                         <span className="pl-2 text-foreground/75 dark:text-foreground/50 font-mono text-xs">$</span>
                         <input
                           type="number"

@@ -159,9 +159,9 @@ export default function BtoPage() {
       </header>
 
       {/* Inputs — split layout: house SVG left, config panel right */}
-      <div className="border border-foreground/10 bg-foreground/[0.03] mb-10 overflow-hidden flex min-h-[420px]">
+      <div className="glass-card mb-10 overflow-hidden flex min-h-[420px]">
         {/* Left: house illustration */}
-        <div className="hidden md:flex flex-1 items-center justify-center bg-background relative overflow-hidden">
+        <div className="hidden md:flex flex-1 items-center justify-center bg-white/30 dark:bg-white/[0.03] relative overflow-hidden">
           {/* ── Daylight SVG — light mode ── */}
           <svg
             viewBox="0 0 340 420"
@@ -585,7 +585,7 @@ export default function BtoPage() {
           />
 
           {/* Downpayment 1 */}
-          <div className="border border-foreground/10 bg-foreground/[0.03] p-5">
+          <div className="glass-card p-5">
             <div className="text-xs uppercase tracking-wide text-foreground/85 dark:text-foreground/60">
               Downpayment 1
             </div>
@@ -619,7 +619,7 @@ export default function BtoPage() {
           />
 
           {/* Downpayment 2 */}
-          <div className="border border-foreground/10 bg-foreground/[0.03] p-5">
+          <div className="glass-card p-5">
             <div className="text-xs uppercase tracking-wide text-foreground/85 dark:text-foreground/60">
               Downpayment 2
             </div>
@@ -666,7 +666,7 @@ export default function BtoPage() {
 
       {/* Mortgage repayment table */}
       {mortgageRows.length > 0 && (
-        <section className="mt-10 border border-foreground/10 bg-foreground/[0.03] p-5">
+        <section className="mt-10 glass-card p-5">
           <div className="mb-4">
             <h2 className="font-semibold">Annual mortgage repayment</h2>
             <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">
