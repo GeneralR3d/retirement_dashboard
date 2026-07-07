@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 
 export type SmartSummaryData = {
@@ -132,8 +133,6 @@ function buildTokens(p: Omit<Props, "open" | "targetWidth">): Tok[] {
     );
 
     const toks: Tok[] = [
-      tx("Not quite there. "),
-      BR,
       ...failureExpenseRangeToks(expenseRanges),
       tx(fmtMoney(p.data.avgInvested), "bold"),
       tx(" on average each year into your investments, generating an investment net worth of only "),
@@ -206,8 +205,6 @@ function buildTokens(p: Omit<Props, "open" | "targetWidth">): Tok[] {
   );
 
   const toks: Tok[] = [
-    tx("Way to go! "),
-    BR,
     ...expenseRangeToks(expenseRanges),
     tx(fmtMoney(p.data.avgInvested), "bold"),
     tx(" on average each year into your investments, yielding an impressive "),
@@ -290,8 +287,7 @@ const Cursor = () => (
 function renderStream(
   paragraphs: Paragraph[],
   revealed: number,
-  done: boolean,
-  canRetire: boolean
+  done: boolean
 ): React.ReactNode {
   let rem = revealed;
   let cursorPlaced = false;
@@ -332,8 +328,6 @@ function renderStream(
       );
     }
 
-    const isAccent = canRetire && pi === 0;
-    const isFailureAccent = !canRetire && pi === 0;
     const nodes: React.ReactNode[] = [];
 
     for (let ti = 0; ti < para.toks.length; ti++) {
@@ -373,13 +367,7 @@ function renderStream(
     return (
       <p
         key={pi}
-        className={
-          isAccent
-            ? "text-base font-semibold text-emerald-600 dark:text-emerald-400"
-            : isFailureAccent
-            ? "text-base font-semibold text-red-600 dark:text-red-400"
-            : "text-sm text-foreground/85 dark:text-foreground/70 leading-relaxed"
-        }
+        className="text-sm text-foreground/85 dark:text-foreground/70 leading-relaxed"
       >
         {nodes}
       </p>
@@ -389,9 +377,20 @@ function renderStream(
 
 const CHARS_PER_TICK = 3;
 const TICK_MS = 16;
+// Brief "thinking" pause before the typewriter starts, to read as AI generating.
+const THINK_MS = 1300;
+
+function AiLabel({ thinking }: { thinking: boolean }) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+      <Sparkles size={14} className={thinking ? "animate-pulse" : ""} />
+      <span>{thinking ? "Thinking…" : "Summary"}</span>
+    </div>
+  );
+}
 
 export default function SmartSummary(props: Props) {
-  const { open, targetWidth, canRetire, generationKey } = props;
+  const { open, targetWidth, generationKey } = props;
 
   const tokens = useMemo(
     () => buildTokens(props),
@@ -432,39 +431,49 @@ export default function SmartSummary(props: Props) {
   const total = useMemo(() => countChars(tokens), [tokens]);
 
   const [revealed, setRevealed] = useState(0);
+  const [thinking, setThinking] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const thinkRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    if (!open) {
+    if (thinkRef.current) clearTimeout(thinkRef.current);
+    const active = open || props.embedded;
+    if (!active) {
       setRevealed(0);
+      setThinking(false);
       return;
     }
-    let count = 0;
     setRevealed(0);
-    timerRef.current = setInterval(() => {
-      count += CHARS_PER_TICK;
-      if (count >= total) {
-        setRevealed(total);
-        clearInterval(timerRef.current!);
-        timerRef.current = null;
-      } else {
-        setRevealed(count);
-      }
-    }, TICK_MS);
+    setThinking(true);
+    thinkRef.current = setTimeout(() => {
+      setThinking(false);
+      let count = 0;
+      timerRef.current = setInterval(() => {
+        count += CHARS_PER_TICK;
+        if (count >= total) {
+          setRevealed(total);
+          clearInterval(timerRef.current!);
+          timerRef.current = null;
+        } else {
+          setRevealed(count);
+        }
+      }, TICK_MS);
+    }, THINK_MS);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (thinkRef.current) clearTimeout(thinkRef.current);
     };
   // generationKey restarts the animation whenever Recalculate is pressed on any page
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, total, generationKey]);
+  }, [open, total, generationKey, props.embedded]);
 
   const done = revealed >= total;
 
   if (props.embedded) {
     return (
       <div className="space-y-3">
-        {renderStream(paragraphs, revealed, done, canRetire)}
+        <AiLabel thinking={thinking} />
+        {renderStream(paragraphs, revealed, done)}
       </div>
     );
   }
@@ -484,7 +493,8 @@ export default function SmartSummary(props: Props) {
         style={{ minWidth: targetWidth > 0 ? targetWidth : undefined }}
       >
         <div className="space-y-3">
-          {renderStream(paragraphs, revealed, done, canRetire)}
+          <AiLabel thinking={thinking} />
+          {renderStream(paragraphs, revealed, done)}
         </div>
       </div>
     </div>

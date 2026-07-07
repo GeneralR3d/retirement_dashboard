@@ -4,8 +4,6 @@ import Script from "next/script";
 import "./globals.css";
 import { ProfileProvider } from "@/lib/profile-context";
 import Navbar from "./components/navbar";
-import Footer from "./components/footer";
-import OnboardingOverlay from "./components/onboarding-overlay";
 import MobileBlocker from "./components/mobile-blocker";
 
 const geistSans = Geist({
@@ -68,15 +66,11 @@ export default function RootLayout({
         })(window, document, "clarity", "script", "x09ww0itw3");
         `}
       </Script>
-      <body className="min-h-full flex">
+      <body className="h-screen overflow-hidden flex flex-col">
         <ProfileProvider>
           <MobileBlocker />
-          <OnboardingOverlay />
           <Navbar />
-          <div className="flex-1 min-w-0 flex flex-col">
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+          <main className="flex-1 min-h-0">{children}</main>
         </ProfileProvider>
       </body>
     </html>

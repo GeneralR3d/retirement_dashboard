@@ -713,168 +713,6 @@ export default function InputsPanel() {
             <RecalcFooter dirty={isDirty} onSave={handleSave} />
           </div>
 
-          {/* Retirement Settings */}
-          <div className="glass-card p-5 space-y-6">
-            <div>
-              <h2 className="font-semibold">Retirement Settings</h2>
-              <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">Spending and withdrawal assumptions used across all retirement projection pages.</p>
-            </div>
-            <NumberField
-              label="Monthly expenses in retirement (today's money)"
-              value={monthlyExpensesRetirement}
-              onChange={update("monthlyExpensesRetirement")}
-              prefix="$"
-              step={100}
-            />
-            <div className="border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm flex justify-between items-center">
-              <span className="text-foreground/85 dark:text-foreground/60">Annual equivalent</span>
-              <span className="font-mono text-foreground/80">
-                {fmtMoney(monthlyExpensesRetirement * 12)}/yr
-              </span>
-            </div>
-            <div className="border border-foreground/10 bg-foreground/[0.03] px-4 py-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground/75 dark:text-foreground/50">SRS withdrawal age</span>
-                <span className="font-mono font-semibold text-foreground/70">{srsWithdrawalAge}</span>
-              </div>
-              <p className="text-[10px] text-foreground/60 dark:text-foreground/30 mt-1.5">Fixed by MAS regulation</p>
-            </div>
-            {/* SRS annual cap */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Max annual SRS top-up</label>
-                <button
-                  type="button"
-                  onClick={() => setSrsCapEditMode((v) => !v)}
-                  className={`p-1 transition-colors ${srsCapEditMode ? "text-foreground" : "text-foreground/65 dark:text-foreground/40 hover:text-foreground/70"}`}
-                  title="Edit manually"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                    <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L2.68 10.846a.75.75 0 0 0-.196.373l-.71 3.539a.75.75 0 0 0 .888.888l3.54-.71a.75.75 0 0 0 .372-.196l8.335-8.334a1.75 1.75 0 0 0 0-2.474l-.421-.42Z" />
-                  </svg>
-                </button>
-              </div>
-              <div className="flex gap-2">
-                {[
-                  { label: "Citizen / PR", value: 15300 },
-                  { label: "Foreigner", value: 35700 },
-                ].map(({ label, value }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => {
-                      update("srsAnnualCap")(value);
-                      setSrsCapEditMode(false);
-                    }}
-                    className={`flex-1 border px-3 py-2 text-sm transition-colors ${
-                      srsAnnualCap === value && !srsCapEditMode
-                        ? "border-foreground/40 bg-foreground/10 font-medium"
-                        : "border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.07]"
-                    }`}
-                  >
-                    <div>{label}</div>
-                    <div className="text-xs mt-0.5 font-mono">{fmtMoney(value)}/yr</div>
-                  </button>
-                ))}
-              </div>
-              {srsCapEditMode && (
-                <NumberField
-                  label="Custom cap"
-                  value={srsAnnualCap}
-                  onChange={update("srsAnnualCap")}
-                  prefix="$"
-                  step={100}
-                />
-              )}
-            </div>
-            <Slider
-              label="Investment growth rate (post-retirement)"
-              value={investmentGrowthRateRetirement}
-              min={0}
-              max={0.1}
-              step={0.005}
-              suffix="%"
-              format={(v) => (v * 100).toFixed(1)}
-              onChange={update("investmentGrowthRateRetirement")}
-            />
-            <RecalcFooter dirty={isDirty} onSave={handleSave} />
-          </div>
-
-          {/* CPF Starting Balances */}
-          <div className="glass-card p-5 space-y-6">
-          <div>
-            <h2 className="font-semibold mb-0.5">CPF Starting Balances</h2>
-            <p className="text-foreground/85 dark:text-foreground/60 text-xs">Enter your current CPF balances. Interest rates are fixed by CPF Board.</p>
-          </div>
-          <NumberField
-            label={`Ordinary Account (OA) — ${(CPF_RATES.OA * 100).toFixed(1)}% p.a.`}
-            value={cpfOA}
-            onChange={update("cpfOA")}
-            prefix="$"
-            step={1000}
-          />
-          <NumberField
-            label={`Special Account (SA) — ${(CPF_RATES.SA * 100).toFixed(1)}% p.a.`}
-            value={cpfSA}
-            onChange={update("cpfSA")}
-            prefix="$"
-            step={1000}
-          />
-          <NumberField
-            label={`Medisave Account (MA) — ${(CPF_RATES.MA * 100).toFixed(1)}% p.a.`}
-            value={cpfMA}
-            onChange={update("cpfMA")}
-            prefix="$"
-            step={1000}
-          />
-          <NumberField
-            label={`Retirement Account (RA) — ${(CPF_RATES.RA * 100).toFixed(1)}% p.a.`}
-            value={cpfRA}
-            onChange={update("cpfRA")}
-            prefix="$"
-            step={1000}
-          />
-          <div className="border-t border-foreground/10 pt-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-semibold uppercase tracking-wider text-foreground/65 dark:text-foreground/40">CPF related age milestones</span>
-              <div className="flex-1 border-t border-foreground/10" />
-            </div>
-            <div className="border border-foreground/10 divide-y divide-foreground/10">
-              {[
-                { label: "Retirement Account (RA) age", value: String(cpfRetirementAge) },
-                { label: "CPF withdrawal age",           value: String(cpfWithdrawalAge) },
-                { label: "CPF LIFE monthly payout",      value: `${fmtMoney(cpfLifeMonthlyPayout)}/mo` },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-sm text-foreground/75 dark:text-foreground/50">{label}</span>
-                  <span className="font-mono text-sm font-semibold text-foreground/70">{value}</span>
-                </div>
-              ))}
-              {/* FRS row — special-cased for the disclaimer tooltip */}
-              <div className="flex items-center justify-between px-4 py-2.5">
-                <span className="flex items-center gap-1.5 text-sm text-foreground/75 dark:text-foreground/50">
-                  Full Retirement Sum (FRS)
-                  <InfoTooltip>
-                    <p className="font-semibold mb-1">How the FRS is projected</p>
-                    <p className="mb-2">
-                      The FRS values change every year.
-                      Based on recent figures we apply a <span className="font-semibold text-emerald-400">{(CPF_FRS_INFLATION_RATE * 100).toFixed(2)}%/yr</span> growth
-                      rate to estimate the FRS target at your retirement age.
-                    </p>
-                    <p className="text-foreground/60 dark:text-foreground/40">
-                      This rate may change. Always refer to the CPF website
-                      for the latest figures.
-                    </p>
-                  </InfoTooltip>
-                </span>
-                <span className="font-mono text-sm font-semibold text-foreground/70">{fmtMoney(cpfLifeFrs)}</span>
-              </div>
-            </div>
-            <p className="text-[10px] text-foreground/60 dark:text-foreground/30 mt-2">Values set by CPF Board. Update when official figures change.</p>
-          </div>
-          <RecalcFooter dirty={isDirty} onSave={handleSave} />
-        </div>
-
           {/* Investment Account */}
           <div className="glass-card p-5">
         <div className="flex items-start justify-between mb-5">
@@ -1044,6 +882,168 @@ export default function InputsPanel() {
             <div className="mt-6">
               <RecalcFooter dirty={isDirty} onSave={handleSave} />
             </div>
+          </div>
+
+          {/* CPF Starting Balances */}
+          <div className="glass-card p-5 space-y-6">
+          <div>
+            <h2 className="font-semibold mb-0.5">CPF Starting Balances</h2>
+            <p className="text-foreground/85 dark:text-foreground/60 text-xs">Enter your current CPF balances. Interest rates are fixed by CPF Board.</p>
+          </div>
+          <NumberField
+            label={`Ordinary Account (OA) — ${(CPF_RATES.OA * 100).toFixed(1)}% p.a.`}
+            value={cpfOA}
+            onChange={update("cpfOA")}
+            prefix="$"
+            step={1000}
+          />
+          <NumberField
+            label={`Special Account (SA) — ${(CPF_RATES.SA * 100).toFixed(1)}% p.a.`}
+            value={cpfSA}
+            onChange={update("cpfSA")}
+            prefix="$"
+            step={1000}
+          />
+          <NumberField
+            label={`Medisave Account (MA) — ${(CPF_RATES.MA * 100).toFixed(1)}% p.a.`}
+            value={cpfMA}
+            onChange={update("cpfMA")}
+            prefix="$"
+            step={1000}
+          />
+          <NumberField
+            label={`Retirement Account (RA) — ${(CPF_RATES.RA * 100).toFixed(1)}% p.a.`}
+            value={cpfRA}
+            onChange={update("cpfRA")}
+            prefix="$"
+            step={1000}
+          />
+          <div className="border-t border-foreground/10 pt-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-foreground/65 dark:text-foreground/40">CPF related age milestones</span>
+              <div className="flex-1 border-t border-foreground/10" />
+            </div>
+            <div className="border border-foreground/10 divide-y divide-foreground/10">
+              {[
+                { label: "Retirement Account (RA) age", value: String(cpfRetirementAge) },
+                { label: "CPF withdrawal age",           value: String(cpfWithdrawalAge) },
+                { label: "CPF LIFE monthly payout",      value: `${fmtMoney(cpfLifeMonthlyPayout)}/mo` },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-sm text-foreground/75 dark:text-foreground/50">{label}</span>
+                  <span className="font-mono text-sm font-semibold text-foreground/70">{value}</span>
+                </div>
+              ))}
+              {/* FRS row — special-cased for the disclaimer tooltip */}
+              <div className="flex items-center justify-between px-4 py-2.5">
+                <span className="flex items-center gap-1.5 text-sm text-foreground/75 dark:text-foreground/50">
+                  Full Retirement Sum (FRS)
+                  <InfoTooltip>
+                    <p className="font-semibold mb-1">How the FRS is projected</p>
+                    <p className="mb-2">
+                      The FRS values change every year.
+                      Based on recent figures we apply a <span className="font-semibold text-emerald-400">{(CPF_FRS_INFLATION_RATE * 100).toFixed(2)}%/yr</span> growth
+                      rate to estimate the FRS target at your retirement age.
+                    </p>
+                    <p className="text-foreground/60 dark:text-foreground/40">
+                      This rate may change. Always refer to the CPF website
+                      for the latest figures.
+                    </p>
+                  </InfoTooltip>
+                </span>
+                <span className="font-mono text-sm font-semibold text-foreground/70">{fmtMoney(cpfLifeFrs)}</span>
+              </div>
+            </div>
+            <p className="text-[10px] text-foreground/60 dark:text-foreground/30 mt-2">Values set by CPF Board. Update when official figures change.</p>
+          </div>
+          <RecalcFooter dirty={isDirty} onSave={handleSave} />
+        </div>
+
+          {/* Retirement Settings */}
+          <div className="glass-card p-5 space-y-6">
+            <div>
+              <h2 className="font-semibold">Retirement Settings</h2>
+              <p className="text-foreground/85 dark:text-foreground/60 text-xs mt-0.5">Spending and withdrawal assumptions used across all retirement projection pages.</p>
+            </div>
+            <NumberField
+              label="Monthly expenses in retirement (today's money)"
+              value={monthlyExpensesRetirement}
+              onChange={update("monthlyExpensesRetirement")}
+              prefix="$"
+              step={100}
+            />
+            <div className="border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm flex justify-between items-center">
+              <span className="text-foreground/85 dark:text-foreground/60">Annual equivalent</span>
+              <span className="font-mono text-foreground/80">
+                {fmtMoney(monthlyExpensesRetirement * 12)}/yr
+              </span>
+            </div>
+            <div className="border border-foreground/10 bg-foreground/[0.03] px-4 py-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground/75 dark:text-foreground/50">SRS withdrawal age</span>
+                <span className="font-mono font-semibold text-foreground/70">{srsWithdrawalAge}</span>
+              </div>
+              <p className="text-[10px] text-foreground/60 dark:text-foreground/30 mt-1.5">Fixed by MAS regulation</p>
+            </div>
+            {/* SRS annual cap */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Max annual SRS top-up</label>
+                <button
+                  type="button"
+                  onClick={() => setSrsCapEditMode((v) => !v)}
+                  className={`p-1 transition-colors ${srsCapEditMode ? "text-foreground" : "text-foreground/65 dark:text-foreground/40 hover:text-foreground/70"}`}
+                  title="Edit manually"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                    <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L2.68 10.846a.75.75 0 0 0-.196.373l-.71 3.539a.75.75 0 0 0 .888.888l3.54-.71a.75.75 0 0 0 .372-.196l8.335-8.334a1.75 1.75 0 0 0 0-2.474l-.421-.42Z" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex gap-2">
+                {[
+                  { label: "Citizen / PR", value: 15300 },
+                  { label: "Foreigner", value: 35700 },
+                ].map(({ label, value }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      update("srsAnnualCap")(value);
+                      setSrsCapEditMode(false);
+                    }}
+                    className={`flex-1 border px-3 py-2 text-sm transition-colors ${
+                      srsAnnualCap === value && !srsCapEditMode
+                        ? "border-foreground/40 bg-foreground/10 font-medium"
+                        : "border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.07]"
+                    }`}
+                  >
+                    <div>{label}</div>
+                    <div className="text-xs mt-0.5 font-mono">{fmtMoney(value)}/yr</div>
+                  </button>
+                ))}
+              </div>
+              {srsCapEditMode && (
+                <NumberField
+                  label="Custom cap"
+                  value={srsAnnualCap}
+                  onChange={update("srsAnnualCap")}
+                  prefix="$"
+                  step={100}
+                />
+              )}
+            </div>
+            <Slider
+              label="Investment growth rate (post-retirement)"
+              value={investmentGrowthRateRetirement}
+              min={0}
+              max={0.1}
+              step={0.005}
+              suffix="%"
+              format={(v) => (v * 100).toFixed(1)}
+              onChange={update("investmentGrowthRateRetirement")}
+            />
+            <RecalcFooter dirty={isDirty} onSave={handleSave} />
           </div>
     </div>
   );
