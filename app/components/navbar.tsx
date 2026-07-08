@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import FeedbackWidget from "./feedback-widget";
 
 const PLANNER_ROUTES = ["/main", "/accumulation", "/retirement", "/cpf", "/bto"];
 
@@ -61,7 +62,7 @@ export default function Navbar() {
   const { theme, toggle } = useTheme();
 
   return (
-    <nav className="shrink-0 h-14 flex items-center gap-6 px-5 border-b border-white/50 dark:border-white/10 bg-white/40 dark:bg-white/[0.04] backdrop-blur-2xl">
+    <nav className="relative z-40 shrink-0 h-14 flex items-center gap-6 px-5 border-b border-white/50 dark:border-white/10 bg-white/40 dark:bg-white/[0.04] backdrop-blur-2xl">
       <Link href="/" className="shrink-0">
         <Image
           src="/logo light.png"
@@ -91,6 +92,7 @@ export default function Navbar() {
         {SECONDARY_LINKS.map((link) => (
           <NavLink key={link.href} href={link.href} label={link.label} />
         ))}
+        <FeedbackWidget />
         <button
           onClick={toggle}
           className="ml-2 rounded-full border border-foreground/15 px-3 py-1 text-xs font-medium hover:bg-white/50 dark:hover:bg-white/10 transition"

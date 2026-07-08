@@ -5,7 +5,6 @@ import "./globals.css";
 import { ProfileProvider } from "@/lib/profile-context";
 import Navbar from "./components/navbar";
 import MobileBlocker from "./components/mobile-blocker";
-import FeedbackWidget from "./components/feedback-widget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -72,7 +71,6 @@ export default function RootLayout({
           <MobileBlocker />
           <Navbar />
           <main className="flex-1 min-h-0">{children}</main>
-          <FeedbackWidget />
         </ProfileProvider>
       </body>
     </html>

@@ -3,7 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #eaf1fb;
+  --background: #dff4f7;
   --foreground: #0f172a;
   --axis-color: #475569;
   --grid-color: rgba(15, 23, 42, 0.08);
@@ -99,30 +99,26 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Wavy pastel aurora backdrop — fixed behind everything */
+/* Flat colour backdrop — fixed behind everything. Light mode is a single cyan
+   colour; dark mode keeps the radial-gradient aurora. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background:
-    radial-gradient(58% 52% at 10% 88%, rgba(30, 58, 138, 0.36) 0%, transparent 62%),
-    radial-gradient(52% 46% at 92% 92%, rgba(30, 64, 175, 0.32) 0%, transparent 62%),
-    radial-gradient(48% 42% at 84% 8%, rgba(7, 89, 133, 0.32) 0%, transparent 65%),
-    radial-gradient(44% 40% at 22% 12%, rgba(3, 105, 161, 0.28) 0%, transparent 62%),
-    var(--background);
+  background: var(--background);
 }
 
-/* Soft wave ribbons drifting across the lower half */
+/* Soft wave ribbons drifting across the lower portion only */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 900' preserveAspectRatio='none'%3E%3Cpath d='M0 620 C 240 540 420 700 720 640 C 1020 580 1200 700 1440 620 L 1440 900 L 0 900 Z' fill='%23ffffff' fill-opacity='0.30'/%3E%3Cpath d='M0 720 C 260 660 480 800 760 740 C 1040 680 1240 790 1440 730 L 1440 900 L 0 900 Z' fill='%23ffffff' fill-opacity='0.35'/%3E%3C/svg%3E");
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 900' preserveAspectRatio='none'%3E%3Cpath d='M0 620 C 240 540 420 700 720 640 C 1020 580 1200 700 1440 620 L 1440 900 L 0 900 Z' fill='%2306b6d4' fill-opacity='0.30'/%3E%3Cpath d='M0 720 C 260 660 480 800 760 740 C 1040 680 1240 790 1440 730 L 1440 900 L 0 900 Z' fill='%2306b6d4' fill-opacity='0.35'/%3E%3C/svg%3E");
   background-size: 100% 100%;
 }
 
@@ -137,6 +133,7 @@ body::after {
 
 .dark body::after {
   opacity: 0.08;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 900' preserveAspectRatio='none'%3E%3Cpath d='M0 620 C 240 540 420 700 720 640 C 1020 580 1200 700 1440 620 L 1440 900 L 0 900 Z' fill='%23ffffff' fill-opacity='0.30'/%3E%3Cpath d='M0 720 C 260 660 480 800 760 740 C 1040 680 1240 790 1440 730 L 1440 900 L 0 900 Z' fill='%23ffffff' fill-opacity='0.35'/%3E%3C/svg%3E");
 }
 
 /* Liquid-glass floating card */
