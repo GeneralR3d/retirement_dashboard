@@ -823,24 +823,22 @@ export default function InputsPanel() {
                 <td className="py-3 px-2 text-sm text-foreground/70">Total</td>
                 <td className="py-3 px-2 font-mono text-sm">{fmtMoney(totalInvestments)}</td>
                 <td className="py-3 px-2" colSpan={2}>
-                  <div className="flex items-center gap-4 min-w-[120px]">
-                    <div className="text-xs text-foreground/75 dark:text-foreground/50 shrink-0">Weighted avg return</div>
-                    <div className="flex flex-col items-end ml-auto">
-                      <span
-                        className={`font-mono font-semibold text-xl leading-tight ${
-                          totalInvestments > 0 && weightedRate < targetReturn
-                            ? "text-red-600 dark:text-red-400"
-                            : "text-emerald-600 dark:text-emerald-400"
-                        }`}
-                      >
-                        {totalInvestments > 0 ? `${(weightedRate * 100).toFixed(1)}%` : "—"}
+                  <div className="flex flex-col items-end">
+                    <span
+                      className={`font-mono font-semibold text-xl leading-tight ${
+                        totalInvestments > 0 && weightedRate < targetReturn
+                          ? "text-red-600 dark:text-red-400"
+                          : "text-emerald-600 dark:text-emerald-400"
+                      }`}
+                    >
+                      {totalInvestments > 0 ? `${(weightedRate * 100).toFixed(1)}%` : "—"}
+                    </span>
+                    <div className="text-xs text-foreground/75 dark:text-foreground/50 mt-0.5">Weighted avg return</div>
+                    {totalInvestments > 0 && weightedRate < targetReturn && (
+                      <span className="text-[11px] text-red-600 dark:text-red-400/80 mt-0.5">
+                        {((targetReturn - weightedRate) * 100).toFixed(1)}% below target
                       </span>
-                      {totalInvestments > 0 && weightedRate < targetReturn && (
-                        <span className="text-[11px] text-red-600 dark:text-red-400/80 mt-0.5">
-                          {((targetReturn - weightedRate) * 100).toFixed(1)}% below target
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </td>
               </tr>
