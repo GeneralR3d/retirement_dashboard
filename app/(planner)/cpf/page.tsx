@@ -459,7 +459,7 @@ export default function CpfPage() {
 
       {/* RA conversion summary */}
       {conversionRow && (
-        <section className="border border-violet-500/20 bg-violet-500/[0.04] p-5 mb-8">
+        <section className="rounded-3xl border border-violet-500/20 bg-violet-500/[0.04] p-5 mb-8">
           <h2 className="font-semibold mb-1">
             SA → RA conversion at age {cpfRetirementAge}
           </h2>
@@ -552,7 +552,7 @@ export default function CpfPage() {
                         </svg>
                       </button>
                       {openMenu === col.id && (
-                        <div className="absolute top-full left-0 mt-1 z-20 border border-foreground/15 bg-[var(--tooltip-bg,#0f172a)] shadow-xl py-1 min-w-[160px]">
+                        <div className="absolute top-full left-0 mt-1 z-20 rounded-xl overflow-hidden border border-foreground/15 bg-[var(--tooltip-bg,#0f172a)] shadow-xl py-1 min-w-[160px]">
                           <button
                             onClick={() => {
                               toggleHiddenCol(col.id);

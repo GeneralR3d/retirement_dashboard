@@ -12,9 +12,10 @@
   --primary-foreground: 210 40% 98%;
   --ring: 222.2 84% 4.9%;
   /* Glass surfaces */
-  --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.26));
+  --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.12));
+  --glass-nav-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.74));
   --glass-border: rgba(255, 255, 255, 0.55);
-  --glass-shadow: 0 8px 32px rgba(31, 38, 64, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 64, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   --glass-inset-bg: rgba(255, 255, 255, 0.24);
   --glass-inset-border: rgba(255, 255, 255, 0.45);
   /* Glass form controls */
@@ -52,7 +53,8 @@
   --primary-foreground: 222.2 47.4% 11.2%;
   --ring: 212.7 26.8% 83.9%;
   /* Glass surfaces */
-  --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025));
+  --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.012));
+  --glass-nav-bg: linear-gradient(135deg, rgba(30, 41, 59, 0.78), rgba(30, 41, 59, 0.64));
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --glass-inset-bg: rgba(255, 255, 255, 0.035);
@@ -102,7 +104,12 @@ body::before {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background: var(--background);
+  background:
+    radial-gradient(58% 52% at 10% 88%, rgba(30, 58, 138, 0.36) 0%, transparent 62%),
+    radial-gradient(52% 46% at 92% 92%, rgba(30, 64, 175, 0.32) 0%, transparent 62%),
+    radial-gradient(48% 42% at 84% 8%, rgba(7, 89, 133, 0.32) 0%, transparent 65%),
+    radial-gradient(44% 40% at 22% 12%, rgba(3, 105, 161, 0.28) 0%, transparent 62%),
+    var(--background);
 }
 
 /* Soft wave ribbons drifting across the lower half */
@@ -136,8 +143,18 @@ body::after {
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
   box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+}
+
+/* Floating sub-nav pill — stronger blur/saturation and less transparent than .glass-card so scrolling content reads as distorted glass, not a see-through smear */
+.glass-nav {
+  border-radius: 1.5rem;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-nav-bg);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(64px) saturate(220%) contrast(115%);
+  -webkit-backdrop-filter: blur(64px) saturate(220%) contrast(115%);
 }
 
 /* Smaller nested glass panel (inside a glass-card) */

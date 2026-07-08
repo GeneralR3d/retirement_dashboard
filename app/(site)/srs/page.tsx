@@ -502,7 +502,7 @@ export default function SrsPage() {
                         </svg>
                       </button>
                       {openMenu === col.id && (
-                        <div className="absolute top-full left-0 mt-1 z-20 border border-foreground/15 bg-[var(--tooltip-bg,#0f172a)] shadow-xl py-1 min-w-[160px]">
+                        <div className="absolute top-full left-0 mt-1 z-20 rounded-xl overflow-hidden border border-foreground/15 bg-[var(--tooltip-bg,#0f172a)] shadow-xl py-1 min-w-[160px]">
                           <button
                             onClick={() => {
                               toggleHiddenCol(col.id);

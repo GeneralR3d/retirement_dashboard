@@ -313,7 +313,7 @@ export default function RetirementPage() {
       </header>
 
       {/* Hero + SRS side-by-side */}
-      <section className="flex flex-col md:flex-row mb-8 border border-foreground/10 overflow-hidden">
+      <section className="glass-card flex flex-col md:flex-row mb-8 overflow-hidden">
         {/* Left half: total retirement spend */}
         <div className="flex-1 flex flex-col justify-center px-8 py-10 border-b md:border-b-0 md:border-r border-foreground/10">
           <p className="text-xs uppercase tracking-widest text-foreground/65 dark:text-foreground/40 mb-3">
