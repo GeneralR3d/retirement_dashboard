@@ -125,6 +125,116 @@ function LivingExpensesCell({
   );
 }
 
+function ManualSrsCell({
+  value,
+  cap,
+  onCommit,
+}: {
+  value: number;
+  cap: number;
+  onCommit: (amount: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function open() {
+    setText(value > 0 ? String(value) : "");
+    setEditing(true);
+  }
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus();
+  }, [editing]);
+
+  function commit() {
+    const parsed = parseFloat(text);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      // nil/0 reverts to the original state without changing anything
+      if (value > 0) onCommit(0);
+      setEditing(false);
+      return;
+    }
+    onCommit(Math.min(parsed, cap));
+    setEditing(false);
+  }
+
+  function remove() {
+    if (value > 0) onCommit(0);
+    setEditing(false);
+  }
+
+  if (!editing) {
+    if (value > 0) {
+      return (
+        <div className="flex flex-col items-start gap-0.5">
+          <span className="text-[10px] text-foreground/75 dark:text-foreground/50 font-sans leading-tight">
+            Manual top-up
+          </span>
+          <button
+            onClick={open}
+            className="text-sm text-emerald-700 dark:text-emerald-300 whitespace-nowrap cursor-pointer hover:underline decoration-dotted underline-offset-2"
+            title="Edit manual SRS top-up"
+          >
+            {fmtMoney(value)}
+          </button>
+        </div>
+      );
+    }
+    return (
+      <button
+        onClick={open}
+        className="text-[10px] text-foreground/60 dark:text-foreground/30 font-sans cursor-pointer hover:text-foreground/85 dark:hover:text-foreground/60 hover:underline decoration-dotted underline-offset-2 text-left"
+        title="Add a manual SRS top-up"
+      >
+        No SRS topups recommended
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center gap-1.5"
+      onBlur={(e) => {
+        // Only revert when focus leaves the whole cell (not moving to the tick/cross)
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          const parsed = parseFloat(text);
+          if (!Number.isFinite(parsed) || parsed <= 0) setEditing(false);
+        }
+      }}
+    >
+      <input
+        ref={inputRef}
+        type="number"
+        min={0}
+        max={cap}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") setEditing(false);
+        }}
+        placeholder="Amount"
+        className="w-24 px-2 py-1 text-xs font-mono bg-foreground/5 border border-foreground/15 rounded-md outline-none focus:border-emerald-500/60"
+      />
+      <button
+        onClick={commit}
+        className="w-6 h-6 rounded-full text-xs font-bold shrink-0 transition-colors cursor-pointer bg-emerald-500 text-white hover:bg-emerald-600"
+        title="Lock in manual top-up"
+      >
+        ✓
+      </button>
+      <button
+        onClick={remove}
+        className="w-5 h-5 rounded-full text-[10px] font-bold shrink-0 transition-colors cursor-pointer bg-foreground/10 text-foreground/65 dark:text-foreground/40 hover:bg-red-500/40 hover:text-red-700 dark:hover:text-red-300"
+        title="Remove manual top-up"
+      >
+        ✗
+      </button>
+    </div>
+  );
+}
+
 export default function AccumulationPage() {
   const { inputs, setInputs } = useProfile();
 
@@ -207,13 +317,28 @@ export default function AccumulationPage() {
     [workingYears, salarySeries, startingSalary, salaryGrowthRate]
   );
 
+  // Manual per-year top-ups apply only where no top-up is recommended.
+  const srsManualTopUps = useMemo(
+    () => inputs.srsManualTopUps ?? [],
+    [inputs.srsManualTopUps]
+  );
+
+  function setManualSrs(index: number, amount: number) {
+    const base = Array.from({ length: workingYears }, (_, i) => srsManualTopUps[i] ?? 0);
+    base[index] = amount;
+    setInputs({ ...inputs, srsManualTopUps: base });
+  }
+
   const srsTopUps = useMemo(
     () =>
       recommendations.map((rec, i) => {
-        const accepted = i < srsAccepted.length ? srsAccepted[i] : true;
-        return accepted ? rec.topUp : 0;
+        if (rec.topUp > 0) {
+          const accepted = i < srsAccepted.length ? srsAccepted[i] : true;
+          return accepted ? rec.topUp : 0;
+        }
+        return Math.min(Math.max(0, srsManualTopUps[i] ?? 0), inputs.srsAnnualCap ?? SRS_ANNUAL_CAP);
       }),
-    [recommendations, srsAccepted]
+    [recommendations, srsAccepted, srsManualTopUps, inputs.srsAnnualCap]
   );
 
   const lumpsumBreakdownByAge = useMemo(() => {
@@ -400,7 +525,11 @@ export default function AccumulationPage() {
                           </div>
                         </div>
                       ) : (
-                        <span className="text-[10px] text-foreground/60 dark:text-foreground/30 font-sans">No SRS topups recommended</span>
+                        <ManualSrsCell
+                          value={srsManualTopUps[i] ?? 0}
+                          cap={inputs.srsAnnualCap ?? SRS_ANNUAL_CAP}
+                          onCommit={(amount) => setManualSrs(i, amount)}
+                        />
                       )}
                     </td>
 

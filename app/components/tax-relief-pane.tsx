@@ -114,7 +114,7 @@ export function TaxReliefPane({ open, rowIndex, age, takeHome, srsTopUp, initial
       <div
         role="dialog"
         aria-modal
-        className={`fixed top-0 right-0 h-full z-50 flex flex-col bg-background/85 backdrop-blur-2xl border-l border-white/50 dark:border-white/10 shadow-2xl transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed top-0 right-0 h-full z-50 flex flex-col rounded-l-3xl bg-background/85 backdrop-blur-2xl border-l border-white/50 dark:border-white/10 shadow-2xl transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "translate-x-full"}`}
         style={{ width: "min(620px, 90vw)" }}
       >
         {/* Header */}
@@ -125,7 +125,7 @@ export function TaxReliefPane({ open, rowIndex, age, takeHome, srsTopUp, initial
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-foreground/50 hover:text-foreground hover:bg-foreground/[0.06] transition-colors text-base"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-foreground/50 hover:text-foreground hover:bg-foreground/[0.06] transition-colors text-base"
             aria-label="Close"
           >
             ✕
@@ -141,7 +141,7 @@ export function TaxReliefPane({ open, rowIndex, age, takeHome, srsTopUp, initial
             <div className="space-y-2 text-sm font-mono">
               <Row label="Take-home salary" value={fmtMoney(takeHome)} />
               {srsTopUp > 0 && <Row label="SRS deduction" value={`−${fmtMoney(srsTopUp)}`} valueClass="text-emerald-600 dark:text-emerald-400" />}
-              {totalRelief > 0 && <Row label="Tax reliefs" value={`−${fmtMoney(totalRelief)}`} valueClass="text-sky-600 dark:text-sky-400" />}
+              {totalRelief > 0 && <Row label="Tax reliefs" value={`−${fmtMoney(totalRelief)}`} valueClass="text-emerald-600 dark:text-emerald-400" />}
               {donationDeduction > 0 && <Row label="Donation deduction" value={`−${fmtMoney(donationDeduction)}`} valueClass="text-violet-600 dark:text-violet-400" />}
               <div className="border-t border-foreground/10 pt-2">
                 <Row label="Chargeable income" value={fmtMoney(chargeableIncome)} bold />
@@ -186,7 +186,7 @@ export function TaxReliefPane({ open, rowIndex, age, takeHome, srsTopUp, initial
                     href="https://www.iras.gov.sg/taxes/individual-income-tax/basics-of-individual-income-tax/tax-reliefs-rebates-and-deductions"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sky-700 dark:text-sky-400 underline hover:text-sky-800 dark:hover:text-sky-300"
+                    className="text-emerald-700 dark:text-emerald-400 underline hover:text-emerald-800 dark:hover:text-emerald-300"
                   >
                     View on IRAS
                   </a>
@@ -234,7 +234,7 @@ export function TaxReliefPane({ open, rowIndex, age, takeHome, srsTopUp, initial
             <p className="text-xs text-foreground/50 mb-3 leading-relaxed">
               Donations to approved IPCs qualify for a 250% tax deduction — every $1 donated reduces chargeable income by $2.50. Not subject to the $80,000 relief cap.
             </p>
-            <div className="border border-foreground/[0.12] bg-foreground/[0.02] p-4 space-y-3">
+            <div className="glass-inset p-4 space-y-3">
               <div>
                 <label className="block text-xs text-foreground/60 mb-1.5">Amount donated to approved IPCs</label>
                 <div className="flex items-center gap-2 border-b border-foreground/20 pb-1">
@@ -269,7 +269,7 @@ export function TaxReliefPane({ open, rowIndex, age, takeHome, srsTopUp, initial
         <div className="shrink-0 px-6 py-4 border-t border-foreground/10 bg-background/60 backdrop-blur-xl space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-foreground/65">Total deductions applied</span>
-            <span className={`font-mono font-semibold ${isCapped ? "text-amber-600 dark:text-amber-400" : (totalRelief + donationDeduction) > 0 ? "text-sky-600 dark:text-sky-400" : "text-foreground/40"}`}>
+            <span className={`font-mono font-semibold ${isCapped ? "text-amber-600 dark:text-amber-400" : (totalRelief + donationDeduction) > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-foreground/40"}`}>
               {fmtMoney(totalRelief + donationDeduction)}{isCapped ? " (reliefs capped)" : ""}
             </span>
           </div>
@@ -323,22 +323,22 @@ function ReliefCard({
   return (
     <div
       onClick={!isLapsed ? onToggle : undefined}
-      className={`relative border p-3 transition-all duration-150 select-none min-h-[64px]
+      className={`relative rounded-xl border p-3 transition-all duration-150 select-none min-h-[64px]
         ${isLapsed
           ? "opacity-40 cursor-not-allowed border-foreground/[0.08] bg-foreground/[0.01]"
           : selected
-            ? "border-sky-500/60 bg-sky-50 dark:bg-sky-900/20 cursor-pointer"
+            ? "border-emerald-500/50 bg-emerald-500/[0.08] cursor-pointer"
             : "border-foreground/[0.12] bg-foreground/[0.02] hover:border-foreground/25 hover:bg-foreground/[0.04] cursor-pointer"
         }
       `}
     >
       {selected && !isLapsed && (
-        <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-sky-500 flex items-center justify-center shrink-0">
+        <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-emerald-600 dark:bg-emerald-500 flex items-center justify-center shrink-0">
           <span className="text-white text-[9px] font-bold leading-none">✓</span>
         </div>
       )}
       <div className="pr-5">
-        <div className={`text-xs font-medium leading-snug ${selected && !isLapsed ? "text-sky-700 dark:text-sky-300" : "text-foreground/80"}`}>
+        <div className={`text-xs font-medium leading-snug ${selected && !isLapsed ? "text-emerald-800 dark:text-emerald-300" : "text-foreground/80"}`}>
           {def.name}
         </div>
         {def.lapsed && (
@@ -346,8 +346,8 @@ function ReliefCard({
         )}
         {selected && !isLapsed && (
           <div className="mt-2" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-1 border-b border-sky-400/50 pb-0.5">
-              <span className="text-xs text-sky-500 dark:text-sky-400 font-mono">$</span>
+            <div className="flex items-center gap-1 border-b border-emerald-700/60 dark:border-emerald-500/60 pb-0.5">
+              <span className="text-xs text-emerald-700 dark:text-emerald-400 font-mono">$</span>
               <input
                 ref={inputRef}
                 type="number"
@@ -355,7 +355,7 @@ function ReliefCard({
                 value={amount || ""}
                 placeholder="0"
                 onChange={e => onAmountChange(parseFloat(e.target.value) || 0)}
-                className="w-full text-sm font-mono bg-transparent focus:outline-none text-foreground placeholder:text-foreground/25"
+                className="w-full text-sm font-mono bg-transparent focus:outline-none text-foreground placeholder:text-foreground/25 caret-emerald-700 dark:caret-emerald-400"
               />
             </div>
           </div>

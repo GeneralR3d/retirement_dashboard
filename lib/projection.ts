@@ -67,6 +67,7 @@ export function buildFullProjection(inputs: ProfileInputs) {
     cash,
     srsAnnualCap,
     srsAccepted,
+    srsManualTopUps,
     btoFlatPrice,
     btoApplicationAge,
     btoCollectionAge,
@@ -79,12 +80,17 @@ export function buildFullProjection(inputs: ProfileInputs) {
     salarySeries.length === workingYears ? salarySeries : undefined;
 
   // Compute recommended SRS top-ups per year, honouring per-year accept/reject.
+  // When no top-up is recommended, a manual per-year amount (srsManualTopUps) applies instead.
+  const cap = srsAnnualCap ?? SRS_ANNUAL_CAP;
   const srsTopUps = Array.from({ length: workingYears }, (_, i) => {
-    const accepted = i < srsAccepted.length ? srsAccepted[i] : true;
-    if (!accepted) return 0;
     const salary = seriesOverride?.[i] ?? startingSalary * Math.pow(1 + salaryGrowthRate, i);
     const takeHome = salary * (1 - CPF_EMPLOYEE_RATE);
-    return recommendedSrsTopUp(takeHome, srsAnnualCap ?? SRS_ANNUAL_CAP).topUp;
+    const rec = recommendedSrsTopUp(takeHome, cap).topUp;
+    if (rec > 0) {
+      const accepted = i < srsAccepted.length ? srsAccepted[i] : true;
+      return accepted ? rec : 0;
+    }
+    return Math.min(Math.max(0, srsManualTopUps?.[i] ?? 0), cap);
   });
 
   const allMortgagePayments = computeMortgageCashPayments(inputs);

@@ -216,7 +216,7 @@ export default function SrsPage() {
 
       <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3text-xs text-amber-700 dark:text-amber-400/80 space-y-1.5">
         <p>
-          <span className="font-semibold text-amber-700 dark:text-amber-400">Projection only</span> — All figures on this page are illustrative comparisons between using SRS and not using SRS. A key assumption is that <span className="font-medium">no withdrawals are made from the brokerage pot before age {srsWithdrawalAge}</span>, which is almost certainly not true in practice.
+          <span className="font-semibold text-amber-700 dark:text-amber-400">Projection only</span> — All figures on this page are illustrative comparisons between using SRS and not using SRS. A key assumption is that <span className="font-medium">no withdrawals are made from the brokerage pot before age {srsWithdrawalAge}</span>.
         </p>
         <p>
           <span className="font-semibold text-amber-700 dark:text-amber-400">Disconnected from your profile</span> — The inputs below are local to this page and do not read from or write to your Config. Changes here have no effect on the Overview, Accumulation, Retirement, or CPF pages, and vice versa. This page is a standalone educational tool.

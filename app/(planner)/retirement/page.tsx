@@ -90,6 +90,7 @@ export default function RetirementPage() {
     cash,
     srsAnnualCap,
     srsAccepted,
+    srsManualTopUps,
     btoFlatPrice,
     btoApplicationAge,
     btoCollectionAge,
@@ -117,12 +118,17 @@ export default function RetirementPage() {
 
   const { srsAnnualIncome, srsPotAtWithdrawal, srsWithdrawalInfo, brokerageByAge, cpfLifeAnnualPayout } = useMemo(() => {
     // Compute recommended SRS top-ups per year, honouring per-year accept/reject from context.
+    // When no top-up is recommended, a manual per-year amount (srsManualTopUps) applies instead.
+    const cap = srsAnnualCap ?? SRS_ANNUAL_CAP;
     const srsTopUps = Array.from({ length: workingYears }, (_, i) => {
-      const accepted = i < srsAccepted.length ? srsAccepted[i] : true;
-      if (!accepted) return 0;
       const salary = seriesOverride?.[i] ?? startingSalary * Math.pow(1 + salaryGrowthRate, i);
       const takeHome = salary * (1 - CPF_EMPLOYEE_RATE);
-      return recommendedSrsTopUp(takeHome, srsAnnualCap ?? SRS_ANNUAL_CAP).topUp;
+      const rec = recommendedSrsTopUp(takeHome, cap).topUp;
+      if (rec > 0) {
+        const accepted = i < srsAccepted.length ? srsAccepted[i] : true;
+        return accepted ? rec : 0;
+      }
+      return Math.min(Math.max(0, srsManualTopUps?.[i] ?? 0), cap);
     });
 
     // Working-year mortgage cash as lumpsum expenses so contributions are reduced accurately
@@ -275,7 +281,7 @@ export default function RetirementPage() {
     cpfOA, cpfSA, cpfMA, cpfRA, cpfLifeFrs, cpfLifeMonthlyPayout, startingCash, srsWithdrawalAge,
     annualExpensesToday, monthlyExpensesRetirement,
     monthlyExpensesToday, monthlyExpenseSeries, emergencyMonths,
-    lumpsumExpenses, lumpsumInflows, cash, srsAnnualCap, srsAccepted,
+    lumpsumExpenses, lumpsumInflows, cash, srsAnnualCap, srsAccepted, srsManualTopUps,
     btoFlatPrice, btoApplicationAge, btoCollectionAge, btoLoanTenureYears, inputs,
     mortgageCashPayments, retirementMortgageByAge,
   ]);
