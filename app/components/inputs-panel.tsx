@@ -428,7 +428,7 @@ export default function InputsPanel() {
                   <div className="w-4 h-4 rounded-full border border-foreground/40 text-foreground/75 dark:text-foreground/50 flex items-center justify-center text-[10px] font-semibold cursor-default select-none">
                     i
                   </div>
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 rounded-xl border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
                     invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
                     <p className="text-foreground/80 font-medium mb-1">Zero-interest cash account</p>
                     <p className="text-foreground/85 dark:text-foreground/60">This balance earns no interest. It&apos;s your liquid emergency reserve and is tracked separately from your invested networth.</p>
@@ -455,7 +455,7 @@ export default function InputsPanel() {
                     key={m}
                     type="button"
                     onClick={() => update("emergencyMonths")(m)}
-                    className={`px-3 py-1.5 text-sm font-medium border transition-colors cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
                       emergencyMonths === m
                         ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                         : "border-foreground/15 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/60 hover:border-foreground/30 hover:text-foreground/80"
@@ -470,7 +470,7 @@ export default function InputsPanel() {
                     if (![3,4,5,6,7,8,9].includes(emergencyMonths)) return;
                     update("emergencyMonths")(10);
                   }}
-                  className={`px-3 py-1.5 text-sm font-medium border transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
                     ![3,4,5,6,7,8,9].includes(emergencyMonths)
                       ? "border-emerald-500 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                       : "border-foreground/15 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/60 hover:border-foreground/30 hover:text-foreground/80"
@@ -500,7 +500,7 @@ export default function InputsPanel() {
                   <div className="w-4 h-4 rounded-full border border-foreground/40 text-foreground/75 dark:text-foreground/50 flex items-center justify-center text-[10px] font-semibold cursor-default select-none">
                     i
                   </div>
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 rounded-xl border border-foreground/15 bg-[var(--tooltip-bg)] px-3 py-2 text-xs shadow-lg
                     invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
                     <p className="text-foreground/80 font-medium mb-1">CPF Employee Contribution</p>
                     <p className="text-foreground/85 dark:text-foreground/60">{(CPF_EMPLOYEE_RATE * 100).toFixed(0)}% of gross salary is deducted and paid into your CPF accounts before you receive your take-home pay.</p>
@@ -521,7 +521,7 @@ export default function InputsPanel() {
             </label>
 
             {/* Salary growth rate accordion */}
-            <div className="border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
+            <div className="rounded-2xl border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
               <button
                 type="button"
                 onClick={() => setShowSalaryTable((v) => !v)}
@@ -561,12 +561,12 @@ export default function InputsPanel() {
                     </p>
                     <button
                       onClick={resetSeries}
-                      className="text-xs px-2.5 py-1 border border-foreground/15 hover:border-foreground/30 text-foreground/85 dark:text-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+                      className="text-xs px-2.5 py-1 rounded-lg border border-foreground/15 hover:border-foreground/30 text-foreground/85 dark:text-foreground/60 hover:text-foreground transition-colors cursor-pointer"
                     >
                       Reset
                     </button>
                   </div>
-                  <div className="border border-foreground/10 bg-foreground/[0.03] overflow-hidden">
+                  <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] overflow-hidden">
                     <div className="max-h-[300px] overflow-y-auto">
                       <table className="w-full text-sm">
                         <thead className="sticky top-0 bg-foreground/[0.06] backdrop-blur-sm z-10">
@@ -622,7 +622,7 @@ export default function InputsPanel() {
             </div>
 
             {/* Monthly living expenses accordion (per-age, today's money) */}
-            <div className="border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
+            <div className="rounded-2xl border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
               <button
                 type="button"
                 onClick={() => setShowExpenseTable((v) => !v)}
@@ -651,12 +651,12 @@ export default function InputsPanel() {
                     </p>
                     <button
                       onClick={resetExpenseSeries}
-                      className="text-xs px-2.5 py-1 border border-foreground/15 hover:border-foreground/30 text-foreground/85 dark:text-foreground/60 hover:text-foreground transition-colors cursor-pointer shrink-0 ml-2"
+                      className="text-xs px-2.5 py-1 rounded-lg border border-foreground/15 hover:border-foreground/30 text-foreground/85 dark:text-foreground/60 hover:text-foreground transition-colors cursor-pointer shrink-0 ml-2"
                     >
                       Reset
                     </button>
                   </div>
-                  <div className="border border-foreground/10 bg-foreground/[0.03] overflow-hidden">
+                  <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] overflow-hidden">
                     <div className="max-h-[300px] overflow-y-auto">
                       <table className="w-full text-sm">
                         <thead className="sticky top-0 bg-foreground/[0.06] backdrop-blur-sm z-10">
@@ -724,7 +724,7 @@ export default function InputsPanel() {
           </div>
           <button
             onClick={addInvestment}
-            className="text-xs px-3 py-1.5 border border-foreground/15 hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 text-foreground/85 dark:text-foreground/60 transition-colors cursor-pointer shrink-0"
+            className="text-xs px-3 py-1.5 rounded-lg border border-foreground/15 hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 text-foreground/85 dark:text-foreground/60 transition-colors cursor-pointer shrink-0"
           >
             + Add row
           </button>
@@ -747,7 +747,7 @@ export default function InputsPanel() {
           </span>
         </div>
 
-        <div className="border border-foreground/10 overflow-x-auto">
+        <div className="rounded-xl border border-foreground/10 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-foreground/[0.06]">
               <tr className="text-left text-foreground/85 dark:text-foreground/60 border-b border-foreground/10">
@@ -923,7 +923,7 @@ export default function InputsPanel() {
               <span className="text-xs font-semibold uppercase tracking-wider text-foreground/65 dark:text-foreground/40">CPF related age milestones</span>
               <div className="flex-1 border-t border-foreground/10" />
             </div>
-            <div className="border border-foreground/10 divide-y divide-foreground/10">
+            <div className="rounded-xl border border-foreground/10 divide-y divide-foreground/10 overflow-hidden">
               {[
                 { label: "Retirement Account (RA) age", value: String(cpfRetirementAge) },
                 { label: "CPF withdrawal age",           value: String(cpfWithdrawalAge) },
@@ -972,13 +972,13 @@ export default function InputsPanel() {
               prefix="$"
               step={100}
             />
-            <div className="border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm flex justify-between items-center">
+            <div className="rounded-xl border border-foreground/10 bg-foreground/5 px-3 py-2 text-sm flex justify-between items-center">
               <span className="text-foreground/85 dark:text-foreground/60">Annual equivalent</span>
               <span className="font-mono text-foreground/80">
                 {fmtMoney(monthlyExpensesRetirement * 12)}/yr
               </span>
             </div>
-            <div className="border border-foreground/10 bg-foreground/[0.03] px-4 py-3">
+            <div className="rounded-xl border border-foreground/10 bg-foreground/[0.03] px-4 py-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-foreground/75 dark:text-foreground/50">SRS withdrawal age</span>
                 <span className="font-mono font-semibold text-foreground/70">{srsWithdrawalAge}</span>
@@ -1012,7 +1012,7 @@ export default function InputsPanel() {
                       update("srsAnnualCap")(value);
                       setSrsCapEditMode(false);
                     }}
-                    className={`flex-1 border px-3 py-2 text-sm transition-colors ${
+                    className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
                       srsAnnualCap === value && !srsCapEditMode
                         ? "border-foreground/40 bg-foreground/10 font-medium"
                         : "border-foreground/10 bg-foreground/[0.03] text-foreground/70 hover:bg-foreground/[0.07]"

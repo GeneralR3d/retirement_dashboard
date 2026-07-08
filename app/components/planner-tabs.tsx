@@ -17,7 +17,7 @@ export default function PlannerTabs() {
 
   return (
     <div className="shrink-0 sticky top-0 z-30 flex justify-center px-4 pt-3 pb-1 pointer-events-none">
-      <nav className="glass-card pointer-events-auto flex items-center justify-center gap-1 px-2 py-1 rounded-full">
+      <nav className="glass-nav pointer-events-auto flex items-center justify-center gap-1 px-2 py-1 rounded-full">
         {PLANNER_TABS.map(({ href, label, Icon }) => {
           const active = pathname === href;
           return (

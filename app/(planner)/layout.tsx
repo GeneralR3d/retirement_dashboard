@@ -19,8 +19,8 @@ export default function PlannerLayout({
       </aside>
 
       <section className="w-2/3 flex-1 h-full min-w-0 flex flex-col">
-        <PlannerTabs />
         <div className="flex-1 min-h-0 overflow-y-auto thin-scroll flex flex-col">
+          <PlannerTabs />
           <div className="flex-1">{children}</div>
           <Footer />
         </div>

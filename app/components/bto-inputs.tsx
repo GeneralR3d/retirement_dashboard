@@ -205,7 +205,7 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
               key={type}
               type="button"
               onClick={() => update("btoApplicantType", type)}
-              className={`flex-1 border px-3 py-2 text-sm capitalize transition-colors ${
+              className={`flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors ${
                 draft.btoApplicantType === type
                   ? "border-foreground/40 bg-foreground/10 font-medium"
                   : "border-foreground/10 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/70 hover:bg-foreground/[0.07]"
@@ -245,7 +245,7 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
               key={id}
               type="button"
               onClick={() => update("btoLoanType", id)}
-              className={`flex-1 border px-3 py-2 text-sm transition-colors ${
+              className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
                 draft.btoLoanType === id
                   ? "border-foreground/40 bg-foreground/10 font-medium"
                   : "border-foreground/10 bg-foreground/[0.03] text-foreground/85 dark:text-foreground/70 hover:bg-foreground/[0.07]"
@@ -318,7 +318,7 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
                 type="button"
                 disabled={disabledBySingle}
                 onClick={() => !disabledBySingle && update("btoDownpaymentScheme", id)}
-                className={`border px-3 py-2 text-sm transition-colors ${
+                className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
                   disabledBySingle
                     ? "border-foreground/10 bg-foreground/[0.03] text-foreground/30 dark:text-foreground/20 cursor-not-allowed"
                     : draft.btoDownpaymentScheme === id
@@ -336,7 +336,7 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
       </div>
 
       {/* Grants accordion */}
-      <div className="border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
+      <div className="rounded-2xl border border-foreground/20 bg-foreground/[0.03] overflow-hidden">
         <button
           type="button"
           onClick={() => setShowGrants((v) => !v)}
