@@ -14,6 +14,7 @@
   /* Glass surfaces */
   --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.12));
   --glass-nav-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.74));
+  --glass-popover-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.44));
   --glass-border: rgba(255, 255, 255, 0.55);
   --glass-shadow: 0 8px 32px rgba(31, 38, 64, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   --glass-inset-bg: rgba(255, 255, 255, 0.24);
@@ -55,6 +56,7 @@
   /* Glass surfaces */
   --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.012));
   --glass-nav-bg: linear-gradient(135deg, rgba(30, 41, 59, 0.78), rgba(30, 41, 59, 0.64));
+  --glass-popover-bg: linear-gradient(135deg, rgba(30, 41, 59, 0.42), rgba(30, 41, 59, 0.32));
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --glass-inset-bg: rgba(255, 255, 255, 0.035);
@@ -148,6 +150,16 @@ body::after {
 }
 
 /* Floating sub-nav pill — stronger blur/saturation and less transparent than .glass-card so scrolling content reads as distorted glass, not a see-through smear */
+/* Floating popover (feedback widget etc.) — midway between .glass-card and .glass-nav */
+.glass-popover {
+  border-radius: 1.5rem;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-popover-bg);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+}
+
 .glass-nav {
   border-radius: 1.5rem;
   border: 1px solid var(--glass-border);
