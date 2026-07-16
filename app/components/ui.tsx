@@ -193,21 +193,24 @@ export function InfoTooltip({ children, className, position = "top" }: { childre
   );
 }
 
-export function StaggeredLabel({ viewBox, value, fill, level = 0 }: {
-  viewBox?: { x: number; y: number; width: number; height: number };
-  value?: string;
-  fill?: string;
-  level?: number;
+export function MilestoneLegend({
+  items,
+}: {
+  items: { label: string; color: string }[];
 }) {
-  if (!viewBox) return null;
-  const { x, y } = viewBox;
-  const labelY = y + 12 + level * 14;
-  const approxWidth = (value?.length ?? 0) * 6 + 4;
+  if (!items.length) return null;
   return (
-    <g>
-      <rect x={x + 3} y={labelY - 10} width={approxWidth} height={13} fill="var(--tooltip-bg, #0f172a)" fillOpacity={0.65} rx={2} />
-      <text x={x + 5} y={labelY} fill={fill} fontSize={10} fontFamily="sans-serif">{value}</text>
-    </g>
+    <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-3 text-[11px]">
+      {items.map((item) => (
+        <span key={item.label} className="flex items-center gap-1.5">
+          <span
+            className="inline-block w-4 border-t-2 border-dashed"
+            style={{ borderColor: item.color }}
+          />
+          <span style={{ color: item.color }}>{item.label}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 

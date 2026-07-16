@@ -17,7 +17,7 @@ import {
 import { buildFullProjection } from "@/lib/projection";
 import { useProfile } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
-import { StatCard, StaggeredLabel } from "@/app/components/ui";
+import { StatCard, MilestoneLegend } from "@/app/components/ui";
 import SmartSummary from "@/app/components/smart-summary";
 
 function fmtAxis(v: number): string {
@@ -284,27 +284,38 @@ export default function MainPage() {
   const gridColor = "var(--grid-color)";
   const axisColor = "var(--axis-color)";
 
-  // Stagger levels for networth chart reference lines to prevent label overlap
-  type NwMilestoneId = "stop" | "cpfret" | "srs" | "life";
-  const nwMilestones = ([
-    ...(stopWorkingAge !== cpfRetirementAge ? [{ id: "stop" as NwMilestoneId, age: stopWorkingAge }] : []),
-    { id: "cpfret" as NwMilestoneId, age: cpfRetirementAge },
-    { id: "srs" as NwMilestoneId, age: srsWithdrawalAge },
-    { id: "life" as NwMilestoneId, age: cpfWithdrawalAge },
-  ] as { id: NwMilestoneId; age: number }[]).sort((a, b) => a.age - b.age);
-  const nwAssignedLevels: number[] = [];
-  const nwStaggerLevel: Record<NwMilestoneId, number> = { stop: 0, cpfret: 0, srs: 0, life: 0 };
-  const NW_PROX_YEARS = 5;
-  for (let i = 0; i < nwMilestones.length; i++) {
-    const used = new Set<number>();
-    for (let j = 0; j < i; j++) {
-      if (nwMilestones[i].age - nwMilestones[j].age < NW_PROX_YEARS) used.add(nwAssignedLevels[j]);
-    }
-    let lvl = 0;
-    while (used.has(lvl)) lvl++;
-    nwAssignedLevels[i] = lvl;
-    nwStaggerLevel[nwMilestones[i].id] = lvl;
-  }
+  // Age-milestone reference lines are rendered without on-chart labels; the
+  // labels live in a MilestoneLegend below each chart to avoid overlap.
+  const nwMilestoneItems = [
+    ...(stopWorkingAge !== cpfRetirementAge
+      ? [{ label: `Retire (${stopWorkingAge})`, color: "var(--chart-stop)" }]
+      : []),
+    {
+      label: stopWorkingAge === cpfRetirementAge
+        ? `Retire / OA→Brok (${cpfRetirementAge})`
+        : `OA→Brok (${cpfRetirementAge})`,
+      color: "var(--chart-cpf-ret)",
+    },
+    { label: `SRS starts (${srsWithdrawalAge})`, color: "var(--chart-cpf-wit)" },
+    { label: `CPF LIFE (${cpfWithdrawalAge})`, color: "var(--chart-srs-wit)" },
+  ];
+  const brokerageMilestoneItems = [
+    ...(stopWorkingAge !== cpfRetirementAge
+      ? [{ label: "Retire", color: "var(--chart-stop)" }]
+      : []),
+    {
+      label: stopWorkingAge === cpfRetirementAge ? "Retire / OA Transfer" : "OA Transfer",
+      color: "var(--chart-cpf-ret)",
+    },
+    { label: "SRS starts", color: "var(--chart-cpf-wit)" },
+  ];
+  const srsMilestoneItems = [
+    { label: `Stop work (${stopWorkingAge})`, color: "var(--chart-stop)" },
+    { label: `Withdrawals start (${srsWithdrawalAge})`, color: "var(--chart-cpf-wit)" },
+  ];
+  const cashMilestoneItems = [
+    { label: `Retire (${stopWorkingAge})`, color: "var(--chart-stop)" },
+  ];
 
   return (
     <main className="px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
@@ -429,7 +440,6 @@ export default function MainPage() {
                 stroke="var(--chart-stop)"
                 strokeDasharray="4 4"
                 strokeWidth={1.5}
-                label={<StaggeredLabel value={`Retire (${stopWorkingAge})`} fill="var(--chart-stop)" level={nwStaggerLevel["stop"]} />}
               />
             )}
             <ReferenceLine
@@ -437,21 +447,18 @@ export default function MainPage() {
               stroke="var(--chart-cpf-ret)"
               strokeDasharray="4 4"
               strokeWidth={1.5}
-              label={<StaggeredLabel value={stopWorkingAge === cpfRetirementAge ? `Retire / OA→Brok (${cpfRetirementAge})` : `OA→Brok (${cpfRetirementAge})`} fill="var(--chart-cpf-ret)" level={nwStaggerLevel["cpfret"]} />}
             />
             <ReferenceLine
               x={srsWithdrawalAge}
               stroke="var(--chart-cpf-wit)"
               strokeDasharray="4 4"
               strokeWidth={1.5}
-              label={<StaggeredLabel value={`SRS starts (${srsWithdrawalAge})`} fill="var(--chart-cpf-wit)" level={nwStaggerLevel["srs"]} />}
             />
             <ReferenceLine
               x={cpfWithdrawalAge}
               stroke="var(--chart-srs-wit)"
               strokeDasharray="4 4"
               strokeWidth={1.5}
-              label={<StaggeredLabel value={`CPF LIFE (${cpfWithdrawalAge})`} fill="var(--chart-srs-wit)" level={nwStaggerLevel["life"]} />}
             />
 
             <Line type="monotone" dataKey="total" name="Total Net Worth" stroke="var(--chart-total)" strokeWidth={2.5} dot={false} />
@@ -461,6 +468,7 @@ export default function MainPage() {
             <Line type="monotone" dataKey="cash" name="Cash" stroke="var(--chart-cash)" strokeWidth={1.5} dot={false} />
           </LineChart>
         </ResponsiveContainer>
+        <MilestoneLegend items={nwMilestoneItems} />
       </section>
 
       {/* Brokerage Chart */}
@@ -543,25 +551,17 @@ export default function MainPage() {
                     x={stopWorkingAge}
                     stroke="var(--chart-stop)"
                     strokeDasharray="4 4"
-                    label={{ value: "Retire", position: "insideTopRight", fill: "var(--chart-stop)", fontSize: 11 }}
                   />
                 )}
                 <ReferenceLine
                   x={cpfRetirementAge}
                   stroke="var(--chart-cpf-ret)"
                   strokeDasharray="4 4"
-                  label={{
-                    value: stopWorkingAge === cpfRetirementAge ? "Retire / OA Transfer" : "OA Transfer",
-                    position: "insideTopLeft",
-                    fill: "var(--chart-cpf-ret)",
-                    fontSize: 11,
-                  }}
                 />
                 <ReferenceLine
                   x={srsWithdrawalAge}
                   stroke="var(--chart-cpf-wit)"
                   strokeDasharray="4 4"
-                  label={{ value: "SRS starts", position: "insideTopRight", fill: "var(--chart-cpf-wit)", fontSize: 11 }}
                 />
                 {hasNegative && (
                   <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.6} />
@@ -579,6 +579,7 @@ export default function MainPage() {
             </ResponsiveContainer>
           );
         })()}
+        <MilestoneLegend items={brokerageMilestoneItems} />
       </section>
 
       {/* SRS Pot Chart */}
@@ -640,13 +641,11 @@ export default function MainPage() {
                   x={stopWorkingAge}
                   stroke="var(--chart-stop)"
                   strokeDasharray="4 4"
-                  label={{ value: `Stop work (${stopWorkingAge})`, position: "insideTopRight", fill: "var(--chart-stop)", fontSize: 10 }}
                 />
                 <ReferenceLine
                   x={srsWithdrawalAge}
                   stroke="var(--chart-cpf-wit)"
                   strokeDasharray="4 4"
-                  label={{ value: `Withdrawals start (${srsWithdrawalAge})`, position: "insideTopLeft", fill: "var(--chart-cpf-wit)", fontSize: 10 }}
                 />
                 <Area
                   type="monotone"
@@ -661,6 +660,7 @@ export default function MainPage() {
             </ResponsiveContainer>
           );
         })()}
+        <MilestoneLegend items={srsMilestoneItems} />
       </section>
 
       {/* Cash Chart */}
@@ -710,7 +710,6 @@ export default function MainPage() {
                   x={stopWorkingAge}
                   stroke="var(--chart-stop)"
                   strokeDasharray="4 4"
-                  label={{ value: `Retire (${stopWorkingAge})`, position: "insideTopRight", fill: "var(--chart-stop)", fontSize: 10 }}
                 />
                 <Area
                   type="monotone"
@@ -725,6 +724,7 @@ export default function MainPage() {
             </ResponsiveContainer>
           );
         })()}
+        <MilestoneLegend items={cashMilestoneItems} />
       </section>
     </main>
   );
