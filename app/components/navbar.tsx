@@ -4,9 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { LineChart } from "lucide-react";
 import FeedbackWidget from "./feedback-widget";
 
-const PLANNER_ROUTES = ["/main", "/accumulation", "/retirement", "/cpf", "/bto"];
+const PLANNER_ROUTES = ["/main", "/accumulation", "/retirement", "/cpf", "/bto", "/inputs"];
 
 const PRIMARY_LINKS = [{ href: "/main", label: "Planner" }];
 
@@ -47,7 +48,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className={`px-3 py-1.5 rounded-full text-sm font-normal transition-colors ${
+      className={`whitespace-nowrap px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-normal transition-colors ${
         active
           ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/25"
           : "text-foreground/70 hover:bg-white/50 dark:hover:bg-white/10 hover:text-foreground"
@@ -60,16 +61,18 @@ function NavLink({ href, label }: { href: string; label: string }) {
 
 export default function Navbar() {
   const { theme, toggle } = useTheme();
+  const pathname = usePathname();
+  const plannerActive = PLANNER_ROUTES.includes(pathname) || pathname === "/";
 
   return (
-    <nav className="relative z-40 shrink-0 h-14 flex items-center gap-6 px-5 border-b border-white/50 dark:border-white/10 bg-white/40 dark:bg-white/[0.04] backdrop-blur-2xl">
+    <nav className="relative z-40 shrink-0 h-14 flex items-center gap-2 sm:gap-6 px-2.5 sm:px-5 border-b border-white/50 dark:border-white/10 bg-white/40 dark:bg-white/[0.04] backdrop-blur-2xl">
       <Link href="/" className="shrink-0">
         <Image
           src="/logo light.png"
           alt="Retirement.sg"
           width={120}
           height={30}
-          className="dark:hidden"
+          className="dark:hidden w-20 sm:w-[120px] h-auto"
           priority
         />
         <Image
@@ -77,28 +80,42 @@ export default function Navbar() {
           alt="Retirement.sg"
           width={120}
           height={30}
-          className="hidden dark:block"
+          className="hidden dark:block w-20 sm:w-[120px] h-auto"
           priority
         />
       </Link>
 
-      <div className="flex items-center gap-1">
+      {/* Mobile: icon-only Planner link (the text link doesn't fit) */}
+      <Link
+        href="/main"
+        aria-label="Planner"
+        className={`sm:hidden shrink-0 flex items-center justify-center rounded-full p-1.5 transition-colors ${
+          plannerActive
+            ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/25"
+            : "text-foreground/70 hover:bg-white/50 dark:hover:bg-white/10 hover:text-foreground"
+        }`}
+      >
+        <LineChart size={16} strokeWidth={2} aria-hidden="true" />
+      </Link>
+
+      <div className="hidden sm:flex items-center gap-1">
         {PRIMARY_LINKS.map((link) => (
           <NavLink key={link.href} href={link.href} label={link.label} />
         ))}
       </div>
 
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
         {SECONDARY_LINKS.map((link) => (
           <NavLink key={link.href} href={link.href} label={link.label} />
         ))}
         <FeedbackWidget />
         <button
           onClick={toggle}
-          className="ml-2 rounded-full border border-foreground/15 px-3 py-1 text-xs font-medium hover:bg-white/50 dark:hover:bg-white/10 transition"
+          className="ml-1 sm:ml-2 shrink-0 rounded-full border border-foreground/15 px-2 sm:px-3 py-1 text-xs font-medium hover:bg-white/50 dark:hover:bg-white/10 transition"
           aria-label="Toggle theme"
         >
-          {theme === "dark" ? "☀ Light" : "☾ Dark"}
+          <span className="sm:hidden">{theme === "dark" ? "☀" : "☾"}</span>
+          <span className="hidden sm:inline">{theme === "dark" ? "☀ Light" : "☾ Dark"}</span>
         </button>
       </div>
     </nav>

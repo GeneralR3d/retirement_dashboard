@@ -24,7 +24,7 @@ Multi-page Next.js 16 (App Router) dashboard for modeling Singapore retirement s
 
 The app is a **double-pane planner**. `app/layout.tsx` renders a slim **top nav bar** (`app/components/navbar.tsx`) with three main links — Planner (`/main`), SRS Demo (`/srs`), Support Us (`/about`) — over a fixed-height body (`h-screen overflow-hidden`); each route group layout owns its own scrolling.
 
-- **`app/(planner)/`** route group — `main`, `accumulation`, `retirement`, `cpf`, `bto`. Its `layout.tsx` renders the persistent **left 1/3 inputs pane** (`app/components/inputs-panel.tsx`, the former Calculator page) and a right 2/3 pane with a thin **sub-nav tab bar** (`app/components/planner-tabs.tsx`, small text + lucide icon per tab) above the page content. Both panes scroll independently; only the right pane swaps on navigation, so the inputs draft state survives sub-page switches. The footer renders at the bottom of the right pane's scroll area.
+- **`app/(planner)/`** route group — `main`, `accumulation`, `retirement`, `cpf`, `bto`, `inputs`. Its `layout.tsx` delegates to the client `PlannerShell` (`app/components/planner-shell.tsx`). **Desktop (md+):** persistent **left 1/3 inputs pane** (`app/components/inputs-panel.tsx`, the former Calculator page) and a right 2/3 pane with a thin **sub-nav tab pill** (`app/components/planner-tabs.tsx`, small text + lucide icon per tab) above the page content. Both panes scroll independently; only the right pane swaps on navigation, so the inputs draft state survives sub-page switches. The footer renders at the bottom of the right pane's scroll area. **Mobile (<md):** single pane — the sub-nav becomes a fixed thumb-reachable **bottom tab bar** with an extra **Inputs** tab (`/inputs`) that shows the inputs pane full-width; `app/(planner)/inputs/page.tsx` itself only renders a desktop fallback note (the shell hides the right section on mobile at that path).
 - **`app/(site)/`** route group — `srs`, `about`, `terms`, `privacy`. Full-width single scrolling column with the footer at the bottom; no inputs pane.
 - `/` and `/config` are server-side redirects to `/main` (the `/config` route is kept for old bookmarks). Route groups do not affect URLs.
 
@@ -120,7 +120,7 @@ Historical references to "the config page" in this file mean `app/components/inp
 
 **`app/components/navbar.tsx`** — slim frosted-glass **top nav bar** (h-14, small `text-sm` links, no bold). Links are split: `PRIMARY_LINKS` (Planner → `/main`) sit left beside the logo; `SECONDARY_LINKS` (SRS Demo → `/srs`, Support Us → `/about`) are pushed right (`ml-auto`) beside the theme toggle. The Planner link is active on any `(planner)` route (`PLANNER_ROUTES`). Active links render as emerald pills. Also owns `useTheme`, which toggles a `dark` class on `<html>` and persists to `localStorage`.
 
-**`app/components/planner-tabs.tsx`** — thin sticky sub-nav tab bar (`h-9`, `text-xs`, `justify-center`) rendered above the right pane in the `(planner)` layout. `PLANNER_TABS`: Networth, Accumulation, Retirement, CPF, BTO — each with a small lucide icon (size 13) beside the label. Each planner sub-page also centers its own `<header>` (`text-center`).
+**`app/components/planner-tabs.tsx`** — sub-nav tab pill with two variants. `variant="top"` (default): thin sticky pill above the right pane, desktop-only (`hidden md:flex`). `variant="bottom"`: mobile-only (`md:hidden`) fixed bottom bar (safe-area padded) with stacked icon-over-label items and an extra `INPUTS_TAB` (Inputs → `/inputs`). `PLANNER_TABS`: Networth, Accumulation, BTO, CPF, Retirement — each with a lucide icon. Each planner sub-page also centers its own `<header>` (`text-center`).
 
 **`components/ui/button.tsx`** — `SplitNavButton`. Three-state nav button tracking mouse X position relative to its centre. Default "Cashflow" (routes to `/cashflow`, currently unbuilt); hover-left "Accumulation" (`/accumulation`); hover-right "Retirement" (`/retirement`). Uses `cn()` from `lib/utils.ts`.
 
@@ -132,7 +132,7 @@ Historical references to "the config page" in this file mean `app/components/inp
 
 **`app/components/smart-summary.tsx`** — `SmartSummary` slide-over panel used by `/main`. Accepts a `SmartSummaryData` type plus individual props. When `open` is false, both `width` and `height` are set to `0` (not just width) to prevent the hidden text content from inflating the flex row height — `overflow: hidden` alone is not sufficient because zero-width text still wraps to many lines. The parent flex container must use `items-start` (not `items-stretch`) for the same reason.
 
-**`app/components/mobile-blocker.tsx`** — `MobileBlocker`. Mounted globally in `app/layout.tsx` (inside `ProfileProvider`). Renders a fixed full-screen overlay with `z-[9999]` whenever `window.innerWidth < 768px`, prompting users to switch to a larger screen. Returns `null` on desktop; uses a `resize` event listener to recheck on window resize.
+**`app/components/planner-shell.tsx`** — `PlannerShell` (client). The whole `(planner)` layout body: double-pane on desktop, single-pane on mobile. Reads `usePathname()` — on mobile (`<md`) the inputs pane is CSS-hidden except at `/inputs`, where it becomes a full-width "page" and the right section hides instead. `InputsPanel` is mounted exactly once and never unmounts (only CSS-hidden), so its local draft survives navigation on both breakpoints. Renders `PlannerTabs variant="top"` (desktop, sticky in the right pane) and `variant="bottom"` (mobile, fixed thumb bar); the scroll areas carry `pb-24/pb-28 md:pb-*` so content clears the bottom bar.
 
 ### Theme
 
@@ -289,7 +289,7 @@ Create `app/(planner)/<name>/page.tsx` (to get the inputs pane + sub-nav shell) 
 
 ### Root layout
 
-**`app/layout.tsx`** wraps every page. `<body>` is `h-screen overflow-hidden flex flex-col` — scrolling is owned by the route group layouts, not the body. Mount order: `ProfileProvider` → `MobileBlocker` → `Navbar` (top bar) → `<main className="flex-1 min-h-0">{children}</main>`. `Footer` is rendered by the `(planner)` layout (bottom of the right pane's scroll area) and the `(site)` layout — not here. Analytics scripts (`<Script strategy="afterInteractive">`) are injected here. Add global providers or overlays here, not in individual pages.
+**`app/layout.tsx`** wraps every page. `<body>` is `h-screen overflow-hidden flex flex-col` — scrolling is owned by the route group layouts, not the body. Mount order: `ProfileProvider` → `Navbar` (top bar) → `<main className="flex-1 min-h-0">{children}</main>`. `Footer` is rendered by the `(planner)` layout (bottom of the right pane's scroll area) and the `(site)` layout — not here. Analytics scripts (`<Script strategy="afterInteractive">`) are injected here. Add global providers or overlays here, not in individual pages.
 
 ### `"use client"` requirement
 

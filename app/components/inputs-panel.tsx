@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useProfile, CPF_RATES, ProfileInputs, Investment, LumpsumExpense } from "@/lib/profile-context";
 import { CPF_EMPLOYEE_RATE, CPF_FRS_INFLATION_RATE } from "@/lib/tax";
 import { LumpsumTablesPanel } from "@/app/components/lumpsum-tables";
@@ -192,6 +193,7 @@ function RecalcFooter({ dirty, onSave }: { dirty: boolean; onSave: () => void })
 
 export default function InputsPanel() {
   const { inputs, setInputs } = useProfile();
+  const router = useRouter();
 
   // Local draft — only committed to shared context on Save
   const [draft, setDraft] = useState<ProfileInputs>(inputs);
@@ -400,6 +402,11 @@ export default function InputsPanel() {
     const saved = { ...d, monthlyExpenseSeries: normalizedExpenses };
     setInputs(saved);
     setDraft(saved);
+    // On mobile the inputs pane is its own page — jump to the networth
+    // projection so the user sees the result of the recalculation.
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      router.push("/main");
+    }
   }
 
   return (

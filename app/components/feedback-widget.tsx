@@ -86,7 +86,7 @@ export default function FeedbackWidget() {
       <button
         ref={buttonRef}
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-normal transition-colors ${
+        className={`flex items-center gap-1.5 rounded-full px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-normal transition-colors ${
           open
             ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/25"
             : "text-foreground/70 hover:bg-white/50 dark:hover:bg-white/10 hover:text-foreground"
@@ -94,7 +94,7 @@ export default function FeedbackWidget() {
         aria-label="Share feedback"
       >
         <MessageCircle size={14} />
-        Feedback
+        <span className="hidden sm:inline">Feedback</span>
       </button>
 
       {coords &&

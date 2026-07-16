@@ -4,7 +4,6 @@ import Script from "next/script";
 import "./globals.css";
 import { ProfileProvider } from "@/lib/profile-context";
 import Navbar from "./components/navbar";
-import MobileBlocker from "./components/mobile-blocker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -68,7 +67,6 @@ export default function RootLayout({
       </Script>
       <body className="h-screen overflow-hidden flex flex-col">
         <ProfileProvider>
-          <MobileBlocker />
           <Navbar />
           <main className="flex-1 min-h-0">{children}</main>
         </ProfileProvider>

@@ -161,7 +161,7 @@ export default function BtoPage() {
             <div className="text-xs text-foreground/85 dark:text-foreground/60 mt-1">
               {ratiosPct.dp1}% of flat price · age {inputs.btoApplicationAge}
             </div>
-            <div className="grid grid-cols-3 gap-2 mt-4">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-2 mt-4">
               <Stat label="From grant" value={fmtMoney(breakdown.dp1.fromGrant)} />
               <Stat
                 label={`From CPF OA`}
@@ -197,7 +197,7 @@ export default function BtoPage() {
                 ? `Grant exceeds ${ratiosPct.dp2}% scheme amount (${fmtMoney(breakdown.dp2.proposed)}) · age ${inputs.btoCollectionAge}`
                 : `${ratiosPct.dp2}% of flat price · age ${inputs.btoCollectionAge}`}
             </div>
-            <div className="grid grid-cols-3 gap-2 mt-4">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-2 mt-4">
               <Stat label="From grant (leftover)" value={fmtMoney(breakdown.dp2.fromGrantLeftover)} />
               <Stat label="From CPF OA" value={fmtMoney(breakdown.dp2.fromOA)} />
               <Stat label="From cash" value={fmtMoney(breakdown.dp2.fromCash)} />
