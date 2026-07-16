@@ -5,6 +5,10 @@ export const HDB_LOAN_RATE = 0.026;
 export const MAX_TENURE_HDB = 25;
 export const MAX_TENURE_BANK = 30;
 
+// Loan eligibility limits.
+export const LTV_CAP = 0.75; // loan cannot exceed 75% of flat price
+export const MSR_LIMIT = 0.30; // monthly mortgage cannot exceed 30% of gross monthly income
+
 export const GRANT_CAPS = {
   family: 80000,
   ehg: 120000,
@@ -60,6 +64,30 @@ function monthlyAmortization(principal: number, annualRate: number, years: numbe
   return (principal * r * factor) / (factor - 1);
 }
 
+// Inverse of monthlyAmortization: largest principal whose monthly instalment equals `monthly`.
+function maxLoanForMonthly(monthly: number, annualRate: number, years: number): number {
+  const n = years * 12;
+  if (n <= 0 || monthly <= 0) return 0;
+  const r = annualRate / 12;
+  if (r === 0) return monthly * n;
+  const factor = Math.pow(1 + r, n);
+  return (monthly * (factor - 1)) / (r * factor);
+}
+
+// Gross monthly salary at a given age, from the salary override series when available,
+// otherwise the growth formula. Returns 0 once the user has stopped working (no income).
+export function grossMonthlyIncomeAt(inputs: ProfileInputs, age: number): number {
+  const workingYears = Math.max(0, inputs.stopWorkingAge - inputs.currentAge);
+  const i = age - inputs.currentAge;
+  if (i >= workingYears) return 0; // no employment income after stopping work
+  const idx = Math.max(0, i);
+  const salary =
+    inputs.salarySeries.length === workingYears && idx < inputs.salarySeries.length
+      ? inputs.salarySeries[idx]
+      : inputs.startingSalary * Math.pow(1 + inputs.salaryGrowthRate, idx);
+  return salary / 12;
+}
+
 export type BtoBreakdown = {
   flatPrice: number;
   scheme: DownpaymentScheme;
@@ -70,6 +98,19 @@ export type BtoBreakdown = {
   loanAmount: number;
   ltvRatio: number;
   interestRate: number;
+  // Eligibility limits (theoretical maximums the buyer qualifies for).
+  grossMonthlyIncomeAtApplication: number;
+  // Age at which income is assessed for MSR/grants — application age normally,
+  // collection age under the Deferred Income Assessment (DIA) Scheme.
+  incomeAssessmentAge: number;
+  maxLoanLtv: number;
+  maxLoanMsr: number;
+  maxLoan: number;
+  maxMonthlyMortgage: number;
+  // Whether the flat's required loan was capped by the limits, and the cash the buyer
+  // must top up at collection as a result.
+  loanConstrained: boolean;
+  loanShortfallToCash: number;
   dp1: {
     proposed: number;
     fromGrant: number;
@@ -158,12 +199,38 @@ export function computeBtoBreakdown(
     dp2ActualPaid = dp2Amount;
   }
 
-  const totalDownpayment = dp1Amount + dp2ActualPaid;
-  const loanAmount = Math.max(0, flatPrice - totalDownpayment);
-  const ltvRatio = flatPrice > 0 ? loanAmount / flatPrice : 0;
   const interestRate = effectiveInterestRate(inputs);
+  const tenure = inputs.btoLoanTenureYears;
 
-  const monthlyMortgage = monthlyAmortization(loanAmount, interestRate, inputs.btoLoanTenureYears);
+  // Loan the flat would nominally require, before eligibility limits.
+  const nominalLoan = Math.max(0, flatPrice - (dp1Amount + dp2ActualPaid));
+
+  // Eligibility limits — the buyer can borrow at most the lower of the LTV cap and
+  // the MSR-implied ceiling (monthly instalment ≤ 30% of gross monthly income).
+  // Under the Deferred Income Assessment (DIA) Scheme (deferred downpayment), HDB
+  // assesses income at collection (DP2) instead of application (DP1), so the income
+  // that sizes MSR and grants is taken at the later, typically higher, salary.
+  const incomeAssessmentAge = isDeferred ? inputs.btoCollectionAge : inputs.btoApplicationAge;
+  const grossMonthlyIncomeAtApplication = grossMonthlyIncomeAt(inputs, incomeAssessmentAge);
+  const maxLoanLtv = flatPrice * LTV_CAP;
+  const maxMonthlyMsr = grossMonthlyIncomeAtApplication * MSR_LIMIT;
+  const maxLoanMsr = maxLoanForMonthly(maxMonthlyMsr, interestRate, tenure);
+  const maxLoan = Math.max(0, Math.min(maxLoanLtv, maxLoanMsr));
+  const maxMonthlyMortgage = monthlyAmortization(maxLoan, interestRate, tenure);
+
+  // Cap the actual loan at the eligibility ceiling; the un-loanable shortfall must be
+  // paid in cash at collection (same timing as DP2), so the accounting stays consistent
+  // (flatPrice = totalDownpayment + loanAmount).
+  const loanAmount = Math.min(nominalLoan, maxLoan);
+  const loanShortfallToCash = Math.max(0, nominalLoan - loanAmount);
+  const loanConstrained = loanShortfallToCash > 0.5;
+  dp2FromCash += loanShortfallToCash;
+  dp2ActualPaid += loanShortfallToCash;
+
+  const totalDownpayment = dp1Amount + dp2ActualPaid;
+  const ltvRatio = flatPrice > 0 ? loanAmount / flatPrice : 0;
+
+  const monthlyMortgage = monthlyAmortization(loanAmount, interestRate, tenure);
   const mortgageStartAge = inputs.btoCollectionAge;
   const mortgageEndAge = inputs.btoCollectionAge + inputs.btoLoanTenureYears - 1;
 
@@ -177,6 +244,14 @@ export function computeBtoBreakdown(
     loanAmount,
     ltvRatio,
     interestRate,
+    grossMonthlyIncomeAtApplication,
+    incomeAssessmentAge,
+    maxLoanLtv,
+    maxLoanMsr,
+    maxLoan,
+    maxMonthlyMortgage,
+    loanConstrained,
+    loanShortfallToCash,
     dp1: {
       proposed: dp1Amount,
       fromGrant: dp1FromGrant,

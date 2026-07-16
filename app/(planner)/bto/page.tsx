@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useProfile } from "@/lib/profile-context";
 import { fmtMoney } from "@/lib/format";
 import { StatCard, Stat, Th, Td } from "@/app/components/ui";
-import { computeBtoBreakdown, type BtoBreakdown } from "@/lib/bto";
+import { computeBtoBreakdown, MSR_LIMIT, type BtoBreakdown } from "@/lib/bto";
 import { buildCpfProjection, type CpfYearRow } from "@/lib/tax";
 import Image from "next/image";
 
@@ -193,7 +193,9 @@ export default function BtoPage() {
               {fmtMoney(breakdown.dp2.actualPaid)}
             </div>
             <div className="text-xs text-foreground/85 dark:text-foreground/60 mt-1">
-              {breakdown.dp2.actualPaid > breakdown.dp2.proposed
+              {breakdown.loanConstrained
+                ? `Includes ${fmtMoney(breakdown.loanShortfallToCash)} extra cash — loan capped by MSR/LTV limits · age ${inputs.btoCollectionAge}`
+                : breakdown.dp2.actualPaid > breakdown.dp2.proposed
                 ? `Grant exceeds ${ratiosPct.dp2}% scheme amount (${fmtMoney(breakdown.dp2.proposed)}) · age ${inputs.btoCollectionAge}`
                 : `${ratiosPct.dp2}% of flat price · age ${inputs.btoCollectionAge}`}
             </div>
@@ -220,13 +222,125 @@ export default function BtoPage() {
           <StatCard
             label="Loan amount"
             value={fmtMoney(breakdown.loanAmount)}
-            sub={`LTV ${(breakdown.ltvRatio * 100).toFixed(1)}% · ${(breakdown.interestRate * 100).toFixed(2)}% p.a.`}
+            sub={
+              breakdown.loanConstrained
+                ? `Capped at max eligible · LTV ${(breakdown.ltvRatio * 100).toFixed(1)}% · ${(breakdown.interestRate * 100).toFixed(2)}% p.a.`
+                : `LTV ${(breakdown.ltvRatio * 100).toFixed(1)}% · ${(breakdown.interestRate * 100).toFixed(2)}% p.a.`
+            }
           />
+
+          {/* Maximum eligibility — informational only, not used in the loan above. */}
+          <div className="glass-card p-5">
+            <div className="text-xs uppercase tracking-wide text-foreground/85 dark:text-foreground/60">
+              Maximum you can borrow
+            </div>
+            <div className="text-xs text-foreground/85 dark:text-foreground/60 mt-1">
+              Based on gross monthly income of {fmtMoney(Math.round(breakdown.grossMonthlyIncomeAtApplication))} at age {breakdown.incomeAssessmentAge}
+            </div>
+
+            {/* Eligibility limits, three across. Each is flex-col with the number
+                vertically centered so the amounts line up even though the labels
+                differ in height. */}
+            <div className="grid grid-cols-3 gap-2 mt-4">
+              <div className="glass-inset p-3 flex flex-col">
+                <div className="text-[11px] text-foreground/85 dark:text-foreground/60">
+                  75% LTV cap based on flat price
+                </div>
+                <div
+                  className={`flex-1 flex items-center text-base font-semibold font-mono ${
+                    breakdown.maxLoanLtv <= breakdown.maxLoanMsr ? "text-emerald-600 dark:text-emerald-500" : ""
+                  }`}
+                >
+                  {fmtMoney(Math.round(breakdown.maxLoanLtv))}
+                </div>
+              </div>
+              <div className="glass-inset p-3 flex flex-col">
+                <div className="text-[11px] text-foreground/85 dark:text-foreground/60">
+                  MSR limit: 30% of gross monthly income
+                </div>
+                <div
+                  className={`flex-1 flex items-center text-base font-semibold font-mono ${
+                    breakdown.maxLoanMsr < breakdown.maxLoanLtv ? "text-emerald-600 dark:text-emerald-500" : ""
+                  }`}
+                >
+                  {fmtMoney(Math.round(breakdown.maxLoanMsr))}
+                </div>
+              </div>
+              <div className="glass-inset p-3 flex flex-col">
+                <div className="text-[11px] text-foreground/85 dark:text-foreground/60">
+                  Max monthly mortgage salary allows
+                </div>
+                <div className="flex-1 flex items-center text-base font-semibold font-mono">
+                  {fmtMoney(Math.round(breakdown.grossMonthlyIncomeAtApplication * MSR_LIMIT))}/mo
+                </div>
+              </div>
+            </div>
+
+            {/* The comparison result. */}
+            <div className="glass-inset p-4 mt-2">
+              <div className="text-xs text-foreground/85 dark:text-foreground/60">
+                Lower of the two → your max loan
+              </div>
+              <div className="mt-1 text-lg font-semibold font-mono text-emerald-600 dark:text-emerald-500">
+                {fmtMoney(Math.round(breakdown.maxLoan))}
+              </div>
+            </div>
+
+            {/* Max monthly mortgage — the instalment on the max loan. */}
+            <div className="glass-inset p-4 mt-2">
+              <div className="text-xs text-foreground/85 dark:text-foreground/60">
+                Max monthly mortgage
+              </div>
+              <div className="mt-1 text-lg font-semibold font-mono">
+                {fmtMoney(Math.round(breakdown.maxMonthlyMortgage))}
+              </div>
+            </div>
+          </div>
+
+          {breakdown.loanConstrained && (
+            <div className="glass-card p-5 border border-amber-500/40 bg-amber-500/[0.06]">
+              <div className="text-xs uppercase tracking-wide font-semibold text-amber-700 dark:text-amber-400">
+                ⚠ Flat exceeds your borrowing limit
+              </div>
+              <div className="text-sm text-foreground/85 dark:text-foreground/70 mt-2">
+                This flat needs a loan larger than the maximum you qualify for, so the loan is
+                capped and you must pay an extra {fmtMoney(Math.round(breakdown.loanShortfallToCash))} in
+                cash at collection. Consider choosing a{" "}
+                <span className="font-semibold">less expensive flat</span> or{" "}
+                <span className="font-semibold">increasing your income</span> to close the gap.
+              </div>
+            </div>
+          )}
+
+          {!breakdown.loanConstrained && breakdown.flatPrice > 0 && breakdown.maxLoanMsr - breakdown.loanAmount > 1000 && (
+            <div className="glass-card p-5 border border-emerald-500/40 bg-emerald-500/[0.06]">
+              <div className="text-xs uppercase tracking-wide font-semibold text-emerald-700 dark:text-emerald-400">
+                🎉 You&apos;re comfortably within your limit
+              </div>
+              <div className="text-sm text-foreground/85 dark:text-foreground/70 mt-2">
+                Your income supports a loan up to{" "}
+                <span className="font-semibold">{fmtMoney(Math.round(breakdown.maxLoanMsr))}</span>, but this
+                flat only needs <span className="font-semibold">{fmtMoney(Math.round(breakdown.loanAmount))}</span> —
+                that&apos;s <span className="font-semibold">{fmtMoney(Math.round(breakdown.maxLoanMsr - breakdown.loanAmount))}</span>{" "}
+                of borrowing headroom to spare. If you&apos;d like, you could comfortably consider a{" "}
+                <span className="font-semibold">more expensive flat</span> without exceeding your
+                borrowing limit.
+              </div>
+            </div>
+          )}
 
           <StatCard
             label="Monthly mortgage"
             value={fmtMoney(Math.round(breakdown.monthlyMortgage))}
             sub={`Age ${breakdown.mortgageStartAge} → ${breakdown.mortgageEndAge} (${inputs.btoLoanTenureYears} yrs)`}
+            tooltip={
+              <>
+                This mortgage respects the <strong>MSR limit</strong> (monthly repayment ≤ 30% of
+                gross monthly income at application age) and the <strong>LTV cap</strong> (loan ≤ 75%
+                of flat price). If the flat needs more than you can borrow, the loan is capped and the
+                shortfall is added to your cash at collection.
+              </>
+            }
           />
       </div>
 

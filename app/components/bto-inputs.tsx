@@ -285,7 +285,15 @@ export function BtoInputsPanel({ draft, setDraft }: BtoInputsProps) {
 
       {/* Downpayment scheme */}
       <div>
-        <span className="block text-sm text-foreground/80 mb-1">Downpayment scheme</span>
+        <span className="flex items-center gap-1 text-sm text-foreground/80 mb-1">
+          Downpayment scheme
+          <InfoTooltip>
+            Under the <strong>Deferred Income Assessment (DIA) Scheme</strong>, HDB assesses your income only at{" "}
+            <strong>key collection</strong>, not at application. Your maximum loan and housing grants
+            are therefore determined by your salary at collection age — usually higher than at
+            application — so they may improve by the time you collect your keys.
+          </InfoTooltip>
+        </span>
         {draft.btoLoanType === "bank" && (() => {
           const info = {
             normal:    "DP1: 5% cash + 15% CPF OA / cash at booking. DP2: 5% CPF OA / cash at collection.",
